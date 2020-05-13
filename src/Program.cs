@@ -3,6 +3,7 @@ using System.Net;
 using System.Text;
 using System.IO;
 using CheckCovid19;
+using Newtonsoft.Json.Linq;
 
 namespace Covid_Check_Client
 {
@@ -10,51 +11,122 @@ namespace Covid_Check_Client
     {
         static void Main(string[] args)
         {
+            Program program = new Program();
+            string change = "1";
             while (true)
             {
-                Console.WriteLine("학생의 바코드를 스캔하거나 숫자를 입력해 주세요");
-                string scan = Console.ReadLine();
-                if (scan == "owner") //관리자 모드로 넘어가기
+                if (change == "1")
                 {
-                    new Program().admin();
+                    change = program.check();
+                }
+                else if (change == "2")
+                {
+                    change = program.uncheck();
+                }
+                else if (change == "3")
+                {
+                    change = program.add();
                 }
             }
-
         }
-        void admin()
+        string check()
         {
-            //////////////////////////////////////////////////////////////////
-            //                                                              //
-            //                                                              //
-            // 관리자 모드: 사용자 생성, 수정, 삭제 프로그램 종료 등 중요한 것을 담당    //
-            //                                                              //
-            //                                                              //
-            //////////////////////////////////////////////////////////////////
-            bool keepLoop = true;
-            Console.WriteLine("================================================================================\n\n\n주의: 관리자 모드입니다. 관리자의 작은 행동 하나로 사용자들의 정보가 훼손될 수 있습니다.\n\n\n================================================================================\n\n새로운 사용자 등록은 1, 사용자 정보 수정은 2, 사용자 삭제는 3, 프로그램 종료는 4, 관리자 모드 나가기는 0을 눌러주세요>");
-            while (keepLoop)
+            User user = new User();
+            string change = "0";
+            while (true)
             {
-                Console.SetCursorPosition(119, Console.CursorTop - 1);
-                string order = Console.ReadLine();
-                switch (order)
+                Console.WriteLine("현재는 체크모드 입니다. 모드를 변경하려면 change를, 프로그램 종료는 exit를 입력해 주세요\n체크하려면 사용자 의 바코드를 스캔하거나 숫자를 입력하세요.");
+                string scan = Console.ReadLine();
+                if (scan == "change")
                 {
-                    case "1":
-                        Console.WriteLine("사용자의 ID(바코드 숫자)를 스캔하거나 입력해 주세요");
-                        break;
-                    case "2":
-                        Console.WriteLine("사용자의 ID(바코드 숫자)를 스캔하거나 입력해 주세요");
-                        break;
-                    case "3":
-                        Console.WriteLine("사용자의 ID(바코드 숫자)를 스캔하거나 입력해 주세요");
-                        break;
-                    case "4":
-                        Environment.Exit(0);
-                        break;
-                    case "0":
-                        keepLoop = false;
-                        break;
+                    while (true)
+                    {
+                        Console.WriteLine("1: 사용자 체크\n2: 사용자 체크 해제\n3: 사용자 추가");
+                        change = Console.ReadLine();
+                        if (change == "1" || change == "2" || change == "3") break;
+                        Console.WriteLine("올바른 번호를 선택해 주세요");
+                    }
+                    break;
+                }
+                else if (scan == "exit") Environment.Exit(0);
+                JObject result = user.check(scan);
+                if ((bool)result["success"])
+                {
+                    Console.WriteLine($"{result["name"]}(ID: {result["id"]})의 체크가 완료되었습니다.");
+                }
+                else
+                {
+                    Console.WriteLine("체크를 실패하였습니다. 확인 후 다시 시도해주세요");
                 }
             }
+            return change;
+        }
+        string uncheck()
+        {
+            User user = new User();
+            string change = "0";
+            while (true)
+            {
+                Console.WriteLine("현재는 체크 해제모드 입니다. 모드를 변경하려면 change를, 프로그램 종료는 exit를 입력해 주세요\n체크하려면 사용자 의 바코드를 스캔하거나 숫자를 입력하세요.");
+                string scan = Console.ReadLine();
+                if (scan == "change")
+                {
+                    while (true)
+                    {
+                        Console.WriteLine("1: 사용자 체크\n2: 사용자 체크 해제\n3: 사용자 추가");
+                        change = Console.ReadLine();
+                        if (change == "1" || change == "2" || change == "3") break;
+                        Console.WriteLine("올바른 번호를 선택해 주세요");
+                    }
+                    break;
+                }
+                else if (scan == "exit") Environment.Exit(0);
+                
+                JObject result = user.uncheck(scan);
+                if ((bool)result["success"])
+                {
+                    Console.WriteLine($"{result["name"]}(ID: {result["id"]})의 체크 해제가 완료되었습니다.");
+                }
+                else
+                {
+                    Console.WriteLine("체크 해제를 실패하였습니다. 확인 후 다시 시도해주세요");
+                }
+                Console.WriteLine();
+            }
+            return change;
+        }
+        string add()
+        {
+            User user = new User();
+            string change = "0";
+            while (true)
+            {
+                Console.WriteLine("현재는 사용자 추가모드 입니다. 모드를 변경하려면 change를, 프로그램 종료는 exit를 입력해 주세요\n사용자를 추가하려면 사용자의 바코드를 스캔하거나 숫자를 입력하세요.");
+                string scan = Console.ReadLine();
+                if (scan == "change")
+                {
+                    while (true)
+                    {
+                        Console.WriteLine("1: 사용자 체크\n2: 사용자 체크 해제\n3: 사용자 추가");
+                        change = Console.ReadLine();
+                        if (change == "1" || change == "2" || change == "3") break;
+                        Console.WriteLine("올바른 번호를 선택해 주세요");
+                    }
+                    break;
+                }
+                else if (scan == "exit") Environment.Exit(0);
+
+                Console.WriteLine("사용자의 학년을 입력해 주세요");
+                int grade = int.Parse(Console.ReadLine());
+                Console.WriteLine("사용자의 반을 입력해 주세요");
+                int @class = int.Parse(Console.ReadLine());
+                Console.WriteLine("사용자의 번호를 입력해 주세요");
+                int number = int.Parse(Console.ReadLine());
+                Console.WriteLine("사용자의 이름을 입력해 주세요");
+                string name = Console.ReadLine();
+                Console.WriteLine(user.addUser(scan, grade, @class, number, name));
+            }
+            return change;
         }
     }
 }
