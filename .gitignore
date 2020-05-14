@@ -1,3 +1,6 @@
-src/*/obj
-src/*/bin
-src/*/config.txt
+src/CLI/obj
+src/CLI/bin
+src/CLI/config.txt
+src/GUI/obj
+src/GUI/bin
+src/GUI/config.txt
