@@ -1,12 +1,17 @@
 ﻿using System;
+using Gtk;
+
 
 namespace CovidCheckClientGui
 {
-    class Program
+    partial class Program : Window
     {
         static void Main(string[] args)
         {
-            Console.WriteLine("Hello World!");
+            Application.Init();
+            new Program();
+            Application.Run();
         }
+
     }
 }
