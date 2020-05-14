@@ -10,6 +10,11 @@
 * .Net Core SDK(3.1 이상)
 * Nuget
    * Newtonsoft.Json
+  
+이 아래는 GUI프로그램 실행시 추가로 필요한 것
+* GTK
+* Nuget
+   * GTK#
 
 
 #### 여기서 사용하는 단어 설명
