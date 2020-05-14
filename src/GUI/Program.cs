@@ -13,5 +13,16 @@ namespace CovidCheckClientGui
             Application.Run();
         }
 
+        void isTeacherClicked (object sender, EventArgs e)
+        {
+            if (isTeacher.Active)
+            {
+                
+            }
+            else
+            {
+
+            }
+        }
     }
 }
