@@ -12,7 +12,7 @@ namespace Covid_Check_Client
         static void Main(string[] args)
         {
             Program program = new Program();
-            string change = "1";
+            string change = "1"; //일단 프로그램을 켰을 땐 체크모드
             while (true)
             {
                 if (change == "1")
@@ -37,26 +37,22 @@ namespace Covid_Check_Client
             {
                 Console.WriteLine("현재는 체크모드 입니다. 모드를 변경하려면 change를, 프로그램 종료는 exit를 입력해 주세요\n체크하려면 사용자 의 바코드를 스캔하거나 숫자를 입력하세요.");
                 string scan = Console.ReadLine();
-                if (scan == "change")
+
+                if (scan == "change") //모드 바꾸기
                 {
-                    while (true)
-                    {
-                        Console.WriteLine("1: 사용자 체크\n2: 사용자 체크 해제\n3: 사용자 추가");
-                        change = Console.ReadLine();
-                        if (change == "1" || change == "2" || change == "3") break;
-                        Console.WriteLine("올바른 번호를 선택해 주세요");
-                    }
+                    change = changeMode();
                     break;
                 }
                 else if (scan == "exit") Environment.Exit(0);
                 JObject result = user.check(scan);
                 if ((bool)result["success"])
                 {
-                    Console.WriteLine($"{result["name"]}(ID: {result["id"]})의 체크가 완료되었습니다.");
+                    Console.WriteLine(result);
+                    Console.WriteLine($"{result["data"]["name"]}(ID: {result["data"]["id"]})의 체크가 완료되었습니다.\n");
                 }
                 else
                 {
-                    Console.WriteLine("체크를 실패하였습니다. 확인 후 다시 시도해주세요");
+                    Console.WriteLine("체크를 실패하였습니다. 확인 후 다시 시도해주세요\n");
                 }
             }
             return change;
@@ -67,17 +63,11 @@ namespace Covid_Check_Client
             string change = "0";
             while (true)
             {
-                Console.WriteLine("현재는 체크 해제모드 입니다. 모드를 변경하려면 change를, 프로그램 종료는 exit를 입력해 주세요\n체크하려면 사용자 의 바코드를 스캔하거나 숫자를 입력하세요.");
+                Console.WriteLine("현재는 체크 해제모드 입니다. 모드를 변경하려면 change를, 프로그램 종료는 exit를 입력해 주세요\n체크를 해제하려면 사용자 의 바코드를 스캔하거나 숫자를 입력하세요.");
                 string scan = Console.ReadLine();
-                if (scan == "change")
+                if (scan == "change") //모드 바꾸기
                 {
-                    while (true)
-                    {
-                        Console.WriteLine("1: 사용자 체크\n2: 사용자 체크 해제\n3: 사용자 추가");
-                        change = Console.ReadLine();
-                        if (change == "1" || change == "2" || change == "3") break;
-                        Console.WriteLine("올바른 번호를 선택해 주세요");
-                    }
+                    change = changeMode();
                     break;
                 }
                 else if (scan == "exit") Environment.Exit(0);
@@ -85,11 +75,11 @@ namespace Covid_Check_Client
                 JObject result = user.uncheck(scan);
                 if ((bool)result["success"])
                 {
-                    Console.WriteLine($"{result["name"]}(ID: {result["id"]})의 체크 해제가 완료되었습니다.");
+                    Console.WriteLine($"{result["data"]["name"]}(ID: {result["data"]["id"]})의 체크 해제가 완료되었습니다.\n");
                 }
                 else
                 {
-                    Console.WriteLine("체크 해제를 실패하였습니다. 확인 후 다시 시도해주세요");
+                    Console.WriteLine("체크 해제를 실패하였습니다. 확인 후 다시 시도해주세요\n");
                 }
                 Console.WriteLine();
             }
@@ -103,15 +93,9 @@ namespace Covid_Check_Client
             {
                 Console.WriteLine("현재는 사용자 추가모드 입니다. 모드를 변경하려면 change를, 프로그램 종료는 exit를 입력해 주세요\n사용자를 추가하려면 사용자의 바코드를 스캔하거나 숫자를 입력하세요.");
                 string scan = Console.ReadLine();
-                if (scan == "change")
+                if (scan == "change") //모드 바꾸기
                 {
-                    while (true)
-                    {
-                        Console.WriteLine("1: 사용자 체크\n2: 사용자 체크 해제\n3: 사용자 추가");
-                        change = Console.ReadLine();
-                        if (change == "1" || change == "2" || change == "3") break;
-                        Console.WriteLine("올바른 번호를 선택해 주세요");
-                    }
+                    change = changeMode();
                     break;
                 }
                 else if (scan == "exit") Environment.Exit(0);
@@ -124,8 +108,21 @@ namespace Covid_Check_Client
                 int number = int.Parse(Console.ReadLine());
                 Console.WriteLine("사용자의 이름을 입력해 주세요");
                 string name = Console.ReadLine();
-                Console.WriteLine(user.addUser(scan, grade, @class, number, name));
+                Console.WriteLine(user.addUser(scan, grade, @class, number, name) + "\n");
             }
+            return change;
+        }
+        string changeMode()
+        {
+            string change = "";
+            while (true)
+            {
+                Console.WriteLine("1: 사용자 체크\n2: 사용자 체크 해제\n3: 사용자 추가");
+                change = Console.ReadLine();
+                if (change == "1" || change == "2" || change == "3") break;
+                Console.WriteLine("올바른 번호를 선택해 주세요");
+            }
+            Console.WriteLine();
             return change;
         }
     }

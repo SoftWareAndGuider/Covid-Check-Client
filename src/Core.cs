@@ -14,10 +14,22 @@ namespace CheckCovid19
             WebClient client = new WebClient();
             
             client.Headers.Add("Content-Type","application/json");
+            string result = "";
             try
             {
-                client.UploadString(url + "/api", "PUT", userData.ToString());
-                return true;
+                client.UploadStringCompleted += (sender, e) => {
+                    result = e.Result;
+                };
+                client.UploadStringAsync(new Uri(url + "/api"), "PUT", userData.ToString());
+                while (string.IsNullOrEmpty(result))
+                {
+                    System.Threading.Thread.Sleep(10);
+                }
+                if ((bool)JObject.Parse(result)["success"])
+                {
+                    return true;
+                }
+                return false;
             }
             catch
             {
