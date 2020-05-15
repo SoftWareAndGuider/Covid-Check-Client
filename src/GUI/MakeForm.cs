@@ -109,12 +109,13 @@ namespace CovidCheckClientGui
             selectMode.AppendPage(uncheck, new Label("체크 해제"));
             selectMode.AppendPage(addUser, new Label("사용자 추가"));
             
-            // Scrollbar logScroll = new Scrollbar(Orientation.Horizontal, );
             
+            ScrolledWindow scroll = new ScrolledWindow();
+            scroll.Add(log);
 
             grid.RowHomogeneous = true;
             grid.Attach(selectMode, 1, 1, 1, 1);
-            grid.Attach(log, 2, 1, 1, 1);
+            grid.Attach(scroll, 2, 1, 1, 1);
             
             Add(grid);
 
@@ -126,7 +127,7 @@ namespace CovidCheckClientGui
         {
             DateTime dt = DateTime.Now;
             string time = $" ({dt.Hour}:{dt.Minute}:{dt.Second})";
-            log.Add(new Label(text + time));
+            log.Insert(new Label(text + time), 0);
             log.ShowAll();
         }
     }

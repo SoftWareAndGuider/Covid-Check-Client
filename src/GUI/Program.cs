@@ -23,13 +23,13 @@ namespace CovidCheckClientGui
         {
             if (checkIDLength.Value == uncheckIDLength.Value) return;
             checkIDLength.Value = uncheckIDLength.Value;
-            addLog($"바코드 길이가 {uncheckIDLength.Value}로 조정됨");
+            addLog($"바코드 길이가 {uncheckIDLength.Value}(으)로 조정됨");
         }
         void checkIDLengthChangeValue(object sender, EventArgs e)
         {
             if (checkIDLength.Value == uncheckIDLength.Value) return;
             uncheckIDLength.Value = checkIDLength.Value;
-            addLog($"바코드 길이가 {uncheckIDLength.Value}로 조정됨");
+            addLog($"바코드 길이가 {uncheckIDLength.Value}(으)로 조정됨");
         }
     }
 }
