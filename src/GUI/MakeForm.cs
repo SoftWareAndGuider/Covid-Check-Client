@@ -38,12 +38,13 @@ namespace CovidCheckClientGui
             Notebook selectMode = new Notebook();          
 
 
-            Grid check = new Grid();            
+            Grid check = new Grid();
             check.ColumnHomogeneous = true; //창의 크기가 달라지면 알아서 위젯 크기 조절해줌
             check.RowSpacing = 10; //Row는 위아래
             check.ColumnSpacing = 10; //Column은 양 옆
             check.Margin = 15;
             checkInsertID.PlaceholderText = "사용자의 ID를 스캔 혹은 입력해 주세요";
+            checkInsertID.KeyReleaseEvent += checkInsertIDChangeText;
             checkIDLength.Digits = 0;
             checkIDLength.ValuePos = PositionType.Right;
 
