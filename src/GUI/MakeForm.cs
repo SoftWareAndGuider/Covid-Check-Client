@@ -123,10 +123,17 @@ namespace CovidCheckClientGui
             ShowAll();
             addLog("프로그램 로딩이 완료됨");
         }
-
+        
+        string last = "";
+        int lastSec = 0;
+        int lastMilsec = 0;
         public void addLog(string text)
         {
             DateTime dt = DateTime.Now;
+            if (last == text && lastSec == dt.Second && lastMilsec == dt.Millisecond / 12) return;
+            lastSec = dt.Second;
+            lastMilsec = dt.Millisecond / 12;
+            last = text;
             string time = $" ({dt.Hour}:{dt.Minute}:{dt.Second})";
             log.Insert(new Label(text + time), 0);
             log.ShowAll();

@@ -36,7 +36,9 @@ namespace CovidCheckClientGui
         async void checkInsertIDChangeText(object sender, EventArgs e)
         {
             if (checkInsertID.Text.Length != checkIDLength.Value) return;
+            checkInsertID.IsEditable = false;
             await System.Threading.Tasks.Task.Delay(10);
+            checkInsertID.IsEditable = true;
             if (checkInsertID.Text.Length != checkIDLength.Value) return;
             Thread thread = new Thread(new ThreadStart(check));
             thread.Start();
@@ -45,6 +47,7 @@ namespace CovidCheckClientGui
         {
             User user = new User();
             JObject result = result = user.check(checkInsertID.Text);
+            if (string.IsNullOrEmpty(checkInsertID.Text)) return;
             if ((bool)result["success"])
             {
                 toLog = $"{result["data"]["grade"]}학년 {result["data"]["class"]}반 {result["data"]["number"]}번 {result["data"]["name"]}(ID: {checkInsertID.Text}) 체크됨";
@@ -53,9 +56,9 @@ namespace CovidCheckClientGui
             {
                 toLog = $"체크 실패 (인식된 ID: {checkInsertID.Text})";
             }
-            checkInsertID.Text = "";
             Application.Invoke (delegate {
                 addLog(toLog);
+                checkInsertID.Text = "";
             });
         }
     }
