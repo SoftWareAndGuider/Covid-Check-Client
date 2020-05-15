@@ -13,16 +13,23 @@ namespace CovidCheckClientGui
             Application.Run();
         }
 
-        void isTeacherClicked (object sender, EventArgs e)
+        void isTeacherClicked(object sender, EventArgs e)
         {
-            if (isTeacher.Active)
-            {
-                
-            }
-            else
-            {
+            insertGrade.Sensitive = !isTeacher.Active;
+            insertClass.Sensitive = !isTeacher.Active;
+        }
 
-            }
+        void uncheckIDLengthChangeValue(object sender, EventArgs e)
+        {
+            if (checkIDLength.Value == uncheckIDLength.Value) return;
+            checkIDLength.Value = uncheckIDLength.Value;
+            addLog($"바코드 길이가 {uncheckIDLength.Value}로 조정됨");
+        }
+        void checkIDLengthChangeValue(object sender, EventArgs e)
+        {
+            if (checkIDLength.Value == uncheckIDLength.Value) return;
+            uncheckIDLength.Value = checkIDLength.Value;
+            addLog($"바코드 길이가 {uncheckIDLength.Value}로 조정됨");
         }
     }
 }
