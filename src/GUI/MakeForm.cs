@@ -17,10 +17,10 @@ namespace CovidCheckClientGui
         Scale uncheckIDLength = new Scale(Orientation.Horizontal, new Adjustment(8, 5, 10, 0, 1, 0));
 
         Entry addInsertID = new Entry();
-        Entry insertGrade = new Entry();
-        Entry insertClass = new Entry();
-        Entry insertNumber = new Entry();
-        Entry insertName = new Entry();
+        Entry addInsertGrade = new Entry();
+        Entry addInsertClass = new Entry();
+        Entry addInsertNumber = new Entry();
+        Entry addInsertName = new Entry();
         CheckButton isTeacher = new CheckButton("학생이 아님");
         Button insertUser = new Button("사용자 만들기");
         public Program() : base("코로나19 예방용 발열체크 프로그램")
@@ -44,11 +44,12 @@ namespace CovidCheckClientGui
             check.ColumnSpacing = 10; //Column은 양 옆
             check.Margin = 15;
             checkInsertID.PlaceholderText = "사용자의 ID를 스캔 혹은 입력해 주세요";
-            checkInsertID.KeyReleaseEvent += checkInsertIDChangeText;
             checkIDLength.Digits = 0;
             checkIDLength.ValuePos = PositionType.Right;
 
+            checkInsertID.KeyReleaseEvent += checkInsertIDChangeText;
             checkIDLength.ValueChanged += checkIDLengthChangeValue;
+            checkOK.Clicked += checkOKClicked;
 
             check.Attach(new Label("실제 바코드의 길이가 지정한 바코드의 길이와 다를 경우 확인 버튼을 눌러 체크해주세요."), 1, 1, 5, 1); // 공지 추가
             check.Attach(checkInsertID, 1, 2, 4, 1); // 텍스트박스 추가
@@ -66,7 +67,9 @@ namespace CovidCheckClientGui
             uncheckIDLength.Digits = 0;
             uncheckIDLength.ValuePos = PositionType.Right;
 
+            uncheckInsertID.KeyReleaseEvent += uncheckInsertIDChangeText;
             uncheckIDLength.ValueChanged += uncheckIDLengthChangeValue;
+            uncheckOK.Clicked += uncheckOKClicked;
 
             uncheck.Attach(new Label("실제 바코드의 길이가 지정한 바코드의 길이와 다를 경우 확인 버튼을 눌러 체크해주세요."), 1, 1, 5, 1); // 공지 추가
             uncheck.Attach(uncheckInsertID, 1, 2, 4, 1); // 텍스트박스 추가
@@ -80,25 +83,26 @@ namespace CovidCheckClientGui
             addUser.Margin = 15;
             addUser.RowSpacing = 10;
             addInsertID.PlaceholderText = "사용자의 ID를 스캔 혹은 입력해 주세요";
-            insertGrade.PlaceholderText = "사용자의 학년을 입력해 주세요";
-            insertClass.PlaceholderText = "사용자의 반을 입력해 주세요";
-            insertNumber.PlaceholderText = "사용자의 번호를 입력해 주세요";
-            insertName.PlaceholderText = "사용자의 이름을 입력해 주세요";            
+            addInsertGrade.PlaceholderText = "사용자의 학년을 입력해 주세요";
+            addInsertClass.PlaceholderText = "사용자의 반을 입력해 주세요";
+            addInsertNumber.PlaceholderText = "사용자의 번호를 입력해 주세요";
+            addInsertName.PlaceholderText = "사용자의 이름을 입력해 주세요";            
 
+            insertUser.Clicked += insertUserClicked;
             
             addUser.Attach(isTeacher, 1, 1, 4, 1);
 
             addUser.Attach(new Label("학년"), 1, 2, 1, 1);
-            addUser.Attach(insertGrade, 2, 2, 3, 1);
+            addUser.Attach(addInsertGrade, 2, 2, 3, 1);
 
             addUser.Attach(new Label("반"), 1, 3, 1, 1);
-            addUser.Attach(insertClass, 2, 3, 3, 1);
+            addUser.Attach(addInsertClass, 2, 3, 3, 1);
 
             addUser.Attach(new Label("번호"), 1, 4, 1, 1);
-            addUser.Attach(insertNumber, 2, 4, 3, 1);
+            addUser.Attach(addInsertNumber, 2, 4, 3, 1);
 
             addUser.Attach(new Label("이름"), 1, 5, 1, 1);
-            addUser.Attach(insertName, 2, 5, 3, 1);
+            addUser.Attach(addInsertName, 2, 5, 3, 1);
 
             addUser.Attach(new Label("ID"), 1, 6, 1, 1);
             addUser.Attach(addInsertID, 2, 6, 3, 1);
@@ -125,14 +129,10 @@ namespace CovidCheckClientGui
         }
         
         string last = "";
-        int lastSec = 0;
-        int lastMilsec = 0;
         public void addLog(string text)
         {
             DateTime dt = DateTime.Now;
-            if (last == text && lastSec == dt.Second && lastMilsec == dt.Millisecond / 12) return;
-            lastSec = dt.Second;
-            lastMilsec = dt.Millisecond / 12;
+            if (last == text) return;
             last = text;
             string time = $" ({dt.Hour}:{dt.Minute}:{dt.Second})";
             log.Insert(new Label(text + time), 0);

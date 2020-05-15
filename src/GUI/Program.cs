@@ -1,8 +1,9 @@
 ﻿using System;
+using System.Threading;
+using System.Threading.Tasks;
 using CheckCovid19;
 using Newtonsoft.Json.Linq;
 using Gtk;
-using System.Threading;
 
 namespace CovidCheckClientGui
 {
@@ -16,8 +17,8 @@ namespace CovidCheckClientGui
         }
         void isTeacherClicked(object sender, EventArgs e)
         {
-            insertGrade.Sensitive = !isTeacher.Active;
-            insertClass.Sensitive = !isTeacher.Active;
+            addInsertGrade.Sensitive = !isTeacher.Active;
+            addInsertClass.Sensitive = !isTeacher.Active;
         }
 
         void uncheckIDLengthChangeValue(object sender, EventArgs e)
@@ -32,33 +33,118 @@ namespace CovidCheckClientGui
             uncheckIDLength.Value = checkIDLength.Value;
             addLog($"바코드 길이가 {uncheckIDLength.Value}(으)로 조정됨");
         }
-        string toLog = "";
         async void checkInsertIDChangeText(object sender, EventArgs e)
         {
+            
             if (checkInsertID.Text.Length != checkIDLength.Value) return;
-            checkInsertID.IsEditable = false;
-            await System.Threading.Tasks.Task.Delay(10);
-            checkInsertID.IsEditable = true;
+            await Task.Delay(10);
             if (checkInsertID.Text.Length != checkIDLength.Value) return;
-            Thread thread = new Thread(new ThreadStart(check));
+            Thread thread = new Thread(new ThreadStart(() => {check(checkInsertID.Text);}));
             thread.Start();
+            await Task.Delay(10);
+            checkInsertID.Text = "";
         }
-        void check()
+        async void checkOKClicked(object sender, EventArgs e)
+        {
+            Thread thread = new Thread(new ThreadStart(() => {check(checkInsertID.Text);}));
+            thread.Start();
+            await Task.Delay(10);
+            checkInsertID.Text = "";
+        }
+        void check(string id)
         {
             User user = new User();
-            JObject result = result = user.check(checkInsertID.Text);
-            if (string.IsNullOrEmpty(checkInsertID.Text)) return;
+            JObject result = user.check(id);
+            string toLog = "";
             if ((bool)result["success"])
             {
-                toLog = $"{result["data"]["grade"]}학년 {result["data"]["class"]}반 {result["data"]["number"]}번 {result["data"]["name"]}(ID: {checkInsertID.Text}) 체크됨";
+                toLog = $"{result["data"]["grade"]}학년 {result["data"]["class"]}반 {result["data"]["number"]}번 {result["data"]["name"]}(ID: {id}) 체크됨";
             }
             else
             {
-                toLog = $"체크 실패 (인식된 ID: {checkInsertID.Text})";
+                toLog = $"체크 실패 (인식된 ID: {id})";
             }
             Application.Invoke (delegate {
                 addLog(toLog);
-                checkInsertID.Text = "";
+            });
+        }
+        async void uncheckInsertIDChangeText(object sender, EventArgs e)
+        {
+            if (uncheckInsertID.Text.Length != uncheckIDLength.Value) return;
+            await Task.Delay(10);
+            if (uncheckInsertID.Text.Length != uncheckIDLength.Value) return;
+            Thread thread = new Thread(new ThreadStart(() => {uncheck(uncheckInsertID.Text);}));
+            thread.Start();
+            await Task.Delay(10);
+            uncheckInsertID.Text = "";
+        }
+        async void uncheckOKClicked(object sender, EventArgs e)
+        {
+            Thread thread = new Thread(new ThreadStart(() => {uncheck(uncheckInsertID.Text);}));
+            thread.Start();
+            await Task.Delay(10);
+            uncheckInsertID.Text = "";
+        }
+        void uncheck(string id)
+        {
+            User user = new User();
+            JObject result = user.uncheck(id);
+            string toLog = "";
+            if ((bool)result["success"])
+            {
+                toLog = $"{result["data"]["grade"]}학년 {result["data"]["class"]}반 {result["data"]["number"]}번 {result["data"]["name"]}(ID: {id}) 체크 해제됨";
+            }
+            else
+            {
+                toLog = $"체크 해제 실패 (인식된 ID: {id})";
+            }
+            Application.Invoke (delegate {
+                addLog(toLog);
+            });
+        }
+        void insertUserClicked(object sender, EventArgs e)
+        {
+            Thread thread = new Thread(new ThreadStart(() => {addUser(isTeacher.Active, addInsertID.Text, addInsertNumber.Text, addInsertName.Text, addInsertGrade.Text, addInsertClass.Text);}));
+            addInsertID.Sensitive = false;
+            addInsertNumber.Sensitive = false;
+            addInsertName.Sensitive = false;
+            addInsertGrade.Sensitive = false;
+            addInsertClass.Sensitive = false;
+            thread.Start();
+        }
+        void addUser(bool isNotStudent, string id, string number, string name, string grade, string @class)
+        {
+            User user = new User();
+            JObject result = new JObject();
+            if (isNotStudent)
+            {
+                result = user.addUser(id, 0, 0, int.Parse(number), name);
+            }
+            else
+            {
+                result = user.addUser(id, int.Parse(grade), int.Parse(@class), int.Parse(number), name);
+            }
+            string toLog = "";
+            if ((bool)result["success"])
+            {
+                toLog = $"{grade}학년 {@class}반 {number}번 이름: {name}(ID: {id}) 추가됨";
+            }
+            else
+            {
+                toLog = $"사용자 추가에 실패함 ({grade}학년 {@class}반 {number}번 이름: {name}(ID: {id}))";
+            }
+            Application.Invoke(delegate {
+                addInsertID.Sensitive = true;
+                addInsertNumber.Sensitive = true;
+                addInsertName.Sensitive = true;
+                addInsertGrade.Sensitive = !isTeacher.Active;
+                addInsertClass.Sensitive = !isTeacher.Active;
+                addInsertID.Text = "";
+                addInsertNumber.Text = "";
+                addInsertName.Text = "";
+                addInsertClass.Text = "";
+                addInsertGrade.Text = "";
+                addLog(toLog);
             });
         }
     }
