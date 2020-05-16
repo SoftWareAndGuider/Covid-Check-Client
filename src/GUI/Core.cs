@@ -87,6 +87,39 @@ namespace CheckCovid19
 
             return JObject.Parse(result);
         }
+        public JObject check(string grade, string @class, string number)
+        {
+            string url = File.ReadAllLines("config.txt")[0];
+            WebClient client = new WebClient();
+            JObject user = new JObject();
+
+            user.Add("process", "check");
+            user.Add("grade", grade);
+            user.Add("class", @class);
+            user.Add("number", number);
+            string result = "";
+
+            client.UploadStringCompleted += (sender, e) => {
+                try
+                {
+                    result = e.Result;
+                }
+                catch
+                {
+                    result = "{\"success\":false}";
+                }
+            };
+
+            client.Headers.Add("Content-Type", "application/json");
+            client.UploadStringAsync(new Uri(url + "/api"), "PUT", user.ToString());
+
+            while (string.IsNullOrEmpty(result))
+            {
+                System.Threading.Thread.Sleep(10);
+            }
+
+            return JObject.Parse(result);
+        }
         public JObject uncheck(string userID)
         {
             string url = File.ReadAllLines("config.txt")[0];
@@ -110,12 +143,10 @@ namespace CheckCovid19
 
             client.Headers.Add("Content-Type", "application/json");
             client.UploadStringAsync(new Uri(url + "/api"), "PUT", user.ToString());
-
             while (string.IsNullOrEmpty(result))
             {
                 System.Threading.Thread.Sleep(10);
             }
-
             return JObject.Parse(result);
         }
     }
