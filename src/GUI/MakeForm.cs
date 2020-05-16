@@ -116,7 +116,8 @@ namespace CovidCheckClientGui
             addInsertGrade.PlaceholderText = "사용자의 학년을 입력해 주세요";
             addInsertClass.PlaceholderText = "사용자의 반을 입력해 주세요";
             addInsertNumber.PlaceholderText = "사용자의 번호를 입력해 주세요";
-            addInsertName.PlaceholderText = "사용자의 이름을 입력해 주세요";            
+            addInsertName.PlaceholderText = "사용자의 이름을 입력해 주세요";  
+            insertUser.Sensitive = false;          
 
             insertUser.Clicked += insertUserClicked;
             addIsTeacher.Clicked += delegate { ifTeacher(title.add); };

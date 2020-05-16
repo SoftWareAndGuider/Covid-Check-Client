@@ -97,6 +97,7 @@ namespace CovidCheckClientGui
             addInsertName.Sensitive = false;
             addInsertGrade.Sensitive = false;
             addInsertClass.Sensitive = false;
+            insertUser.Sensitive = false;
             thread.Start();
         }
 
@@ -178,14 +179,13 @@ namespace CovidCheckClientGui
         {
             User user = new User();
             JObject result = new JObject();
+            
             if (isNotStudent)
             {
-                result = user.addUser(id, 0, 0, int.Parse(number), name);
+                grade = "0";
+                @class = "0";
             }
-            else
-            {
-                result = user.addUser(id, int.Parse(grade), int.Parse(@class), int.Parse(number), name);
-            }
+            result = user.addUser(id, int.Parse(grade), int.Parse(@class), int.Parse(number), name);
             string toLog = "";
             if ((bool)result["success"])
             {
