@@ -15,10 +15,28 @@ namespace CovidCheckClientGui
             new Program();
             Application.Run();
         }
-        void isTeacherClicked(object sender, EventArgs e)
+        void ifTeacher(title t)
         {
-            addInsertGrade.Sensitive = !isTeacher.Active;
-            addInsertClass.Sensitive = !isTeacher.Active;
+            if (t == title.check)
+            {
+                checkInsertGrade.Sensitive = !checkIsTeacher.Active;
+                checkInsertClass.Sensitive = !checkIsTeacher.Active;
+            }
+            else if (t == title.uncheck)
+            {
+                
+            }
+            else
+            {
+                addInsertGrade.Sensitive = !addIsTeacher.Active;
+                addInsertClass.Sensitive = !addIsTeacher.Active;
+            }
+        }
+        enum title
+        {
+            check,
+            uncheck,
+            add
         }
 
         void uncheckIDLengthChangeValue(object sender, EventArgs e)
@@ -34,8 +52,7 @@ namespace CovidCheckClientGui
             addLog($"바코드 길이가 {uncheckIDLength.Value}(으)로 조정됨");
         }
         async void checkInsertIDChangeText(object sender, EventArgs e)
-        {
-            
+        {            
             if (checkInsertID.Text.Length != checkIDLength.Value) return;
             await Task.Delay(10);
             if (checkInsertID.Text.Length != checkIDLength.Value) return;
@@ -104,7 +121,7 @@ namespace CovidCheckClientGui
         }
         void insertUserClicked(object sender, EventArgs e)
         {
-            Thread thread = new Thread(new ThreadStart(() => {addUser(isTeacher.Active, addInsertID.Text, addInsertNumber.Text, addInsertName.Text, addInsertGrade.Text, addInsertClass.Text);}));
+            Thread thread = new Thread(new ThreadStart(() => {addUser(addIsTeacher.Active, addInsertID.Text, addInsertNumber.Text, addInsertName.Text, addInsertGrade.Text, addInsertClass.Text);}));
             addInsertID.Sensitive = false;
             addInsertNumber.Sensitive = false;
             addInsertName.Sensitive = false;
@@ -137,8 +154,8 @@ namespace CovidCheckClientGui
                 addInsertID.Sensitive = true;
                 addInsertNumber.Sensitive = true;
                 addInsertName.Sensitive = true;
-                addInsertGrade.Sensitive = !isTeacher.Active;
-                addInsertClass.Sensitive = !isTeacher.Active;
+                addInsertGrade.Sensitive = !addIsTeacher.Active;
+                addInsertClass.Sensitive = !addIsTeacher.Active;
                 addInsertID.Text = "";
                 addInsertNumber.Text = "";
                 addInsertName.Text = "";

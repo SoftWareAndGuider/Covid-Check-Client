@@ -9,11 +9,14 @@ namespace CovidCheckClientGui
         ListBox log = new ListBox();
 
         Entry checkInsertID = new Entry();
-        Button checkOK = new Button("체크하기");
         Scale checkIDLength = new Scale(Orientation.Horizontal, new Adjustment(8, 5, 10, 0, 1, 0));
+        Entry checkInsertGrade = new Entry();
+        Entry checkInsertClass = new Entry();
+        Entry checkInsertNumber = new Entry();
+        CheckButton checkIsTeacher = new CheckButton("학생이 아님");
+
 
         Entry uncheckInsertID = new Entry();
-        Button uncheckOK = new Button("체크 해제하기");
         Scale uncheckIDLength = new Scale(Orientation.Horizontal, new Adjustment(8, 5, 10, 0, 1, 0));
 
         Entry addInsertID = new Entry();
@@ -21,13 +24,12 @@ namespace CovidCheckClientGui
         Entry addInsertClass = new Entry();
         Entry addInsertNumber = new Entry();
         Entry addInsertName = new Entry();
-        CheckButton isTeacher = new CheckButton("학생이 아님");
+        CheckButton addIsTeacher = new CheckButton("학생이 아님");
         Button insertUser = new Button("사용자 만들기");
         public Program() : base("코로나19 예방용 발열체크 프로그램")
         {
             addLog("프로그램이 시작됨");            
             DeleteEvent += delegate {Application.Quit();};
-            isTeacher.Clicked += isTeacherClicked;
 
             SetDefaultSize(1280, 720);
             
@@ -39,6 +41,9 @@ namespace CovidCheckClientGui
 
 
             Grid check = new Grid();
+            Button checkOK = new Button("체크하기");
+            Button checkInsertUser = new Button("체크하기");
+
             check.ColumnHomogeneous = true; //창의 크기가 달라지면 알아서 위젯 크기 조절해줌
             check.RowSpacing = 10; //Row는 위아래
             check.ColumnSpacing = 10; //Column은 양 옆
@@ -46,19 +51,39 @@ namespace CovidCheckClientGui
             checkInsertID.PlaceholderText = "사용자의 ID를 스캔 혹은 입력해 주세요";
             checkIDLength.Digits = 0;
             checkIDLength.ValuePos = PositionType.Right;
+            checkInsertID.PlaceholderText = "사용자의 ID를 스캔 혹은 입력해 주세요";
+            checkInsertGrade.PlaceholderText = "사용자의 학년을 입력해 주세요";
+            checkInsertClass.PlaceholderText = "사용자의 반을 입력해 주세요";
+            checkInsertNumber.PlaceholderText = "사용자의 번호를 입력해 주세요";
 
             checkInsertID.KeyReleaseEvent += checkInsertIDChangeText;
             checkIDLength.ValueChanged += checkIDLengthChangeValue;
             checkOK.Clicked += checkOKClicked;
+            checkIsTeacher.Clicked += delegate {ifTeacher(title.check);};
 
-            check.Attach(new Label("실제 바코드의 길이가 지정한 바코드의 길이와 다를 경우 확인 버튼을 눌러 체크해주세요."), 1, 1, 5, 1); // 공지 추가
+            check.Attach(new Label("실제 바코드의 길이가 지정한 바코드의 길이와 다를 경우 체크하기 버튼을 눌러 체크해주세요."), 1, 1, 5, 1); // 공지 추가
             check.Attach(checkInsertID, 1, 2, 4, 1); // 텍스트박스 추가
             check.Attach(checkOK, 5, 2, 1, 1); //OK 버튼 추가
             check.Attach(new Label("바코드 길이 조절"), 1, 3, 1, 1);
             check.Attach(checkIDLength, 2, 3, 4, 1);
 
+            check.Attach(new Separator(Orientation.Horizontal), 1, 4, 5, 1);
+
+            check.Attach(new Label("ID 없이 체크하기"), 1, 5, 5, 1);
+            check.Attach(checkIsTeacher, 1, 6, 5, 1);
+            check.Attach(new Label("학년"), 1, 7, 1, 1);
+            check.Attach(checkInsertGrade, 2, 7, 4, 1);
+            check.Attach(new Label("반"), 1, 8, 1, 1);
+            check.Attach(checkInsertClass, 2, 8, 4, 1);
+            check.Attach(new Label("번호"), 1, 9, 1, 1);
+            check.Attach(checkInsertNumber, 2, 9, 4, 1);
+            check.Attach(checkInsertUser, 1, 10, 5, 1);
+
+
 
             Grid uncheck = new Grid();
+            Button uncheckOK = new Button("체크 해제하기");
+
             uncheck.ColumnHomogeneous = true; //창의 크기가 달라지면 알아서 위젯 크기 조절해줌
             uncheck.RowSpacing = 10; //Row는 위아래
             uncheck.ColumnSpacing = 10; //Column은 양 옆
@@ -71,7 +96,7 @@ namespace CovidCheckClientGui
             uncheckIDLength.ValueChanged += uncheckIDLengthChangeValue;
             uncheckOK.Clicked += uncheckOKClicked;
 
-            uncheck.Attach(new Label("실제 바코드의 길이가 지정한 바코드의 길이와 다를 경우 확인 버튼을 눌러 체크해주세요."), 1, 1, 5, 1); // 공지 추가
+            uncheck.Attach(new Label("실제 바코드의 길이가 지정한 바코드의 길이와 다를 경우 체크 해제하기 버튼을 눌러 체크해주세요."), 1, 1, 5, 1); // 공지 추가
             uncheck.Attach(uncheckInsertID, 1, 2, 4, 1); // 텍스트박스 추가
             uncheck.Attach(uncheckOK, 5, 2, 1, 1); //OK 버튼 추가
             uncheck.Attach(new Label("바코드 길이 조절"), 1, 3, 1, 1);
@@ -89,8 +114,9 @@ namespace CovidCheckClientGui
             addInsertName.PlaceholderText = "사용자의 이름을 입력해 주세요";            
 
             insertUser.Clicked += insertUserClicked;
+            addIsTeacher.Clicked += delegate { ifTeacher(title.add); };
             
-            addUser.Attach(isTeacher, 1, 1, 4, 1);
+            addUser.Attach(addIsTeacher, 1, 1, 4, 1);
 
             addUser.Attach(new Label("학년"), 1, 2, 1, 1);
             addUser.Attach(addInsertGrade, 2, 2, 3, 1);
