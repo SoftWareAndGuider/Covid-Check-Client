@@ -25,7 +25,9 @@ namespace CovidCheckClientGui
             }
             else if (t == title.uncheck)
             {
-                
+                uncheckInsertGrade.Sensitive = !uncheckIsTeacher.Active;
+                uncheckInsertClass.Sensitive = !uncheckIsTeacher.Active;
+                uncheckInsertUser.Sensitive = isFull(title.uncheck);
             }
             else
             {
@@ -231,7 +233,20 @@ namespace CovidCheckClientGui
             }
             else if (t == title.uncheck)
             {
-                return true;
+                if (string.IsNullOrEmpty(uncheckInsertNumber.Text))
+                {
+                    return false;
+                }
+
+                if (uncheckIsTeacher.Active)
+                {
+                    return true;
+                }
+                else
+                {
+                    if (string.IsNullOrEmpty(uncheckInsertGrade.Text) || string.IsNullOrEmpty(uncheckInsertClass.Text)) return false;
+                    return true;
+                }
             }
             else
             {
@@ -247,7 +262,8 @@ namespace CovidCheckClientGui
         }
 
 
-        void checkWithoutIDKeyPress(object sender, EventArgs e) => checkInsertUser.Sensitive = isFull(title.check);
-        void addUserKeyPress(object sender, EventArgs e) => insertUser.Sensitive = isFull(title.add);
+        void checkWithoutIDKeyRelease(object sender, EventArgs e) => checkInsertUser.Sensitive = isFull(title.check);
+        void addUserKeyRelease(object sender, EventArgs e) => insertUser.Sensitive = isFull(title.add);
+        void uncheckWithoutIDKeyRelease(object sender, EventArgs e) => uncheckInsertUser.Sensitive = isFull(title.uncheck);
     }
 }
