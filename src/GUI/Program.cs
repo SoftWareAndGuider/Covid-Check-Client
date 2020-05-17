@@ -15,7 +15,9 @@ namespace CovidCheckClientGui
             new Program();
             Application.Run();
         }
-        void ifTeacher(title t)
+        
+        //학생이 아님이 체크됐을 때 실행하는 것
+        void unlessStudent(title t)
         {
             if (t == title.check)
             {
@@ -36,6 +38,8 @@ namespace CovidCheckClientGui
                 insertUser.Sensitive = isFull(title.add);
             }
         }
+        
+        //체크인지 체크 해제인지 사용자 만들기인지 확인하는 것
         enum title
         {
             check,
@@ -43,6 +47,7 @@ namespace CovidCheckClientGui
             add
         }
 
+        //ID의 길이를 입력하는 Scale이 조정되었을 때 실행되는 이벤트
         void uncheckIDLengthChangeValue(object sender, EventArgs e)
         {
             if (checkIDLength.Value == uncheckIDLength.Value) return;
@@ -56,6 +61,7 @@ namespace CovidCheckClientGui
             addLog($"바코드 길이가 {uncheckIDLength.Value}(으)로 조정됨");
         }
         
+        //ID가 입력되는 Entry(사용자 추가 제외)의 텍스트가 바뀌었을 때 실행되는 이벤트
         async void checkInsertIDChangeText(object sender, EventArgs e)
         {            
             if (checkInsertID.Text.Length != checkIDLength.Value) return;
@@ -77,6 +83,7 @@ namespace CovidCheckClientGui
             uncheckInsertID.Text = "";
         }
         
+        //ID없이 입력하는 버튼 빼고 버튼을 눌렀을 때 실행되는 이벤트
         async void checkOKClicked(object sender, EventArgs e)
         {
             Thread thread = new Thread(new ThreadStart(() => {check(checkInsertID.Text);}));
@@ -103,6 +110,7 @@ namespace CovidCheckClientGui
             thread.Start();
         }
 
+        //ID 입력하는 버튼이 눌렸을 때 실행되는 이벤트
         void checkInsertUserClicked(object sender, EventArgs e)
         {
             Thread thread = new Thread(new ThreadStart(() => {check(checkInsertGrade.Text, checkInsertClass.Text, checkInsertNumber.Text);}));
@@ -122,6 +130,7 @@ namespace CovidCheckClientGui
             uncheckInsertUser.Sensitive = false;
         }
 
+        //체크, 체크 해제, 사용자 추가의 본체
         void check(string id)
         {
             User user = new User();
@@ -249,6 +258,7 @@ namespace CovidCheckClientGui
             });
         }
  
+        //사용자의 정보들이 입력외었는지 확인하는 것
         bool isFull(title t)
         {
             if (t == title.check)
@@ -298,7 +308,7 @@ namespace CovidCheckClientGui
             }
         }
 
-
+        //사용자 정보 입력할 때 실행되는 이벤트
         void checkWithoutIDKeyRelease(object sender, EventArgs e) => checkInsertUser.Sensitive = isFull(title.check);
         void addUserKeyRelease(object sender, EventArgs e) => insertUser.Sensitive = isFull(title.add);
         void uncheckWithoutIDKeyRelease(object sender, EventArgs e) => uncheckInsertUser.Sensitive = isFull(title.uncheck);

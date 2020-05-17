@@ -78,7 +78,7 @@ namespace CovidCheckClientGui
             checkInsertID.KeyReleaseEvent += checkInsertIDChangeText;
             checkIDLength.ValueChanged += checkIDLengthChangeValue;
             checkOK.Clicked += checkOKClicked;
-            checkIsTeacher.Clicked += delegate {ifTeacher(title.check);};
+            checkIsTeacher.Clicked += delegate {unlessStudent(title.check);};
             checkInsertUser.Clicked += checkInsertUserClicked;
             checkInsertGrade.KeyReleaseEvent += checkWithoutIDKeyRelease;
             checkInsertClass.KeyReleaseEvent += checkWithoutIDKeyRelease;
@@ -128,7 +128,7 @@ namespace CovidCheckClientGui
             uncheckInsertGrade.KeyReleaseEvent += uncheckWithoutIDKeyRelease;
             uncheckInsertClass.KeyReleaseEvent += uncheckWithoutIDKeyRelease;
             uncheckInsertNumber.KeyReleaseEvent += uncheckWithoutIDKeyRelease;
-            uncheckIsTeacher.Clicked += delegate {ifTeacher(title.uncheck);};
+            uncheckIsTeacher.Clicked += delegate {unlessStudent(title.uncheck);};
             uncheckInsertUser.Clicked += uncheckInsertUserClicked;
 
 
@@ -169,7 +169,7 @@ namespace CovidCheckClientGui
             
             //사용자 추가 이벤트 설정
             insertUser.Clicked += insertUserClicked;
-            addIsTeacher.Clicked += delegate { ifTeacher(title.add); };
+            addIsTeacher.Clicked += delegate { unlessStudent(title.add); };
             addInsertClass.KeyReleaseEvent += addUserKeyRelease;
             addInsertGrade.KeyReleaseEvent += addUserKeyRelease;
             addInsertNumber.KeyReleaseEvent += addUserKeyRelease;
