@@ -112,6 +112,15 @@ namespace CovidCheckClientGui
             checkInsertNumber.Sensitive = false;
             checkInsertUser.Sensitive = false;
         }
+        void uncheckInsertUserClicked(object sender, EventArgs e)
+        {
+            Thread thread = new Thread(new ThreadStart(() => {uncheck(uncheckInsertGrade.Text, uncheckInsertClass.Text, uncheckInsertNumber.Text);}));
+            thread.Start();
+            uncheckInsertGrade.Sensitive = false;
+            uncheckInsertClass.Sensitive = false;
+            uncheckInsertNumber.Sensitive = false;
+            uncheckInsertUser.Sensitive = false;
+        }
 
         void check(string id)
         {
@@ -176,7 +185,35 @@ namespace CovidCheckClientGui
                 addLog(toLog);
             });
         }
-        
+        void uncheck(string grade, string @class, string number)
+        {
+            User user = new User();
+            JObject result = new JObject();
+            if (uncheckIsTeacher.Active)
+            {
+                grade = "0";
+                @class = "0";
+            }
+            result = user.uncheck(grade, @class, number);
+            string toLog = "";
+            if ((bool)result["success"])
+            {
+                toLog = $"{result["data"]["grade"]}학년 {result["data"]["class"]}반 {result["data"]["number"]}번 {result["data"]["name"]}(ID: {result["data"]["id"]}) 체크 해제됨";
+            }
+            else
+            {
+                toLog = $"체크 해제 실패 (인식된 정보: {grade}학년 {@class}반 {number}번)";
+            }
+            Application.Invoke (delegate {
+                addLog(toLog);
+                uncheckInsertGrade.Sensitive = !uncheckIsTeacher.Active;
+                uncheckInsertClass.Sensitive = !uncheckIsTeacher.Active;
+                uncheckInsertNumber.Sensitive = true;
+                uncheckInsertGrade.Text = "";
+                uncheckInsertClass.Text = "";
+                uncheckInsertNumber.Text = "";
+            });
+        }
         void addUser(bool isNotStudent, string id, string number, string name, string grade, string @class)
         {
             User user = new User();

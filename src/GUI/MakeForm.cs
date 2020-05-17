@@ -129,6 +129,7 @@ namespace CovidCheckClientGui
             uncheckInsertClass.KeyReleaseEvent += uncheckWithoutIDKeyRelease;
             uncheckInsertNumber.KeyReleaseEvent += uncheckWithoutIDKeyRelease;
             uncheckIsTeacher.Clicked += delegate {ifTeacher(title.uncheck);};
+            uncheckInsertUser.Clicked += uncheckInsertUserClicked;
 
 
             //사용자 체크 해제 배치(ID)
