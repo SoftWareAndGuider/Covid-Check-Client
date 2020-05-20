@@ -1,4 +1,6 @@
 using System;
+using System.IO;
+using System.Diagnostics;
 using Gtk;
 
 
@@ -44,6 +46,25 @@ namespace CovidCheckClientGui
         Button insertUser = new Button("사용자 만들기");
         public Program() : base("코로나19 예방용 발열체크 프로그램")
         {
+            try
+            {
+                System.IO.File.ReadAllText("config.txt");
+            }
+            catch
+            {
+                File.WriteAllText("config.txt", "홈페이지 URL을 입력해 주세요... (마지막에 / 빼고)");
+                try
+                {
+                    Process.Start("./config.txt");
+                }
+                catch
+                {
+                    Process.Start("chmod", "777 ./config.txt");
+                    System.Threading.Thread.Sleep(100);
+                    Process.Start("./config.txt");
+                }
+                Environment.Exit(0);
+            }
             addLog("프로그램이 시작됨");            
             DeleteEvent += delegate {Application.Quit();};
 
@@ -216,6 +237,7 @@ namespace CovidCheckClientGui
             //이제 보여주기
             ShowAll();
             addLog("프로그램 로딩이 완료됨");
+            
         }
         
         string last = "";
