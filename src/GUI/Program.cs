@@ -134,7 +134,21 @@ namespace CovidCheckClientGui
         void check(string id)
         {
             User user = new User();
-            JObject result = user.check(id);
+            JObject result = new JObject();
+            try
+            {
+                result = user.check(id);;  
+            } 
+            catch
+            {
+                Application.Invoke(delegate {
+                    MessageDialog dialog = new MessageDialog(null, DialogFlags.Modal, MessageType.Error, ButtonsType.Close, false, "./config.txt에 올바른 홈페이지 주소를 입력해 주세요");
+                    dialog.Run();
+                    dialog.Dispose();
+                    Environment.Exit(0);
+                });
+                return;  
+            }
             string toLog = "";
             if ((bool)result["success"])
             {
@@ -157,7 +171,20 @@ namespace CovidCheckClientGui
                 grade = "0";
                 @class = "0";
             }
-            result = user.check(grade, @class, number);
+            try
+            {
+                result = user.check(grade, @class, number);
+            }
+            catch
+            {
+                Application.Invoke(delegate {
+                    MessageDialog dialog = new MessageDialog(null, DialogFlags.Modal, MessageType.Error, ButtonsType.Close, false, "./config.txt에 올바른 홈페이지 주소를 입력해 주세요");
+                    dialog.Run();
+                    dialog.Dispose();
+                    Environment.Exit(0);
+                });
+                return;
+            }
             string toLog = "";
             if ((bool)result["success"])
             {
@@ -180,7 +207,21 @@ namespace CovidCheckClientGui
         void uncheck(string id)
         {
             User user = new User();
-            JObject result = user.uncheck(id);
+            JObject result = new JObject();
+            try
+            {
+                result = user.uncheck(id);
+            }
+            catch
+            {
+                Application.Invoke(delegate {
+                    MessageDialog dialog = new MessageDialog(null, DialogFlags.Modal, MessageType.Error, ButtonsType.Close, false, "./config.txt에 올바른 홈페이지 주소를 입력해 주세요");
+                    dialog.Run();
+                    dialog.Dispose();
+                    Environment.Exit(0);
+                });
+                return;
+            }
             string toLog = "";
             if ((bool)result["success"])
             {
@@ -203,7 +244,20 @@ namespace CovidCheckClientGui
                 grade = "0";
                 @class = "0";
             }
-            result = user.uncheck(grade, @class, number);
+            try
+            {
+                result = user.uncheck(grade, @class, number);
+            }
+            catch
+            {
+                Application.Invoke(delegate {
+                    MessageDialog dialog = new MessageDialog(null, DialogFlags.Modal, MessageType.Error, ButtonsType.Close, false, "./config.txt에 올바른 홈페이지 주소를 입력해 주세요");
+                    dialog.Run();
+                    dialog.Dispose();
+                    Environment.Exit(0);
+                });
+                return;
+            }
             string toLog = "";
             if ((bool)result["success"])
             {
@@ -232,8 +286,21 @@ namespace CovidCheckClientGui
             {
                 grade = "0";
                 @class = "0";
+            } 
+            try
+            {
+                result = user.addUser(id, int.Parse(grade), int.Parse(@class), int.Parse(number), name);
             }
-            result = user.addUser(id, int.Parse(grade), int.Parse(@class), int.Parse(number), name);
+            catch
+            {
+                Application.Invoke(delegate {
+                    MessageDialog dialog = new MessageDialog(null, DialogFlags.Modal, MessageType.Error, ButtonsType.Close, false, "./config.txt에 올바른 홈페이지 주소를 입력해 주세요");
+                    dialog.Run();
+                    dialog.Dispose();
+                    Environment.Exit(0);
+                });
+                return;
+            }
             string toLog = "";
             if ((bool)result["success"])
             {
