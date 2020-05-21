@@ -211,6 +211,18 @@ namespace CovidCheckClientGui
             delInsertID.PlaceholderText = "삭제할 사용자의 ID를 스캔 혹은 입력해 주세요";
             delInsertUser.Sensitive = false;
 
+            delInsertID.KeyReleaseEvent += delegate {
+                if (string.IsNullOrEmpty(delInsertID.Text))
+                {
+                    delInsertUser.Sensitive = false;
+                }
+                else
+                {
+                    delInsertUser.Sensitive = true;
+                }
+            };
+
+
             delUser.Attach(delInsertID, 1, 1, 1, 1);
             delUser.Attach(delInsertUser, 1, 2, 1, 1);
 
