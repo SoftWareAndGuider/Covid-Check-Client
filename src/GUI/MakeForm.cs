@@ -53,16 +53,9 @@ namespace CovidCheckClientGui
             catch
             {
                 File.WriteAllText("config.txt", "홈페이지 URL을 입력해 주세요... (마지막에 / 빼고)");
-                try
-                {
-                    Process.Start("./config.txt");
-                }
-                catch
-                {
-                    Process.Start("chmod", "777 ./config.txt");
-                    System.Threading.Thread.Sleep(100);
-                    Process.Start("./config.txt");
-                }
+                MessageDialog dialog = new MessageDialog(null, DialogFlags.Modal, MessageType.Error, ButtonsType.Close, false, "./config.txt에 홈페이지 주소를 입력해 주세요");
+                    dialog.Run();
+                    dialog.Dispose();
                 Environment.Exit(0);
             }
             addLog("프로그램이 시작됨");            
