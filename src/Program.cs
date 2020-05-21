@@ -47,26 +47,13 @@ namespace CovidCheckClientGui
             add
         }
 
-        //ID의 길이를 입력하는 Scale이 조정되었을 때 실행되는 이벤트
-        void uncheckIDLengthChangeValue(object sender, EventArgs e)
-        {
-            if (checkIDLength.Value == uncheckIDLength.Value) return;
-            checkIDLength.Value = uncheckIDLength.Value;
-            addLog($"바코드 길이가 {uncheckIDLength.Value}(으)로 조정됨");
-        }
-        void checkIDLengthChangeValue(object sender, EventArgs e)
-        {
-            if (checkIDLength.Value == uncheckIDLength.Value) return;
-            uncheckIDLength.Value = checkIDLength.Value;
-            addLog($"바코드 길이가 {uncheckIDLength.Value}(으)로 조정됨");
-        }
         
         //ID가 입력되는 Entry(사용자 추가 제외)의 텍스트가 바뀌었을 때 실행되는 이벤트
         async void checkInsertIDChangeText(object sender, EventArgs e)
         {            
-            if (checkInsertID.Text.Length != checkIDLength.Value) return;
+            if (checkInsertID.Text.Length != 8) return;
             await Task.Delay(10);
-            if (checkInsertID.Text.Length != checkIDLength.Value) return;
+            if (checkInsertID.Text.Length != 8) return;
             Thread thread = new Thread(new ThreadStart(() => {check(checkInsertID.Text);}));
             thread.Start();
             await Task.Delay(10);
@@ -74,9 +61,9 @@ namespace CovidCheckClientGui
         }
         async void uncheckInsertIDChangeText(object sender, EventArgs e)
         {
-            if (uncheckInsertID.Text.Length != uncheckIDLength.Value) return;
+            if (uncheckInsertID.Text.Length != 8) return;
             await Task.Delay(10);
-            if (uncheckInsertID.Text.Length != uncheckIDLength.Value) return;
+            if (uncheckInsertID.Text.Length != 8) return;
             Thread thread = new Thread(new ThreadStart(() => {uncheck(uncheckInsertID.Text);}));
             thread.Start();
             await Task.Delay(10);

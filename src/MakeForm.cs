@@ -13,27 +13,23 @@ namespace CovidCheckClientGui
 
         // 사용자 체크
         Entry checkInsertID = new Entry();
-        Scale checkIDLength = new Scale(Orientation.Horizontal, new Adjustment(8, 5, 10, 0, 1, 0));
 
         Entry checkInsertGrade = new Entry();
         Entry checkInsertClass = new Entry();
         Entry checkInsertNumber = new Entry();
         CheckButton checkIsTeacher = new CheckButton("학생이 아님");
 
-        Button checkOK = new Button("체크하기");
-        Button checkInsertUser = new Button("체크하기");
+        Button checkInsertUser = new Button("검사 확인하기");
 
         // 사용자 체크 해제        
         Entry uncheckInsertID = new Entry();
-        Scale uncheckIDLength = new Scale(Orientation.Horizontal, new Adjustment(8, 5, 10, 0, 1, 0));
 
         Entry uncheckInsertGrade = new Entry();
         Entry uncheckInsertClass = new Entry();
         Entry uncheckInsertNumber = new Entry();
         CheckButton uncheckIsTeacher = new CheckButton("학생이 아님");
 
-        Button uncheckOK = new Button("체크 해제하기");
-        Button uncheckInsertUser = new Button("체크 해제하기");
+        Button uncheckInsertUser = new Button("검사 취소하기");
         
 
         //사용자 추가
@@ -44,6 +40,10 @@ namespace CovidCheckClientGui
         Entry addInsertName = new Entry();
         CheckButton addIsTeacher = new CheckButton("학생이 아님");
         Button insertUser = new Button("사용자 만들기");
+
+
+        Entry delInsertID = new Entry();
+
         public Program() : base("코로나19 예방용 발열체크 프로그램")
         {
             try
@@ -88,8 +88,6 @@ namespace CovidCheckClientGui
             check.ColumnSpacing = 10; //Column은 양 옆
             check.Margin = 15;
             checkInsertID.PlaceholderText = "사용자의 ID를 스캔 혹은 입력해 주세요";
-            checkIDLength.Digits = 0;
-            checkIDLength.ValuePos = PositionType.Right;
             checkInsertGrade.PlaceholderText = "사용자의 학년을 입력해 주세요";
             checkInsertClass.PlaceholderText = "사용자의 반을 입력해 주세요";
             checkInsertNumber.PlaceholderText = "사용자의 번호를 입력해 주세요";
@@ -97,8 +95,6 @@ namespace CovidCheckClientGui
 
             //사용자 체크 이벤트 설정
             checkInsertID.KeyReleaseEvent += checkInsertIDChangeText;
-            checkIDLength.ValueChanged += checkIDLengthChangeValue;
-            checkOK.Clicked += checkOKClicked;
             checkIsTeacher.Clicked += delegate {unlessStudent(title.check);};
             checkInsertUser.Clicked += checkInsertUserClicked;
             checkInsertGrade.KeyReleaseEvent += checkWithoutIDKeyRelease;
@@ -107,10 +103,7 @@ namespace CovidCheckClientGui
 
             //사용자 체크 배치(ID)
             check.Attach(new Label("실제 바코드의 길이가 지정한 바코드의 길이와 다를 경우 체크하기 버튼을 눌러 체크해주세요."), 1, 1, 5, 1); // 공지 추가
-            check.Attach(checkInsertID, 1, 2, 4, 1); // 텍스트박스 추가
-            check.Attach(checkOK, 5, 2, 1, 1); //OK 버튼 추가
-            check.Attach(new Label("바코드 길이 조절"), 1, 3, 1, 1);
-            check.Attach(checkIDLength, 2, 3, 4, 1);
+            check.Attach(checkInsertID, 1, 2, 5, 1); // 텍스트박스 추가
 
             check.Attach(new Separator(Orientation.Horizontal), 1, 4, 5, 1);
             
@@ -135,8 +128,6 @@ namespace CovidCheckClientGui
             uncheck.ColumnSpacing = 10; //Column은 양 옆
             uncheck.Margin = 15;
             uncheckInsertID.PlaceholderText = "사용자의 ID를 스캔 혹은 입력해 주세요";
-            uncheckIDLength.Digits = 0;
-            uncheckIDLength.ValuePos = PositionType.Right;
             uncheckInsertGrade.PlaceholderText = "사용자의 학년을 입력해 주세요";
             uncheckInsertClass.PlaceholderText = "사용자의 반을 입력해 주세요";
             uncheckInsertNumber.PlaceholderText = "사용자의 번호를 입력해 주세요";
@@ -144,8 +135,6 @@ namespace CovidCheckClientGui
 
             //사용자 체크 해제 이벤트 설정
             uncheckInsertID.KeyReleaseEvent += uncheckInsertIDChangeText;
-            uncheckIDLength.ValueChanged += uncheckIDLengthChangeValue;
-            uncheckOK.Clicked += uncheckOKClicked;
             uncheckInsertGrade.KeyReleaseEvent += uncheckWithoutIDKeyRelease;
             uncheckInsertClass.KeyReleaseEvent += uncheckWithoutIDKeyRelease;
             uncheckInsertNumber.KeyReleaseEvent += uncheckWithoutIDKeyRelease;
@@ -155,10 +144,7 @@ namespace CovidCheckClientGui
 
             //사용자 체크 해제 배치(ID)
             uncheck.Attach(new Label("실제 바코드의 길이가 지정한 바코드의 길이와 다를 경우 체크 해제하기 버튼을 눌러 체크해주세요."), 1, 1, 5, 1); // 공지 추가
-            uncheck.Attach(uncheckInsertID, 1, 2, 4, 1); // 텍스트박스 추가
-            uncheck.Attach(uncheckOK, 5, 2, 1, 1); //OK 버튼 추가
-            uncheck.Attach(new Label("바코드 길이 조절"), 1, 3, 1, 1);
-            uncheck.Attach(uncheckIDLength, 2, 3, 4, 1);
+            uncheck.Attach(uncheckInsertID, 1, 2, 5, 1); // 텍스트박스 추가
             
             uncheck.Attach(new Separator(Orientation.Horizontal), 1, 4, 5, 1);
 
@@ -174,6 +160,7 @@ namespace CovidCheckClientGui
             uncheck.Attach(uncheckInsertUser, 1, 10, 5, 1);
 
 
+            Grid manageMode = new Grid();
 
             //사용자 추가 Grid
             Grid addUser = new Grid();
@@ -216,11 +203,36 @@ namespace CovidCheckClientGui
             addUser.Attach(addInsertID, 2, 6, 3, 1);
 
             addUser.Attach(insertUser, 1, 7, 4, 1);
+
+            Frame addUserFrame = new Frame("사용자 추가");
+            addUserFrame.Margin = 15;
+            addUserFrame.Add(addUser);
+
+
+            Grid delUser = new Grid();
+            Button delInsertUser = new Button("사용자 삭제");
+
+            delUser.ColumnHomogeneous = true;
+            delUser.Margin = 15;
+            delUser.RowSpacing = 10;
+            delInsertID.PlaceholderText = "삭제할 사용자의 ID를 스캔 혹은 입력해 주세요";
+            delInsertUser.Sensitive = false;
+
+            delUser.Attach(delInsertID, 1, 1, 1, 1);
+            delUser.Attach(delInsertUser, 1, 2, 1, 1);
+
+            Frame delUserFrame = new Frame("사용자 삭제");
+            delUserFrame.Margin = 15;
+            delUserFrame.Add(delUser);
             
+            manageMode.ColumnHomogeneous = true;
+            manageMode.Attach(addUserFrame, 1, 1, 1, 1);
+            manageMode.Attach(delUserFrame, 1, 2, 1, 1);
+
             //Grid들 Notebook에 추가
-            selectMode.AppendPage(check, new Label("체크"));
-            selectMode.AppendPage(uncheck, new Label("체크 해제"));
-            selectMode.AppendPage(addUser, new Label("사용자 추가"));
+            selectMode.AppendPage(check, new Label("검사 확인"));
+            selectMode.AppendPage(uncheck, new Label("검사 취소"));
+            selectMode.AppendPage(manageMode, new Label("관리자 모드"));
             
             
             //로그 나타내는 ScrolledWindow에 추가
