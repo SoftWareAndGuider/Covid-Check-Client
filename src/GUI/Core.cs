@@ -182,5 +182,14 @@ namespace CheckCovid19
 
             return JObject.Parse(result);
         }
+        public JObject delUser(string userID)
+        {
+            return new JObject();
+        }
+        public JObject delUser(string grade, string @class, string number)
+        {
+            return new JObject();
+        }
+    
     }
 }

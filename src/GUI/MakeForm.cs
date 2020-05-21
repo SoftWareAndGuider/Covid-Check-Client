@@ -44,6 +44,18 @@ namespace CovidCheckClientGui
         Entry addInsertName = new Entry();
         CheckButton addIsTeacher = new CheckButton("학생이 아님");
         Button insertUser = new Button("사용자 만들기");
+
+
+        //사용자 삭제
+        Entry delInsertID = new Entry();
+        Entry delInsertGrade = new Entry();
+        Entry delInsertClass = new Entry();
+        Entry delInsertNumber = new Entry();
+        Entry delInsertName = new Entry();
+        CheckButton delIsTeacher = new CheckButton("학생이 아님");
+        Button delInsertUser = new Button("사용자 삭제");
+        Button delInsertUserWithoutID = new Button("사용자 삭제");
+
         public Program() : base("코로나19 예방용 발열체크 프로그램")
         {
             try
@@ -210,10 +222,50 @@ namespace CovidCheckClientGui
 
             addUser.Attach(insertUser, 1, 7, 4, 1);
             
+            Frame addUserFrame = new Frame("사용자 추가");
+            addUserFrame.Margin = 15;
+            addUserFrame.MarginBottom = 0;
+            addUserFrame.Add(addUser);
+
+
+            Grid delUser = new Grid();
+            delUser.Margin = 15;
+            delUser.ColumnHomogeneous = true;
+            delUser.ColumnSpacing = 10;
+            delUser.RowSpacing = 10;
+
+            delUser.Attach(delInsertID, 1, 1, 4, 1);
+            delUser.Attach(delInsertUser, 5, 1, 1, 1);
+            delUser.Attach(new Separator(Orientation.Horizontal), 1, 2, 5, 1);
+            delUser.Attach(new Label("ID없이 사용자 삭제하기"), 1, 3, 5, 1);
+            delUser.Attach(delIsTeacher, 1, 4, 5, 1);
+            delUser.Attach(new Label("학년"), 1, 5, 1, 1);
+            delUser.Attach(delInsertGrade, 2, 5, 3, 1);
+            delUser.Attach(new Label("반"), 1, 6, 1, 1);
+            delUser.Attach(delInsertClass, 2, 6, 3, 1);
+            delUser.Attach(new Label("번호"), 1, 7, 1, 1);
+            delUser.Attach(delInsertNumber, 2, 7, 3, 1);
+            delUser.Attach(delInsertUserWithoutID, 5, 5, 1, 3);
+            
+
+            Frame delUserFrame = new Frame("사용자 삭제");
+            delUserFrame.Margin = 15;
+            delUserFrame.MarginTop = 0;
+            
+            delUserFrame.Add(delUser);
+
+            Grid manageMode = new Grid();
+            manageMode.RowSpacing = 10;
+            manageMode.ColumnSpacing = 10;
+            manageMode.ColumnHomogeneous = true;
+
+            manageMode.Attach(addUserFrame, 1, 1, 1, 1);
+            manageMode.Attach(delUserFrame, 1, 2, 1, 1);
+
             //Grid들 Notebook에 추가
             selectMode.AppendPage(check, new Label("체크"));
             selectMode.AppendPage(uncheck, new Label("체크 해제"));
-            selectMode.AppendPage(addUser, new Label("사용자 추가"));
+            selectMode.AppendPage(manageMode, new Label("관리자 모드"));
             
             
             //로그 나타내는 ScrolledWindow에 추가
@@ -230,7 +282,6 @@ namespace CovidCheckClientGui
             //이제 보여주기
             ShowAll();
             addLog("프로그램 로딩이 완료됨");
-            
         }
         
         string last = "";
