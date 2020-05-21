@@ -81,7 +81,7 @@ namespace CovidCheckClientGui
             grid.ColumnHomogeneous = true;
             grid.ColumnSpacing = 8;
             //왼쪽의 탭들 (체크, 체크 해제, 추가)
-            Notebook selectMode = new Notebook();          
+            Notebook selectMode = new Notebook();
 
 
             //사용자 체크 Grid
@@ -99,6 +99,7 @@ namespace CovidCheckClientGui
             checkInsertClass.PlaceholderText = "사용자의 반을 입력해 주세요";
             checkInsertNumber.PlaceholderText = "사용자의 번호를 입력해 주세요";
             checkInsertUser.Sensitive = false;
+            checkOK.Sensitive = false;
 
             //사용자 체크 이벤트 설정
             checkInsertID.KeyReleaseEvent += checkInsertIDChangeText;
@@ -146,6 +147,7 @@ namespace CovidCheckClientGui
             uncheckInsertClass.PlaceholderText = "사용자의 반을 입력해 주세요";
             uncheckInsertNumber.PlaceholderText = "사용자의 번호를 입력해 주세요";
             uncheckInsertUser.Sensitive = false;
+            uncheckOK.Sensitive = false;
 
             //사용자 체크 해제 이벤트 설정
             uncheckInsertID.KeyReleaseEvent += uncheckInsertIDChangeText;
@@ -156,7 +158,7 @@ namespace CovidCheckClientGui
             uncheckInsertNumber.KeyReleaseEvent += uncheckWithoutIDKeyRelease;
             uncheckIsTeacher.Clicked += delegate {unlessStudent(title.uncheck);};
             uncheckInsertUser.Clicked += uncheckInsertUserClicked;
-
+            
 
             //사용자 체크 해제 배치(ID)
             uncheck.Attach(new Label("실제 바코드의 길이가 지정한 바코드의 길이와 다를 경우 체크 해제하기 버튼을 눌러 체크해주세요."), 1, 1, 5, 1); // 공지 추가
@@ -229,6 +231,15 @@ namespace CovidCheckClientGui
 
 
             Grid delUser = new Grid();
+            delInsertID.PlaceholderText = "사용자의 ID를 스캔 또는 입력해 주세요";
+            delInsertGrade.PlaceholderText = "사용자의 학년을 입력해 주세요";
+            delInsertClass.PlaceholderText = "사용자의 반을 입력해 주세요";
+            delInsertNumber.PlaceholderText = "사용자의 번호를 입력해 주세요";
+            delInsertName.PlaceholderText = "사용자의 이름을 입력해 주세요"; 
+            delInsertUserWithoutID.Sensitive = false;
+            delInsertUser.Sensitive = false;
+
+
             delUser.Margin = 15;
             delUser.ColumnHomogeneous = true;
             delUser.ColumnSpacing = 10;

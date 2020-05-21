@@ -63,7 +63,9 @@ namespace CovidCheckClientGui
         
         //ID가 입력되는 Entry(사용자 추가 제외)의 텍스트가 바뀌었을 때 실행되는 이벤트
         async void checkInsertIDChangeText(object sender, EventArgs e)
-        {            
+        {
+            if (checkInsertID.Text.Length == 0) checkOK.Sensitive = false;
+            else checkOK.Sensitive = true;
             if (checkInsertID.Text.Length != checkIDLength.Value) return;
             await Task.Delay(10);
             if (checkInsertID.Text.Length != checkIDLength.Value) return;
@@ -71,9 +73,12 @@ namespace CovidCheckClientGui
             thread.Start();
             await Task.Delay(10);
             checkInsertID.Text = "";
+            checkOK.Sensitive = false;
         }
         async void uncheckInsertIDChangeText(object sender, EventArgs e)
         {
+            if (uncheckInsertID.Text.Length == 0) uncheckOK.Sensitive = false;
+            else uncheckOK.Sensitive = true;
             if (uncheckInsertID.Text.Length != uncheckIDLength.Value) return;
             await Task.Delay(10);
             if (uncheckInsertID.Text.Length != uncheckIDLength.Value) return;
@@ -81,6 +86,7 @@ namespace CovidCheckClientGui
             thread.Start();
             await Task.Delay(10);
             uncheckInsertID.Text = "";
+            uncheckOK.Sensitive = false;
         }
         
         //ID없이 입력하는 버튼 빼고 버튼을 눌렀을 때 실행되는 이벤트
