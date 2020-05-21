@@ -53,16 +53,9 @@ namespace CovidCheckClientGui
             catch
             {
                 File.WriteAllText("config.txt", "홈페이지 URL을 입력해 주세요... (마지막에 / 빼고)");
-                try
-                {
-                    Process.Start("./config.txt");
-                }
-                catch
-                {
-                    Process.Start("chmod", "777 ./config.txt");
-                    System.Threading.Thread.Sleep(100);
-                    Process.Start("./config.txt");
-                }
+                MessageDialog dialog = new MessageDialog(null, DialogFlags.Modal, MessageType.Error, ButtonsType.Close, false, "./config.txt에 홈페이지 주소를 입력해 주세요");
+                dialog.Run();
+                dialog.Dispose();
                 Environment.Exit(0);
             }
             addLog("프로그램이 시작됨");            
@@ -87,7 +80,7 @@ namespace CovidCheckClientGui
             check.RowSpacing = 10; //Row는 위아래
             check.ColumnSpacing = 10; //Column은 양 옆
             check.Margin = 15;
-            checkInsertID.PlaceholderText = "사용자의 ID를 스캔 혹은 입력해 주세요";
+            checkInsertID.PlaceholderText = "사용자의 번호를 스캔 혹은 입력해 주세요";
             checkInsertGrade.PlaceholderText = "사용자의 학년을 입력해 주세요";
             checkInsertClass.PlaceholderText = "사용자의 반을 입력해 주세요";
             checkInsertNumber.PlaceholderText = "사용자의 번호를 입력해 주세요";
@@ -102,13 +95,13 @@ namespace CovidCheckClientGui
             checkInsertNumber.KeyReleaseEvent += checkWithoutIDKeyRelease;
 
             //사용자 체크 배치(ID)
-            check.Attach(new Label("실제 바코드의 길이가 지정한 바코드의 길이와 다를 경우 체크하기 버튼을 눌러 체크해주세요."), 1, 1, 5, 1); // 공지 추가
+            check.Attach(new Label("번호로 체크 확인하기"), 1, 1, 5, 1); // 공지 추가
             check.Attach(checkInsertID, 1, 2, 5, 1); // 텍스트박스 추가
 
             check.Attach(new Separator(Orientation.Horizontal), 1, 4, 5, 1);
             
             //사용자 체크 배치(학년, 반, 번호)
-            check.Attach(new Label("ID 없이 체크하기"), 1, 5, 5, 1);
+            check.Attach(new Label("번호 없이 체크하기"), 1, 5, 5, 1);
             check.Attach(checkIsTeacher, 1, 6, 5, 1);
             check.Attach(new Label("학년"), 1, 7, 1, 1);
             check.Attach(checkInsertGrade, 2, 7, 4, 1);
@@ -127,7 +120,7 @@ namespace CovidCheckClientGui
             uncheck.RowSpacing = 10; //Row는 위아래
             uncheck.ColumnSpacing = 10; //Column은 양 옆
             uncheck.Margin = 15;
-            uncheckInsertID.PlaceholderText = "사용자의 ID를 스캔 혹은 입력해 주세요";
+            uncheckInsertID.PlaceholderText = "사용자의 번호를 스캔 혹은 입력해 주세요";
             uncheckInsertGrade.PlaceholderText = "사용자의 학년을 입력해 주세요";
             uncheckInsertClass.PlaceholderText = "사용자의 반을 입력해 주세요";
             uncheckInsertNumber.PlaceholderText = "사용자의 번호를 입력해 주세요";
@@ -143,13 +136,13 @@ namespace CovidCheckClientGui
 
 
             //사용자 체크 해제 배치(ID)
-            uncheck.Attach(new Label("실제 바코드의 길이가 지정한 바코드의 길이와 다를 경우 체크 해제하기 버튼을 눌러 체크해주세요."), 1, 1, 5, 1); // 공지 추가
+            uncheck.Attach(new Label("번호로 검사 확인하기"), 1, 1, 5, 1); // 공지 추가
             uncheck.Attach(uncheckInsertID, 1, 2, 5, 1); // 텍스트박스 추가
             
             uncheck.Attach(new Separator(Orientation.Horizontal), 1, 4, 5, 1);
 
             //사용자 체크 해제 배치(학년, 반, 번호)
-            uncheck.Attach(new Label("ID 없이 체크 해제하기"), 1, 5, 5, 1);
+            uncheck.Attach(new Label("번호 없이 체크 해제하기"), 1, 5, 5, 1);
             uncheck.Attach(uncheckIsTeacher, 1, 6, 5, 1);
             uncheck.Attach(new Label("학년"), 1, 7, 1, 1);
             uncheck.Attach(uncheckInsertGrade, 2, 7, 4, 1);
