@@ -23,19 +23,25 @@ namespace CovidCheckClientGui
             {
                 checkInsertGrade.Sensitive = !checkIsTeacher.Active;
                 checkInsertClass.Sensitive = !checkIsTeacher.Active;
-                checkInsertUser.Sensitive = isFull(title.check);
+                checkInsertUser.Sensitive = isFull(t);
             }
             else if (t == title.uncheck)
             {
                 uncheckInsertGrade.Sensitive = !uncheckIsTeacher.Active;
                 uncheckInsertClass.Sensitive = !uncheckIsTeacher.Active;
-                uncheckInsertUser.Sensitive = isFull(title.uncheck);
+                uncheckInsertUser.Sensitive = isFull(t);
             }
-            else
+            else if (t == title.add)
             {
                 addInsertGrade.Sensitive = !addIsTeacher.Active;
                 addInsertClass.Sensitive = !addIsTeacher.Active;
-                insertUser.Sensitive = isFull(title.add);
+                insertUser.Sensitive = isFull(t);
+            }
+            else if (t == title.delete)
+            {
+                delInsertGrade.Sensitive = !delIsTeacher.Active;
+                delInsertClass.Sensitive = !delIsTeacher.Active;
+                delInsertUserWithoutID.Sensitive = isFull(t);
             }
         }
         
@@ -44,7 +50,8 @@ namespace CovidCheckClientGui
         {
             check,
             uncheck,
-            add
+            add,
+            delete
         }
 
         //ID의 길이를 입력하는 Scale이 조정되었을 때 실행되는 이벤트
@@ -368,7 +375,7 @@ namespace CovidCheckClientGui
                     return true;
                 }
             }
-            else
+            else if (t == title.add)
             {
                 if (string.IsNullOrEmpty(addInsertID.Text) || string.IsNullOrEmpty(addInsertName.Text) || string.IsNullOrEmpty(addInsertNumber.Text)) return false;
 
@@ -379,11 +386,23 @@ namespace CovidCheckClientGui
                     return true;
                 }
             }
+            else
+            {
+                if (string.IsNullOrEmpty(delInsertNumber.Text)) return false;
+
+                if (delIsTeacher.Active) return true;
+                else
+                {
+                    if (string.IsNullOrEmpty(delInsertGrade.Text) || string.IsNullOrEmpty(delInsertClass.Text)) return false;
+                    return true;
+                }
+            }
         }
 
         //사용자 정보 입력할 때 실행되는 이벤트
         void checkWithoutIDKeyRelease(object sender, EventArgs e) => checkInsertUser.Sensitive = isFull(title.check);
         void addUserKeyRelease(object sender, EventArgs e) => insertUser.Sensitive = isFull(title.add);
         void uncheckWithoutIDKeyRelease(object sender, EventArgs e) => uncheckInsertUser.Sensitive = isFull(title.uncheck);
+        void delUserWithoutIDKeyRelease(object sender, EventArgs e) => delInsertUserWithoutID.Sensitive = isFull(title.delete);
     }
 }

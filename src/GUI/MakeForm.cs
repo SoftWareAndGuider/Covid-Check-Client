@@ -51,7 +51,6 @@ namespace CovidCheckClientGui
         Entry delInsertGrade = new Entry();
         Entry delInsertClass = new Entry();
         Entry delInsertNumber = new Entry();
-        Entry delInsertName = new Entry();
         CheckButton delIsTeacher = new CheckButton("학생이 아님");
         Button delInsertUser = new Button("사용자 삭제");
         Button delInsertUserWithoutID = new Button("사용자 삭제");
@@ -158,7 +157,7 @@ namespace CovidCheckClientGui
             uncheckInsertNumber.KeyReleaseEvent += uncheckWithoutIDKeyRelease;
             uncheckIsTeacher.Clicked += delegate {unlessStudent(title.uncheck);};
             uncheckInsertUser.Clicked += uncheckInsertUserClicked;
-            
+
 
             //사용자 체크 해제 배치(ID)
             uncheck.Attach(new Label("실제 바코드의 길이가 지정한 바코드의 길이와 다를 경우 체크 해제하기 버튼을 눌러 체크해주세요."), 1, 1, 5, 1); // 공지 추가
@@ -235,7 +234,6 @@ namespace CovidCheckClientGui
             delInsertGrade.PlaceholderText = "사용자의 학년을 입력해 주세요";
             delInsertClass.PlaceholderText = "사용자의 반을 입력해 주세요";
             delInsertNumber.PlaceholderText = "사용자의 번호를 입력해 주세요";
-            delInsertName.PlaceholderText = "사용자의 이름을 입력해 주세요"; 
             delInsertUserWithoutID.Sensitive = false;
             delInsertUser.Sensitive = false;
 
@@ -244,6 +242,17 @@ namespace CovidCheckClientGui
             delUser.ColumnHomogeneous = true;
             delUser.ColumnSpacing = 10;
             delUser.RowSpacing = 10;
+
+            delInsertClass.KeyReleaseEvent += delUserWithoutIDKeyRelease;
+            delInsertGrade.KeyReleaseEvent += delUserWithoutIDKeyRelease;
+            delInsertNumber.KeyReleaseEvent += delUserWithoutIDKeyRelease;
+            delIsTeacher.Clicked += delegate {
+                unlessStudent(title.delete);
+            };
+            delInsertID.KeyReleaseEvent += delegate {
+                if (string.IsNullOrEmpty(delInsertID.Text)) delInsertUser.Sensitive = false;
+                else delInsertUser.Sensitive = true;
+            };
 
             delUser.Attach(delInsertID, 1, 1, 4, 1);
             delUser.Attach(delInsertUser, 5, 1, 1, 1);
@@ -276,7 +285,7 @@ namespace CovidCheckClientGui
             //Grid들 Notebook에 추가
             selectMode.AppendPage(check, new Label("체크"));
             selectMode.AppendPage(uncheck, new Label("체크 해제"));
-            selectMode.AppendPage(manageMode, new Label("관리자 모드"));
+            selectMode.AppendPage(manageMode, new Label("사용자 관리"));
             
             
             //로그 나타내는 ScrolledWindow에 추가
