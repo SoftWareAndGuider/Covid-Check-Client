@@ -163,7 +163,7 @@ namespace CovidCheckClientGui
             uncheck.Attach(new Separator(Orientation.Horizontal), 1, 4, 5, 1);
 
             //사용자 체크 해제 배치(학년, 반, 번호)
-            uncheck.Attach(new Label("ID 없이 체크하기"), 1, 5, 5, 1);
+            uncheck.Attach(new Label("ID 없이 체크 해제하기"), 1, 5, 5, 1);
             uncheck.Attach(uncheckIsTeacher, 1, 6, 5, 1);
             uncheck.Attach(new Label("학년"), 1, 7, 1, 1);
             uncheck.Attach(uncheckInsertGrade, 2, 7, 4, 1);
