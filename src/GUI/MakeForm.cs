@@ -253,6 +253,8 @@ namespace CovidCheckClientGui
                 if (string.IsNullOrEmpty(delInsertID.Text)) delInsertUser.Sensitive = false;
                 else delInsertUser.Sensitive = true;
             };
+            delInsertUser.Clicked += delInsertUserClicked;
+            delInsertUserWithoutID.Clicked += delInsertUserWithoutIDClicked;
 
             delUser.Attach(delInsertID, 1, 1, 4, 1);
             delUser.Attach(delInsertUser, 5, 1, 1, 1);

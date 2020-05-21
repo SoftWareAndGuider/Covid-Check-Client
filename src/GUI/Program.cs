@@ -96,7 +96,7 @@ namespace CovidCheckClientGui
             uncheckOK.Sensitive = false;
         }
         
-        //ID없이 입력하는 버튼 빼고 버튼을 눌렀을 때 실행되는 이벤트
+        //ID 입력하는 버튼 빼고 버튼을 눌렀을 때 실행되는 이벤트
         async void checkOKClicked(object sender, EventArgs e)
         {
             Thread thread = new Thread(new ThreadStart(() => {check(checkInsertID.Text);}));
@@ -122,8 +122,28 @@ namespace CovidCheckClientGui
             insertUser.Sensitive = false;
             thread.Start();
         }
-
-        //ID 입력하는 버튼이 눌렸을 때 실행되는 이벤트
+        void delInsertUserClicked(object sender, EventArgs e)
+        {
+            string id = delInsertID.Text;
+            Thread thread = new Thread(new ThreadStart(() => {delUser(id);}));
+            thread.Start();
+            delInsertID.Text = "";
+        }
+        void delInsertUserWithoutIDClicked(object sender, EventArgs e)
+        {
+            string[] info = new string[] {
+                delInsertGrade.Text,
+                delInsertClass.Text,
+                delInsertNumber.Text
+            };
+            Thread thread = new Thread(new ThreadStart(() => {delUser(info[0], info[1], info[2]);}));
+            thread.Start();
+            delInsertGrade.Text = "";
+            delInsertClass.Text = "";
+            delInsertNumber.Text = "";
+        }
+        
+        //ID 없이 입력하는 버튼이 눌렸을 때 실행되는 이벤트
         void checkInsertUserClicked(object sender, EventArgs e)
         {
             Thread thread = new Thread(new ThreadStart(() => {check(checkInsertGrade.Text, checkInsertClass.Text, checkInsertNumber.Text);}));
@@ -142,8 +162,10 @@ namespace CovidCheckClientGui
             uncheckInsertNumber.Sensitive = false;
             uncheckInsertUser.Sensitive = false;
         }
-
-        //체크, 체크 해제, 사용자 추가의 본체
+        
+        
+        
+        //실제로 작업을 하는 곳 (별도의 스레드 사용)
         void check(string id)
         {
             User user = new User();
@@ -337,7 +359,89 @@ namespace CovidCheckClientGui
                 addLog(toLog);
             });
         }
- 
+        void delUser(string id)
+        {
+            User user = new User();
+            JObject result = new JObject();
+            try
+            {
+                result = user.delUser(id);
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+                Application.Invoke(delegate {
+                    MessageDialog dialog = new MessageDialog(null, DialogFlags.Modal, MessageType.Error, ButtonsType.Close, false, "./config.txt에 올바른 홈페이지 주소를 입력해 주세요");
+                    dialog.Run();
+                    dialog.Dispose();
+                    Environment.Exit(0);
+                });
+                return;
+            }
+            string toLog = "";
+            if ((bool)result["success"])
+            {
+                try
+                {
+                    toLog = $"{result["data"]["grade"]}학년 {result["data"]["class"]}반 {result["data"]["number"]}번 {result["data"]["name"]}(ID: {id}) 삭제됨";
+                }
+                catch
+                {
+                    toLog = $"삭제 실패 (인식된 ID: {id})";
+                }
+            }
+            else
+            {
+                toLog = $"삭제 실패 (인식된 ID: {id})";
+            }
+            Application.Invoke (delegate {
+                addLog(toLog);
+            });
+        }
+        void delUser(string grade, string @class, string number)
+        {
+            User user = new User();
+            JObject result = new JObject();
+            if (delIsTeacher.Active)
+            {
+                grade = "0";
+                @class = "0";
+            }
+            try
+            {
+                result = user.delUser(grade, @class, number);
+            }
+            catch
+            {
+                Application.Invoke(delegate {
+                    MessageDialog dialog = new MessageDialog(null, DialogFlags.Modal, MessageType.Error, ButtonsType.Close, false, "./config.txt에 올바른 홈페이지 주소를 입력해 주세요");
+                    dialog.Run();
+                    dialog.Dispose();
+                    Environment.Exit(0);
+                });
+                return;
+            }
+            string toLog = "";
+            if ((bool)result["success"])
+            {
+                try
+                {
+                    toLog = $"{result["data"]["grade"]}학년 {result["data"]["class"]}반 {result["data"]["number"]}번 {result["data"]["name"]}(ID: {result["data"]["id"]}) 삭제됨";
+                }
+                catch
+                {
+                    toLog = $"삭제 실패 (인식된 정보: {grade}학년 {@class}반 {number}번)";
+                }
+            }
+            else
+            {
+                toLog = $"삭제 실패 (인식된 정보: {grade}학년 {@class}반 {number}번)";
+            }
+            Application.Invoke (delegate {
+                addLog(toLog);
+            });
+        }
+
         //사용자의 정보들이 입력외었는지 확인하는 것
         bool isFull(title t)
         {
