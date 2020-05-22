@@ -26,6 +26,16 @@ namespace CovidCheckClientGui
         Button checkOK = new Button("체크하기");
         Button checkInsertUser = new Button("체크하기");
 
+
+        Entry checkDoubtInsertID = new Entry();
+        Entry checkDoubtInsertGrade = new Entry();
+        Entry checkDoubtInsertClass = new Entry();
+        Entry checkDoubtInsertNumber = new Entry();
+        CheckButton checkDoubtIsTeacher = new CheckButton("학생이 아님");
+
+        Button checkDoubtOK = new Button("발열 체크하기");
+        Button checkDoubtInsertUser = new Button("발열 체크하기");
+
         // 사용자 체크 해제        
         Entry uncheckInsertID = new Entry();
         Scale uncheckIDLength = new Scale(Orientation.Horizontal, new Adjustment(8, 5, 10, 0, 1, 0));
@@ -103,6 +113,7 @@ namespace CovidCheckClientGui
             check.RowSpacing = 10; //Row는 위아래
             check.ColumnSpacing = 10; //Column은 양 옆
             check.Margin = 15;
+            check.MarginTop = 5;
             checkInsertID.PlaceholderText = "사용자의 ID를 스캔 혹은 입력해 주세요";
             checkIDLength.Digits = 0;
             checkIDLength.ValuePos = PositionType.Right;
@@ -126,8 +137,6 @@ namespace CovidCheckClientGui
             check.Attach(new Label("실제 바코드의 길이가 지정한 바코드의 길이와 다를 경우 체크하기 버튼을 눌러 체크해주세요."), 1, 1, 5, 1); // 공지 추가
             check.Attach(checkInsertID, 1, 2, 4, 1); // 텍스트박스 추가
             check.Attach(checkOK, 5, 2, 1, 1); //OK 버튼 추가
-            check.Attach(new Label("바코드 길이 조절"), 1, 3, 1, 1);
-            check.Attach(checkIDLength, 2, 3, 4, 1);
 
             check.Attach(new Separator(Orientation.Horizontal), 1, 4, 5, 1);
             
@@ -141,6 +150,69 @@ namespace CovidCheckClientGui
             check.Attach(new Label("번호"), 1, 9, 1, 1);
             check.Attach(checkInsertNumber, 2, 9, 4, 1);
             check.Attach(checkInsertUser, 1, 10, 5, 1);
+
+            Frame checkFrame = new Frame("정상");
+            checkFrame.Margin = 15;
+            checkFrame.MarginBottom = 0;
+            checkFrame.MarginTop = 0;
+            checkFrame.Add(check);
+
+            Grid checkDoubt = new Grid();
+            checkDoubt.ColumnHomogeneous = true;
+            checkDoubt.RowSpacing = 10; 
+            checkDoubt.ColumnSpacing = 10;
+            checkDoubt.Margin = 15;
+            checkDoubt.MarginTop = 5;
+            checkDoubtInsertID.PlaceholderText = "사용자의 ID를 스캔 혹은 입력해 주세요";
+            checkDoubtInsertGrade.PlaceholderText = "사용자의 학년을 입력해 주세요";
+            checkDoubtInsertClass.PlaceholderText = "사용자의 반을 입력해 주세요";
+            checkDoubtInsertNumber.PlaceholderText = "사용자의 번호를 입력해 주세요";
+            checkDoubtInsertUser.Sensitive = false;
+            checkDoubtOK.Sensitive = false;
+
+            checkDoubtInsertID.KeyReleaseEvent += checkDoubtInsertIDChangeText;
+            checkDoubtOK.Clicked += checkDoubtOKClicked;
+            checkDoubtIsTeacher.Clicked += delegate {unlessStudent(title.checkDoubt);};
+            checkDoubtInsertUser.Clicked += checkDoubtInsertUserClicked;
+            checkDoubtInsertGrade.KeyReleaseEvent += checkDoubtWithoutIDKeyRelease;
+            checkDoubtInsertClass.KeyReleaseEvent += checkDoubtWithoutIDKeyRelease;
+            checkDoubtInsertNumber.KeyReleaseEvent += checkDoubtWithoutIDKeyRelease;
+
+            //사용자 체크 배치(ID)
+            checkDoubt.Attach(new Label("실제 바코드의 길이가 지정한 바코드의 길이와 다를 경우 체크하기 버튼을 눌러 체크해주세요."), 1, 1, 5, 1); // 공지 추가
+            checkDoubt.Attach(checkDoubtInsertID, 1, 2, 4, 1); // 텍스트박스 추가
+            checkDoubt.Attach(checkDoubtOK, 5, 2, 1, 1); //OK 버튼 추가
+            checkDoubt.Attach(new Label("바코드 길이 조절"), 1, 3, 1, 1);
+
+            checkDoubt.Attach(new Separator(Orientation.Horizontal), 1, 4, 5, 1);
+            
+            //사용자 체크 배치(학년, 반, 번호)
+            checkDoubt.Attach(new Label("ID 없이 체크하기"), 1, 5, 5, 1);
+            checkDoubt.Attach(checkDoubtIsTeacher, 1, 6, 5, 1);
+            checkDoubt.Attach(new Label("학년"), 1, 7, 1, 1);
+            checkDoubt.Attach(checkDoubtInsertGrade, 2, 7, 4, 1);
+            checkDoubt.Attach(new Label("반"), 1, 8, 1, 1);
+            checkDoubt.Attach(checkDoubtInsertClass, 2, 8, 4, 1);
+            checkDoubt.Attach(new Label("번호"), 1, 9, 1, 1);
+            checkDoubt.Attach(checkDoubtInsertNumber, 2, 9, 4, 1);
+            checkDoubt.Attach(checkDoubtInsertUser, 1, 10, 5, 1);
+
+            Frame checkDoubtFrame = new Frame("의심 체크");
+            checkDoubtFrame.Margin = 15;
+            checkDoubtFrame.MarginTop = 0;
+            checkDoubtFrame.Add(checkDoubt);
+
+
+            Grid checkAll = new Grid();
+            checkAll.ColumnHomogeneous = true;
+            checkAll.RowSpacing = 10;
+            Label changeBarcodeLength = new Label("바코드 길이 조절");
+            changeBarcodeLength.MarginTop = 10;
+            checkIDLength.MarginTop = 10;
+            checkAll.Attach(changeBarcodeLength, 1, 1, 1, 1);
+            checkAll.Attach(checkIDLength, 2, 1, 4, 1);     
+            checkAll.Attach(checkFrame, 1, 2, 5, 1);
+            checkAll.Attach(checkDoubtFrame, 1, 3, 5, 1);            
 
 
             //사용자 체크 해제 Grid
@@ -198,6 +270,7 @@ namespace CovidCheckClientGui
             //사용자 추가 속성 설정
             addUser.ColumnHomogeneous = true;
             addUser.Margin = 15;
+            addUser.MarginTop = 5;
             addUser.RowSpacing = 10;
             addInsertID.PlaceholderText = "사용자의 ID를 스캔 혹은 입력해 주세요";
             addInsertGrade.PlaceholderText = "사용자의 학년을 입력해 주세요";
@@ -234,6 +307,8 @@ namespace CovidCheckClientGui
             addUser.Attach(addInsertID, 2, 6, 3, 1);
 
             addUser.Attach(insertUser, 1, 7, 4, 1);
+
+
             
             Frame addUserFrame = new Frame("사용자 추가");
             addUserFrame.Margin = 15;
@@ -317,7 +392,7 @@ namespace CovidCheckClientGui
             
 
             //Grid들 Notebook에 추가
-            selectMode.AppendPage(check, new Label("체크"));
+            selectMode.AppendPage(checkAll, new Label("체크"));
             selectMode.AppendPage(uncheck, new Label("체크 해제"));
             selectMode.AppendPage(manageMode, new Label("사용자 관리"));
             

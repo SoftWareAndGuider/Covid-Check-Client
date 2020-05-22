@@ -25,6 +25,12 @@ namespace CovidCheckClientGui
                 checkInsertClass.Sensitive = !checkIsTeacher.Active;
                 checkInsertUser.Sensitive = isFull(t);
             }
+            else if (t == title.checkDoubt)
+            {
+                checkDoubtInsertGrade.Sensitive = !checkDoubtIsTeacher.Active;
+                checkDoubtInsertClass.Sensitive = !checkDoubtIsTeacher.Active;
+                checkDoubtInsertUser.Sensitive = isFull(t);
+            }
             else if (t == title.uncheck)
             {
                 uncheckInsertGrade.Sensitive = !uncheckIsTeacher.Active;
@@ -49,6 +55,7 @@ namespace CovidCheckClientGui
         enum title
         {
             check,
+            checkDoubt,
             uncheck,
             add,
             delete
@@ -67,7 +74,7 @@ namespace CovidCheckClientGui
             uncheckIDLength.Value = checkIDLength.Value;
             addLog($"바코드 길이가 {uncheckIDLength.Value}(으)로 조정됨");
         }
-        
+                
         //ID가 입력되는 Entry(사용자 추가 제외)의 텍스트가 바뀌었을 때 실행되는 이벤트
         async void checkInsertIDChangeText(object sender, EventArgs e)
         {
@@ -76,9 +83,9 @@ namespace CovidCheckClientGui
             if (checkInsertID.Text.Length != checkIDLength.Value) return;
             await Task.Delay(10);
             if (checkInsertID.Text.Length != checkIDLength.Value) return;
-            Thread thread = new Thread(new ThreadStart(() => {check(checkInsertID.Text);}));
+            string id = checkInsertID.Text;
+            Thread thread = new Thread(new ThreadStart(() => {check(id);}));
             thread.Start();
-            await Task.Delay(10);
             checkInsertID.Text = "";
             checkOK.Sensitive = false;
         }
@@ -95,14 +102,34 @@ namespace CovidCheckClientGui
             uncheckInsertID.Text = "";
             uncheckOK.Sensitive = false;
         }
-        
-        //ID 입력하는 버튼 빼고 버튼을 눌렀을 때 실행되는 이벤트
-        async void checkOKClicked(object sender, EventArgs e)
+        async void checkDoubtInsertIDChangeText(object sender, EventArgs e)
         {
-            Thread thread = new Thread(new ThreadStart(() => {check(checkInsertID.Text);}));
-            thread.Start();
+            if (checkDoubtInsertID.Text.Length == 0) checkDoubtOK.Sensitive = false;
+            else checkDoubtOK.Sensitive = true;
+            if (checkDoubtInsertID.Text.Length != checkIDLength.Value) return;
             await Task.Delay(10);
+            if (checkDoubtInsertID.Text.Length != checkIDLength.Value) return;
+            string id = checkDoubtInsertID.Text;
+            Thread thread = new Thread(new ThreadStart(() => {checkDoubt(id);}));
+            thread.Start();
+            checkDoubtInsertID.Text = "";
+            checkDoubtOK.Sensitive = false;
+        }
+
+        //ID 입력하는 버튼 빼고 버튼을 눌렀을 때 실행되는 이벤트
+        void checkOKClicked(object sender, EventArgs e)
+        {
+            string id = checkInsertID.Text;
+            Thread thread = new Thread(new ThreadStart(() => {check(id);}));
+            thread.Start();
             checkInsertID.Text = "";
+        }
+        void checkDoubtOKClicked(object sender, EventArgs e)
+        {
+            string id = checkDoubtInsertID.Text;
+            Thread thread = new Thread(new ThreadStart(() => {checkDoubt(id);}));
+            thread.Start();
+            checkDoubtInsertID.Text = "";
         }
         async void uncheckOKClicked(object sender, EventArgs e)
         {
@@ -152,6 +179,21 @@ namespace CovidCheckClientGui
             checkInsertClass.Sensitive = false;
             checkInsertNumber.Sensitive = false;
             checkInsertUser.Sensitive = false;
+        }
+        void checkDoubtInsertUserClicked(object sender, EventArgs e)
+        {
+            string[] info = new string[] {
+                checkDoubtInsertGrade.Text,
+                checkDoubtInsertClass.Text,
+                checkDoubtInsertNumber.Text
+            };
+            Thread thread = new Thread(new ThreadStart(() => {checkDoubt(info[0], info[1], info[2]);}));
+            thread.Start();
+
+            checkDoubtInsertUser.Sensitive = false;
+            checkDoubtInsertGrade.Text = "";
+            checkDoubtInsertClass.Text = "";
+            checkDoubtInsertNumber.Text = "";
         }
         void uncheckInsertUserClicked(object sender, EventArgs e)
         {
@@ -237,6 +279,73 @@ namespace CovidCheckClientGui
                 checkInsertGrade.Text = "";
                 checkInsertClass.Text = "";
                 checkInsertNumber.Text = "";
+            });
+        }
+        void checkDoubt(string id)
+        {
+            User user = new User();
+            JObject result = new JObject();
+            try
+            {
+                result = user.check(id, true);  
+            } 
+            catch
+            {
+                Application.Invoke(delegate {
+                    MessageDialog dialog = new MessageDialog(null, DialogFlags.Modal, MessageType.Error, ButtonsType.Close, false, "./config.txt에 올바른 홈페이지 주소를 입력해 주세요");
+                    dialog.Run();
+                    dialog.Dispose();
+                    Environment.Exit(0);
+                });
+                return;  
+            }
+            string toLog = "";
+            if ((bool)result["success"])
+            {
+                toLog = $"{result["data"]["grade"]}학년 {result["data"]["class"]}반 {result["data"]["number"]}번 {result["data"]["name"]}(ID: {result["data"]["id"]}) 의심 체크됨";
+            }
+            else
+            {
+                toLog = $"의심 체크 실패 (인식된 ID: {id})";
+            }
+            Application.Invoke (delegate {
+                addLog(toLog);
+            });
+        }       
+        void checkDoubt(string grade, string @class, string number)
+        {
+            User user = new User();
+            JObject result = new JObject();
+            if (checkDoubtIsTeacher.Active)
+            {
+                grade = "0";
+                @class = "0";
+            }
+            try
+            {
+                result = user.check(grade, @class, number, true);
+            }
+            catch
+            {
+                Application.Invoke(delegate {
+                    MessageDialog dialog = new MessageDialog(null, DialogFlags.Modal, MessageType.Error, ButtonsType.Close, false, "./config.txt에 올바른 홈페이지 주소를 입력해 주세요");
+                    dialog.Run();
+                    dialog.Dispose();
+                    Environment.Exit(0);
+                });
+                return;
+            }
+            string toLog = "";
+            if ((bool)result["success"])
+            {
+                toLog = $"{result["data"]["grade"]}학년 {result["data"]["class"]}반 {result["data"]["number"]}번 {result["data"]["name"]}(ID: {result["data"]["id"]}) 의심 체크됨";
+            }
+            else
+            {
+                toLog = $"의심 체크 실패 (인식된 정보: {grade}학년 {@class}반 {number}번)";
+            }
+            Application.Invoke (delegate {
+                addLog(toLog);
             });
         }
         void uncheck(string id)
@@ -462,6 +571,23 @@ namespace CovidCheckClientGui
                     return true;
                 }
             }
+            else if (t == title.checkDoubt)
+            {
+                if (string.IsNullOrEmpty(checkDoubtInsertNumber.Text))
+                {
+                    return false;
+                }
+
+                if (checkDoubtIsTeacher.Active)
+                {
+                    return true;
+                }
+                else
+                {
+                    if (string.IsNullOrEmpty(checkDoubtInsertGrade.Text) || string.IsNullOrEmpty(checkDoubtInsertClass.Text)) return false;
+                    return true;
+                }
+            }
             else if (t == title.uncheck)
             {
                 if (string.IsNullOrEmpty(uncheckInsertNumber.Text))
@@ -505,6 +631,7 @@ namespace CovidCheckClientGui
 
         //사용자 정보 입력할 때 실행되는 이벤트
         void checkWithoutIDKeyRelease(object sender, EventArgs e) => checkInsertUser.Sensitive = isFull(title.check);
+        void checkDoubtWithoutIDKeyRelease(object sender, EventArgs e) => checkDoubtInsertUser.Sensitive = isFull(title.checkDoubt);
         void addUserKeyRelease(object sender, EventArgs e) => insertUser.Sensitive = isFull(title.add);
         void uncheckWithoutIDKeyRelease(object sender, EventArgs e) => uncheckInsertUser.Sensitive = isFull(title.uncheck);
         void delUserWithoutIDKeyRelease(object sender, EventArgs e) => delInsertUserWithoutID.Sensitive = isFull(title.delete);

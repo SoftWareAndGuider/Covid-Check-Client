@@ -56,13 +56,14 @@ namespace CheckCovid19
                 return JObject.Parse("{\"success\":false}");
             }
         }        
-        public JObject check(string userID)
+        public JObject check(string userID, bool ondo = false)
         {
             string url = File.ReadAllLines("config.txt")[0];
             WebClient client = new WebClient();
             JObject user = new JObject();
 
             user.Add("process", "check");
+            user.Add("ondo", ondo);
             user.Add("id", userID);
             string result = "";
 
@@ -87,13 +88,14 @@ namespace CheckCovid19
 
             return JObject.Parse(result);
         }
-        public JObject check(string grade, string @class, string number)
+        public JObject check(string grade, string @class, string number, bool ondo = false)
         {
             string url = File.ReadAllLines("config.txt")[0];
             WebClient client = new WebClient();
             JObject user = new JObject();
 
             user.Add("process", "check");
+            user.Add("ondo", ondo);
             user.Add("grade", grade);
             user.Add("class", @class);
             user.Add("number", number);
