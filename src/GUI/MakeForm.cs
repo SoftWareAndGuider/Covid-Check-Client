@@ -65,6 +65,7 @@ namespace CovidCheckClientGui
         Label secondGradeUserCount = new Label("");
         Label thirdGradeUserCount = new Label("");
         Label etcGradeUserCount = new Label("");
+        Label allUserCount = new Label("");
 
         public Program() : base("코로나19 예방용 발열체크 프로그램")
         {
@@ -297,6 +298,7 @@ namespace CovidCheckClientGui
             statusList.Attach(secondGradeUserCount, 2, 1, 1, 1);
             statusList.Attach(thirdGradeUserCount, 1, 2, 1, 1);
             statusList.Attach(etcGradeUserCount, 2, 2, 1, 1);
+            statusList.Attach(allUserCount, 3, 1, 1, 2);
 
             Frame statusListFrame = new Frame("사용자 수 (10초마다 새로고침)");
             statusListFrame.Add(statusList);
@@ -400,6 +402,7 @@ namespace CovidCheckClientGui
                         secondGradeUserCount.Text = "2학년: " + secondGrade.ToString() + "명";
                         thirdGradeUserCount.Text = "3학년: " + thirdGrade.ToString() + "명";
                         etcGradeUserCount.Text = "기타: " + etcGrade.ToString() + "명";
+                        allUserCount.Text = "합계: " + (firstGrade + secondGrade + thirdGrade + etcGrade).ToString() + "명";
                     });
                 }
                 catch (Exception e)
