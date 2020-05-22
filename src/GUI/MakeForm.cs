@@ -60,9 +60,11 @@ namespace CovidCheckClientGui
 
 
         //체크 상황 보기
-        LevelBar firstGradeStatus = new LevelBar(0, 100);
-        LevelBar secondGradeStatus = new LevelBar(0, 100);
-        LevelBar thirdGradeStatus = new LevelBar(0, 100);
+        bool programProcessing = true;
+        Label firstGradeUserCount = new Label("");        
+        Label secondGradeUserCount = new Label("");
+        Label thirdGradeUserCount = new Label("");
+        Label etcGradeUserCount = new Label("");
 
         public Program() : base("코로나19 예방용 발열체크 프로그램")
         {
@@ -79,7 +81,7 @@ namespace CovidCheckClientGui
                 Environment.Exit(0);
             }
             addLog("프로그램이 시작됨");            
-            DeleteEvent += delegate {Application.Quit();};
+            DeleteEvent += delegate {programProcessing = false; Application.Quit();};
 
             SetDefaultSize(1280, 720);
             
@@ -282,21 +284,34 @@ namespace CovidCheckClientGui
             Frame delUserFrame = new Frame("사용자 삭제");
             delUserFrame.Margin = 15;
             delUserFrame.MarginTop = 0;
+            delUserFrame.MarginBottom = 0;
             
             delUserFrame.Add(delUser);
 
             Grid statusList = new Grid();
-            statusList.Attach(firstGradeStatus, 1, 1, 1, 1);
-            statusList.Attach(secondGradeStatus, 1, 2, 1, 1);
-            statusList.Attach(thirdGradeStatus, 1, 3, 1, 1);
+            statusList.RowSpacing = 10;
+            statusList.Margin = 15;
+            statusList.ColumnHomogeneous = true;
+
+            statusList.Attach(firstGradeUserCount, 1, 1, 1, 1);
+            statusList.Attach(secondGradeUserCount, 2, 1, 1, 1);
+            statusList.Attach(thirdGradeUserCount, 1, 2, 1, 1);
+            statusList.Attach(etcGradeUserCount, 2, 2, 1, 1);
+
+            Frame statusListFrame = new Frame("사용자 수 (10초마다 새로고침)");
+            statusListFrame.Add(statusList);
+
+            statusListFrame.Margin = 15;
+            statusListFrame.MarginTop = 0;
 
             Grid manageMode = new Grid();
             manageMode.RowSpacing = 10;
             manageMode.ColumnSpacing = 10;
             manageMode.ColumnHomogeneous = true;
 
-            manageMode.Attach(addUserFrame, 1, 1, 1, 1);
-            manageMode.Attach(delUserFrame, 1, 2, 1, 1);
+            manageMode.Attach(addUserFrame, 1, 1, 1, 2);
+            manageMode.Attach(delUserFrame, 1, 3, 1, 2);
+            manageMode.Attach(statusListFrame, 1, 5, 1, 1);
             
 
             //Grid들 Notebook에 추가
@@ -341,13 +356,12 @@ namespace CovidCheckClientGui
             string url = File.ReadAllLines("config.txt")[0] + "/api";
             WebClient client = new WebClient();
             string uploadString = "{\"process\":\"info\", \"multi\": true}";
-            while (true)
+            while (programProcessing)
             {
                 client.Headers.Add("Content-Type", "application/json");
                 JObject result = new JObject();
                 try
                 {
-                    File.WriteAllText("do.txt", "시작");
                     string down = "";
                     client.UploadStringCompleted += (sender, e) => {
                         down = e.Result;
@@ -357,90 +371,40 @@ namespace CovidCheckClientGui
                     {
                         System.Threading.Thread.Sleep(10);
                     }
-                    File.WriteAllText("do.txt","받아옴");
                     result = JObject.Parse(down);
-                    int[] firstGrade = new int[3];
-                    int[] secondGrade = new int[3];
-                    int[] thirdGrade = new int[3];
-                    int[] etcGrade = new int[3];
-                    File.WriteAllText("do.txt","루프 시작");
+                    int firstGrade = 0;
+                    int secondGrade = 0;
+                    int thirdGrade = 0;
+                    int etcGrade = 0;
                     foreach (var a in result["data"])
                     {
                         if (a["grade"].ToString() == "1")
                         {
-                            if (a["checks"].ToString() == "0")
-                            {
-                                firstGrade[0]++;
-                            }
-                            else if (a["checks"].ToString() == "1")
-                            {
-                                firstGrade[1]++;
-                            }
-                            else
-                            {
-                                firstGrade[2]++;
-                            }
+                            firstGrade++;
                         }
                         else if (a["grade"].ToString() == "2")
                         {
-                            if (a["checks"].ToString() == "0")
-                            {
-                                secondGrade[0]++;
-                            }
-                            else if (a["checks"].ToString() == "1")
-                            {
-                                secondGrade[1]++;
-                            }
-                            else
-                            {
-                                secondGrade[2]++;
-                            }
+                            secondGrade++;
                         }
                         else if (a["grade"].ToString() == "3")
                         {
-                            if (a["checks"].ToString() == "0")
-                            {
-                                thirdGrade[0]++;
-                            }
-                            else if (a["checks"].ToString() == "1")
-                            {
-                                thirdGrade[1]++;
-                            }
-                            else
-                            {
-                                thirdGrade[2]++;
-                            }
+                            thirdGrade++;
                         }
                         else
                         {
-                            if (a["checks"].ToString() == "0")
-                            {
-                                etcGrade[0]++;
-                            }
-                            else if (a["checks"].ToString() == "1")
-                            {
-                                etcGrade[1]++;
-                            }
-                            else
-                            {
-                                etcGrade[2]++;
-                            }
+                            etcGrade++;
                         }
                     }
-                    File.WriteAllText("do.txt","루프 끝");
                     Application.Invoke(delegate {
-                        firstGradeStatus.MaxValue = firstGrade[0] + firstGrade[1] + firstGrade[2];
-                        firstGradeStatus.Value = firstGrade[2] + firstGrade[1];
-
-                        secondGradeStatus.MaxValue = secondGrade[0] + secondGrade[1] + secondGrade[2];
-                        secondGradeStatus.Value = secondGrade[2] + secondGrade[1];
-
-                        thirdGradeStatus.MaxValue = thirdGrade[0] + thirdGrade[1] + thirdGrade[2];
-                        thirdGradeStatus.Value = thirdGrade[2] + thirdGrade[1];
+                        firstGradeUserCount.Text = "1학년: " + firstGrade.ToString() + "명";
+                        secondGradeUserCount.Text = "2학년: " + secondGrade.ToString() + "명";
+                        thirdGradeUserCount.Text = "3학년: " + thirdGrade.ToString() + "명";
+                        etcGradeUserCount.Text = "기타: " + etcGrade.ToString() + "명";
                     });
                 }
                 catch (Exception e)
                 {
+                    Console.WriteLine(e);
                     Application.Invoke(delegate {
                         MessageDialog dialog = new MessageDialog(null, DialogFlags.Modal, MessageType.Error, ButtonsType.Close, false, "./config.txt에 올바른 홈페이지 주소를 입력해 주세요");
                         dialog.Run();
