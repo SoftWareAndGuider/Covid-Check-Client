@@ -1,7 +1,10 @@
 using System;
 using System.IO;
 using System.Diagnostics;
+using System.Threading;
+using System.Net;
 using Gtk;
+using Newtonsoft.Json.Linq;
 
 
 namespace CovidCheckClientGui
@@ -54,6 +57,12 @@ namespace CovidCheckClientGui
         CheckButton delIsTeacher = new CheckButton("학생이 아님");
         Button delInsertUser = new Button("사용자 삭제");
         Button delInsertUserWithoutID = new Button("사용자 삭제");
+
+
+        //체크 상황 보기
+        LevelBar firstGradeStatus = new LevelBar(0, 100);
+        LevelBar secondGradeStatus = new LevelBar(0, 100);
+        LevelBar thirdGradeStatus = new LevelBar(0, 100);
 
         public Program() : base("코로나19 예방용 발열체크 프로그램")
         {
@@ -276,6 +285,11 @@ namespace CovidCheckClientGui
             
             delUserFrame.Add(delUser);
 
+            Grid statusList = new Grid();
+            statusList.Attach(firstGradeStatus, 1, 1, 1, 1);
+            statusList.Attach(secondGradeStatus, 1, 2, 1, 1);
+            statusList.Attach(thirdGradeStatus, 1, 3, 1, 1);
+
             Grid manageMode = new Grid();
             manageMode.RowSpacing = 10;
             manageMode.ColumnSpacing = 10;
@@ -283,6 +297,7 @@ namespace CovidCheckClientGui
 
             manageMode.Attach(addUserFrame, 1, 1, 1, 1);
             manageMode.Attach(delUserFrame, 1, 2, 1, 1);
+            
 
             //Grid들 Notebook에 추가
             selectMode.AppendPage(check, new Label("체크"));
@@ -303,6 +318,9 @@ namespace CovidCheckClientGui
             Add(grid);
             //이제 보여주기
             ShowAll();
+            
+            Thread status = new Thread(new ThreadStart(getStatus));
+            status.Start();
             addLog("프로그램 로딩이 완료됨");
         }
         
@@ -315,6 +333,123 @@ namespace CovidCheckClientGui
             string time = $" ({dt.Hour}:{dt.Minute}:{dt.Second})";
             log.Insert(new Label(text + time), 0);
             log.ShowAll();
+        }
+
+
+        public void getStatus()
+        {
+            string url = File.ReadAllLines("config.txt")[0] + "/api";
+            WebClient client = new WebClient();
+            string uploadString = "{\"process\":\"info\", \"multi\": true}";
+            while (true)
+            {
+                client.Headers.Add("Content-Type", "application/json");
+                JObject result = new JObject();
+                try
+                {
+                    File.WriteAllText("do.txt", "시작");
+                    string down = "";
+                    client.UploadStringCompleted += (sender, e) => {
+                        down = e.Result;
+                    };
+                    client.UploadStringAsync(new Uri(url), "PUT", uploadString);
+                    while (down == "")
+                    {
+                        System.Threading.Thread.Sleep(10);
+                    }
+                    File.WriteAllText("do.txt","받아옴");
+                    result = JObject.Parse(down);
+                    int[] firstGrade = new int[3];
+                    int[] secondGrade = new int[3];
+                    int[] thirdGrade = new int[3];
+                    int[] etcGrade = new int[3];
+                    File.WriteAllText("do.txt","루프 시작");
+                    foreach (var a in result["data"])
+                    {
+                        if (a["grade"].ToString() == "1")
+                        {
+                            if (a["checks"].ToString() == "0")
+                            {
+                                firstGrade[0]++;
+                            }
+                            else if (a["checks"].ToString() == "1")
+                            {
+                                firstGrade[1]++;
+                            }
+                            else
+                            {
+                                firstGrade[2]++;
+                            }
+                        }
+                        else if (a["grade"].ToString() == "2")
+                        {
+                            if (a["checks"].ToString() == "0")
+                            {
+                                secondGrade[0]++;
+                            }
+                            else if (a["checks"].ToString() == "1")
+                            {
+                                secondGrade[1]++;
+                            }
+                            else
+                            {
+                                secondGrade[2]++;
+                            }
+                        }
+                        else if (a["grade"].ToString() == "3")
+                        {
+                            if (a["checks"].ToString() == "0")
+                            {
+                                thirdGrade[0]++;
+                            }
+                            else if (a["checks"].ToString() == "1")
+                            {
+                                thirdGrade[1]++;
+                            }
+                            else
+                            {
+                                thirdGrade[2]++;
+                            }
+                        }
+                        else
+                        {
+                            if (a["checks"].ToString() == "0")
+                            {
+                                etcGrade[0]++;
+                            }
+                            else if (a["checks"].ToString() == "1")
+                            {
+                                etcGrade[1]++;
+                            }
+                            else
+                            {
+                                etcGrade[2]++;
+                            }
+                        }
+                    }
+                    File.WriteAllText("do.txt","루프 끝");
+                    Application.Invoke(delegate {
+                        firstGradeStatus.MaxValue = firstGrade[0] + firstGrade[1] + firstGrade[2];
+                        firstGradeStatus.Value = firstGrade[2] + firstGrade[1];
+
+                        secondGradeStatus.MaxValue = secondGrade[0] + secondGrade[1] + secondGrade[2];
+                        secondGradeStatus.Value = secondGrade[2] + secondGrade[1];
+
+                        thirdGradeStatus.MaxValue = thirdGrade[0] + thirdGrade[1] + thirdGrade[2];
+                        thirdGradeStatus.Value = thirdGrade[2] + thirdGrade[1];
+                    });
+                }
+                catch (Exception e)
+                {
+                    Application.Invoke(delegate {
+                        MessageDialog dialog = new MessageDialog(null, DialogFlags.Modal, MessageType.Error, ButtonsType.Close, false, "./config.txt에 올바른 홈페이지 주소를 입력해 주세요");
+                        dialog.Run();
+                        dialog.Dispose();
+                        Environment.Exit(0);
+                    });
+                }
+                Thread.Sleep(10000);
+            }
         }
     }
 }
