@@ -229,11 +229,11 @@ namespace CovidCheckClientGui
             string toLog = "";
             if ((bool)result["success"])
             {
-                toLog = $"{result["data"]["grade"]}학년 {result["data"]["class"]}반 {result["data"]["number"]}번 {result["data"]["name"]}(ID: {result["data"]["id"]}) 체크됨";
+                toLog = $"{result["data"]["grade"]}학년 {result["data"]["class"]}반 {result["data"]["number"]}번 {result["data"]["name"]}(ID: {result["data"]["id"]}) 정상 체크됨";
             }
             else
             {
-                toLog = $"체크 실패 (인식된 ID: {id})";
+                toLog = $"정상 체크 실패 (인식된 ID: {id})";
             }
             Application.Invoke (delegate {
                 addLog(toLog);
@@ -302,11 +302,11 @@ namespace CovidCheckClientGui
             string toLog = "";
             if ((bool)result["success"])
             {
-                toLog = $"{result["data"]["grade"]}학년 {result["data"]["class"]}반 {result["data"]["number"]}번 {result["data"]["name"]}(ID: {result["data"]["id"]}) 의심 체크됨";
+                toLog = $"{result["data"]["grade"]}학년 {result["data"]["class"]}반 {result["data"]["number"]}번 {result["data"]["name"]}(ID: {result["data"]["id"]}) 발열 체크됨";
             }
             else
             {
-                toLog = $"의심 체크 실패 (인식된 ID: {id})";
+                toLog = $"발열 체크 실패 (인식된 ID: {id})";
             }
             Application.Invoke (delegate {
                 addLog(toLog);
@@ -338,11 +338,11 @@ namespace CovidCheckClientGui
             string toLog = "";
             if ((bool)result["success"])
             {
-                toLog = $"{result["data"]["grade"]}학년 {result["data"]["class"]}반 {result["data"]["number"]}번 {result["data"]["name"]}(ID: {result["data"]["id"]}) 의심 체크됨";
+                toLog = $"{result["data"]["grade"]}학년 {result["data"]["class"]}반 {result["data"]["number"]}번 {result["data"]["name"]}(ID: {result["data"]["id"]}) 발열 체크됨";
             }
             else
             {
-                toLog = $"의심 체크 실패 (인식된 정보: {grade}학년 {@class}반 {number}번)";
+                toLog = $"발열 체크 실패 (인식된 정보: {grade}학년 {@class}반 {number}번)";
             }
             Application.Invoke (delegate {
                 addLog(toLog);
