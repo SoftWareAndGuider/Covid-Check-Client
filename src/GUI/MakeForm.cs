@@ -521,7 +521,11 @@ namespace CovidCheckClientGui
             Add(grid);
             //이제 보여주기
             ShowAll();
-            
+
+            statusListFrame[1].Add(statusListMore);
+            statusListFrame[1].Margin = 15;
+            statusListFrame[1].MarginTop = 0;
+
             Thread status = new Thread(new ThreadStart(getStatus));
             Thread showTime = new Thread(new ThreadStart(timer));
             status.Start();
