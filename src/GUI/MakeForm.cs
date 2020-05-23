@@ -23,8 +23,8 @@ namespace CovidCheckClientGui
         Entry checkInsertNumber = new Entry();
         CheckButton checkIsTeacher = new CheckButton("학생이 아님");
 
-        Button checkOK = new Button("체크하기");
-        Button checkInsertUser = new Button("체크하기");
+        Button checkOK = new Button("정상 체크하기");
+        Button checkInsertUser = new Button("정상 체크하기");
 
 
         Entry checkDoubtInsertID = new Entry();
@@ -232,7 +232,7 @@ namespace CovidCheckClientGui
                 checkDoubt.Attach(checkDoubtInsertUser, 1, 10, 5, 1);
             }
 
-            Frame checkDoubtFrame = new Frame("의심 체크");
+            Frame checkDoubtFrame = new Frame("발열");
             checkDoubtFrame.Margin = 15;
             checkDoubtFrame.MarginTop = 0;
             checkDoubtFrame.Add(checkDoubt);
