@@ -71,11 +71,60 @@ namespace CovidCheckClientGui
 
         //체크 상황 보기
         bool programProcessing = true;
-        Label firstGradeUserCount = new Label("");        
-        Label secondGradeUserCount = new Label("");
-        Label thirdGradeUserCount = new Label("");
-        Label etcGradeUserCount = new Label("");
+        Label[,] userCount = new Label[4, 4] { //[0, ]: 1학년, [1, ]: 2학년, [2, ]: 3학년, [3, ]: 기타, [, 0]: 미검사, [, 1]: 검사, [, 2]: 발열, [, 3]: 상세정보 없음
+            {
+                new Label(""),
+                new Label(""),
+                new Label(""),
+                new Label("")
+            },
+            {
+                new Label(""),
+                new Label(""),
+                new Label(""),
+                new Label("")
+            },
+            {
+                new Label(""),
+                new Label(""),
+                new Label(""),
+                new Label("")
+            },
+            {
+                new Label(""),
+                new Label(""),
+                new Label(""),
+                new Label("")
+            }
+        };
         Label allUserCount = new Label("");
+
+        Label time = new Label("");
+
+        CheckButton seeMoreInfo = new CheckButton("상세정보 보기");
+        Frame[] statusListFrame = new Frame[2] {new Frame("사용자 수 (3초마다 새로고침)"), new Frame("검사 현황 (3초마다 새로고침)")};
+        LevelBar[,] statusLevelBar = new LevelBar[4, 3] { //[0, ]: 1학년, [1, ]: 2학년, [2, ]: 3학년, [3, ]: 기타, [, 0]: 미검사, [, 1]: 검사, [, 2]: 발열
+            {
+                new LevelBar(0, 100),
+                new LevelBar(0, 100),
+                new LevelBar(0, 100)
+            },
+            {
+                new LevelBar(0, 100),
+                new LevelBar(0, 100),
+                new LevelBar(0, 100)
+            },
+            {
+                new LevelBar(0, 100),
+                new LevelBar(0, 100),
+                new LevelBar(0, 100)
+            },
+            {
+                new LevelBar(0, 100),
+                new LevelBar(0, 100),
+                new LevelBar(0, 100)
+            }
+        };        
 
         public Program() : base("코로나19 예방용 발열체크 프로그램")
         {
@@ -134,22 +183,26 @@ namespace CovidCheckClientGui
             checkInsertNumber.KeyReleaseEvent += checkWithoutIDKeyRelease;
 
             //사용자 체크 배치(ID)
-            check.Attach(new Label("실제 바코드의 길이가 지정한 바코드의 길이와 다를 경우 체크하기 버튼을 눌러 체크해주세요."), 1, 1, 5, 1); // 공지 추가
-            check.Attach(checkInsertID, 1, 2, 4, 1); // 텍스트박스 추가
-            check.Attach(checkOK, 5, 2, 1, 1); //OK 버튼 추가
+            {
+                check.Attach(new Label("실제 바코드의 길이가 지정한 바코드의 길이와 다를 경우 체크하기 버튼을 눌러 체크해주세요."), 1, 1, 5, 1); // 공지 추가
+                check.Attach(checkInsertID, 1, 2, 4, 1); // 텍스트박스 추가
+                check.Attach(checkOK, 5, 2, 1, 1); //OK 버튼 추가
 
-            check.Attach(new Separator(Orientation.Horizontal), 1, 4, 5, 1);
+                check.Attach(new Separator(Orientation.Horizontal), 1, 4, 5, 1);
+            }
             
             //사용자 체크 배치(학년, 반, 번호)
-            check.Attach(new Label("ID 없이 체크하기"), 1, 5, 5, 1);
-            check.Attach(checkIsTeacher, 1, 6, 5, 1);
-            check.Attach(new Label("학년"), 1, 7, 1, 1);
-            check.Attach(checkInsertGrade, 2, 7, 4, 1);
-            check.Attach(new Label("반"), 1, 8, 1, 1);
-            check.Attach(checkInsertClass, 2, 8, 4, 1);
-            check.Attach(new Label("번호"), 1, 9, 1, 1);
-            check.Attach(checkInsertNumber, 2, 9, 4, 1);
-            check.Attach(checkInsertUser, 1, 10, 5, 1);
+            {
+                check.Attach(new Label("ID 없이 체크하기"), 1, 5, 5, 1);
+                check.Attach(checkIsTeacher, 1, 6, 5, 1);
+                check.Attach(new Label("학년"), 1, 7, 1, 1);
+                check.Attach(checkInsertGrade, 2, 7, 4, 1);
+                check.Attach(new Label("반"), 1, 8, 1, 1);
+                check.Attach(checkInsertClass, 2, 8, 4, 1);
+                check.Attach(new Label("번호"), 1, 9, 1, 1);
+                check.Attach(checkInsertNumber, 2, 9, 4, 1);
+                check.Attach(checkInsertUser, 1, 10, 5, 1);
+            }
 
             Frame checkFrame = new Frame("정상");
             checkFrame.Margin = 15;
@@ -187,15 +240,17 @@ namespace CovidCheckClientGui
             checkDoubt.Attach(new Separator(Orientation.Horizontal), 1, 4, 5, 1);
             
             //사용자 체크 배치(학년, 반, 번호)
-            checkDoubt.Attach(new Label("ID 없이 체크하기"), 1, 5, 5, 1);
-            checkDoubt.Attach(checkDoubtIsTeacher, 1, 6, 5, 1);
-            checkDoubt.Attach(new Label("학년"), 1, 7, 1, 1);
-            checkDoubt.Attach(checkDoubtInsertGrade, 2, 7, 4, 1);
-            checkDoubt.Attach(new Label("반"), 1, 8, 1, 1);
-            checkDoubt.Attach(checkDoubtInsertClass, 2, 8, 4, 1);
-            checkDoubt.Attach(new Label("번호"), 1, 9, 1, 1);
-            checkDoubt.Attach(checkDoubtInsertNumber, 2, 9, 4, 1);
-            checkDoubt.Attach(checkDoubtInsertUser, 1, 10, 5, 1);
+            {
+                checkDoubt.Attach(new Label("ID 없이 체크하기"), 1, 5, 5, 1);
+                checkDoubt.Attach(checkDoubtIsTeacher, 1, 6, 5, 1);
+                checkDoubt.Attach(new Label("학년"), 1, 7, 1, 1);
+                checkDoubt.Attach(checkDoubtInsertGrade, 2, 7, 4, 1);
+                checkDoubt.Attach(new Label("반"), 1, 8, 1, 1);
+                checkDoubt.Attach(checkDoubtInsertClass, 2, 8, 4, 1);
+                checkDoubt.Attach(new Label("번호"), 1, 9, 1, 1);
+                checkDoubt.Attach(checkDoubtInsertNumber, 2, 9, 4, 1);
+                checkDoubt.Attach(checkDoubtInsertUser, 1, 10, 5, 1);
+            }
 
             Frame checkDoubtFrame = new Frame("의심 체크");
             checkDoubtFrame.Margin = 15;
@@ -253,15 +308,17 @@ namespace CovidCheckClientGui
             uncheck.Attach(new Separator(Orientation.Horizontal), 1, 4, 5, 1);
 
             //사용자 체크 해제 배치(학년, 반, 번호)
-            uncheck.Attach(new Label("ID 없이 체크 해제하기"), 1, 5, 5, 1);
-            uncheck.Attach(uncheckIsTeacher, 1, 6, 5, 1);
-            uncheck.Attach(new Label("학년"), 1, 7, 1, 1);
-            uncheck.Attach(uncheckInsertGrade, 2, 7, 4, 1);
-            uncheck.Attach(new Label("반"), 1, 8, 1, 1);
-            uncheck.Attach(uncheckInsertClass, 2, 8, 4, 1);
-            uncheck.Attach(new Label("번호"), 1, 9, 1, 1);
-            uncheck.Attach(uncheckInsertNumber, 2, 9, 4, 1);
-            uncheck.Attach(uncheckInsertUser, 1, 10, 5, 1);
+            {
+                uncheck.Attach(new Label("ID 없이 체크 해제하기"), 1, 5, 5, 1);
+                uncheck.Attach(uncheckIsTeacher, 1, 6, 5, 1);
+                uncheck.Attach(new Label("학년"), 1, 7, 1, 1);
+                uncheck.Attach(uncheckInsertGrade, 2, 7, 4, 1);
+                uncheck.Attach(new Label("반"), 1, 8, 1, 1);
+                uncheck.Attach(uncheckInsertClass, 2, 8, 4, 1);
+                uncheck.Attach(new Label("번호"), 1, 9, 1, 1);
+                uncheck.Attach(uncheckInsertNumber, 2, 9, 4, 1);
+                uncheck.Attach(uncheckInsertUser, 1, 10, 5, 1);
+            }
 
 
 
@@ -289,24 +346,26 @@ namespace CovidCheckClientGui
             addInsertID.KeyReleaseEvent += addUserKeyRelease;
             
             //사용자 추가 배치
-            addUser.Attach(addIsTeacher, 1, 1, 4, 1);
+            {
+                addUser.Attach(addIsTeacher, 1, 1, 4, 1);
 
-            addUser.Attach(new Label("학년"), 1, 2, 1, 1);
-            addUser.Attach(addInsertGrade, 2, 2, 3, 1);
+                addUser.Attach(new Label("학년"), 1, 2, 1, 1);
+                addUser.Attach(addInsertGrade, 2, 2, 3, 1);
 
-            addUser.Attach(new Label("반"), 1, 3, 1, 1);
-            addUser.Attach(addInsertClass, 2, 3, 3, 1);
+                addUser.Attach(new Label("반"), 1, 3, 1, 1);
+                addUser.Attach(addInsertClass, 2, 3, 3, 1);
 
-            addUser.Attach(new Label("번호"), 1, 4, 1, 1);
-            addUser.Attach(addInsertNumber, 2, 4, 3, 1);
+                addUser.Attach(new Label("번호"), 1, 4, 1, 1);
+                addUser.Attach(addInsertNumber, 2, 4, 3, 1);
 
-            addUser.Attach(new Label("이름"), 1, 5, 1, 1);
-            addUser.Attach(addInsertName, 2, 5, 3, 1);
+                addUser.Attach(new Label("이름"), 1, 5, 1, 1);
+                addUser.Attach(addInsertName, 2, 5, 3, 1);
 
-            addUser.Attach(new Label("ID"), 1, 6, 1, 1);
-            addUser.Attach(addInsertID, 2, 6, 3, 1);
+                addUser.Attach(new Label("ID"), 1, 6, 1, 1);
+                addUser.Attach(addInsertID, 2, 6, 3, 1);
 
-            addUser.Attach(insertUser, 1, 7, 4, 1);
+                addUser.Attach(insertUser, 1, 7, 4, 1);
+            }
 
 
             
@@ -343,18 +402,20 @@ namespace CovidCheckClientGui
             delInsertUser.Clicked += delInsertUserClicked;
             delInsertUserWithoutID.Clicked += delInsertUserWithoutIDClicked;
 
-            delUser.Attach(delInsertID, 1, 1, 4, 1);
-            delUser.Attach(delInsertUser, 5, 1, 1, 1);
-            delUser.Attach(new Separator(Orientation.Horizontal), 1, 2, 5, 1);
-            delUser.Attach(new Label("ID없이 사용자 삭제하기"), 1, 3, 5, 1);
-            delUser.Attach(delIsTeacher, 1, 4, 5, 1);
-            delUser.Attach(new Label("학년"), 1, 5, 1, 1);
-            delUser.Attach(delInsertGrade, 2, 5, 3, 1);
-            delUser.Attach(new Label("반"), 1, 6, 1, 1);
-            delUser.Attach(delInsertClass, 2, 6, 3, 1);
-            delUser.Attach(new Label("번호"), 1, 7, 1, 1);
-            delUser.Attach(delInsertNumber, 2, 7, 3, 1);
-            delUser.Attach(delInsertUserWithoutID, 5, 5, 1, 3);
+            {
+                delUser.Attach(delInsertID, 1, 1, 4, 1);
+                delUser.Attach(delInsertUser, 5, 1, 1, 1);
+                delUser.Attach(new Separator(Orientation.Horizontal), 1, 2, 5, 1);
+                delUser.Attach(new Label("ID없이 사용자 삭제하기"), 1, 3, 5, 1);
+                delUser.Attach(delIsTeacher, 1, 4, 5, 1);
+                delUser.Attach(new Label("학년"), 1, 5, 1, 1);
+                delUser.Attach(delInsertGrade, 2, 5, 3, 1);
+                delUser.Attach(new Label("반"), 1, 6, 1, 1);
+                delUser.Attach(delInsertClass, 2, 6, 3, 1);
+                delUser.Attach(new Label("번호"), 1, 7, 1, 1);
+                delUser.Attach(delInsertNumber, 2, 7, 3, 1);
+                delUser.Attach(delInsertUserWithoutID, 5, 5, 1, 3);
+            }
             
 
             Frame delUserFrame = new Frame("사용자 삭제");
@@ -369,17 +430,61 @@ namespace CovidCheckClientGui
             statusList.Margin = 15;
             statusList.ColumnHomogeneous = true;
 
-            statusList.Attach(firstGradeUserCount, 1, 1, 1, 1);
-            statusList.Attach(secondGradeUserCount, 2, 1, 1, 1);
-            statusList.Attach(thirdGradeUserCount, 1, 2, 1, 1);
-            statusList.Attach(etcGradeUserCount, 2, 2, 1, 1);
-            statusList.Attach(allUserCount, 3, 1, 1, 2);
+            {
+                statusList.Attach(userCount[0, 3], 1, 1, 1, 1);
+                statusList.Attach(userCount[1, 3], 2, 1, 1, 1);
+                statusList.Attach(userCount[2, 3], 1, 2, 1, 1);
+                statusList.Attach(userCount[3, 3], 2, 2, 1, 1);
+                statusList.Attach(allUserCount, 3, 1, 1, 2);
+            }
+            
+            Grid statusListMore = new Grid();
+            statusListMore.RowSpacing = 10;
+            statusListMore.Margin = 15;
+            statusListMore.ColumnHomogeneous = true;
+            
+            {
+                statusListMore.Attach(new Label("학년"), 1, 1, 1, 1);
+                statusListMore.Attach(new Label("미검사"), 2, 1, 2, 1);
+                statusListMore.Attach(new Label("검사"), 4, 1, 2, 1);
+                statusListMore.Attach(new Label("의심"), 6, 1, 2, 1);
 
-            Frame statusListFrame = new Frame("사용자 수 (10초마다 새로고침)");
-            statusListFrame.Add(statusList);
+                statusListMore.Attach(new Label("1"), 1, 2, 1, 1);
+                statusListMore.Attach(userCount[0, 0], 3, 2, 1, 1);
+                statusListMore.Attach(statusLevelBar[0, 0], 2, 2, 2, 1);
+                statusListMore.Attach(userCount[0, 1], 5, 2, 1, 1);
+                statusListMore.Attach(statusLevelBar[0, 1], 4, 2, 2, 1);
+                statusListMore.Attach(userCount[0, 2], 7, 2, 1, 1);
+                statusListMore.Attach(statusLevelBar[0, 2], 6, 2, 2, 1);
 
-            statusListFrame.Margin = 15;
-            statusListFrame.MarginTop = 0;
+                statusListMore.Attach(new Label("2"), 1, 3, 1, 1);
+                statusListMore.Attach(userCount[0, 0], 3, 3, 1, 1);
+                statusListMore.Attach(statusLevelBar[0, 0], 2, 3, 2, 1);
+                statusListMore.Attach(userCount[0, 1], 5, 3, 1, 1);
+                statusListMore.Attach(statusLevelBar[0, 1], 4, 3, 2, 1);
+                statusListMore.Attach(userCount[0, 2], 7, 3, 1, 1);
+                statusListMore.Attach(statusLevelBar[0, 2], 6, 3, 2, 1);
+
+                statusListMore.Attach(new Label("3"), 1, 4, 1, 1);
+                statusListMore.Attach(userCount[0, 0], 3, 4, 1, 1);
+                statusListMore.Attach(statusLevelBar[0, 0], 2, 4, 2, 1);
+                statusListMore.Attach(userCount[0, 1], 5, 4, 1, 1);
+                statusListMore.Attach(statusLevelBar[0, 1], 4, 4, 2, 1);
+                statusListMore.Attach(userCount[0, 2], 7, 4, 1, 1);
+                statusListMore.Attach(statusLevelBar[0, 2], 6, 4, 2, 1);
+
+                statusListMore.Attach(new Label("기타"), 1, 5, 1, 1);
+                statusListMore.Attach(userCount[0, 0], 3, 5, 1, 1);
+                statusListMore.Attach(statusLevelBar[0, 0], 2, 5, 2, 1);
+                statusListMore.Attach(userCount[0, 1], 5, 5, 1, 1);
+                statusListMore.Attach(statusLevelBar[0, 1], 4, 5, 2, 1);
+                statusListMore.Attach(userCount[0, 2], 7, 5, 1, 1);
+                statusListMore.Attach(statusLevelBar[0, 2], 6, 5, 2, 1);
+            }
+
+            statusListFrame[0].Add(statusList);
+            statusListFrame[0].Margin = 15;
+            statusListFrame[0].MarginTop = 0;
 
             Grid manageMode = new Grid();
             manageMode.RowSpacing = 10;
@@ -388,7 +493,7 @@ namespace CovidCheckClientGui
 
             manageMode.Attach(addUserFrame, 1, 1, 1, 2);
             manageMode.Attach(delUserFrame, 1, 3, 1, 2);
-            manageMode.Attach(statusListFrame, 1, 5, 1, 1);
+            manageMode.Attach(statusListFrame[0], 1, 5, 1, 1);
             
 
             //Grid들 Notebook에 추가
@@ -401,10 +506,16 @@ namespace CovidCheckClientGui
             ScrolledWindow scroll = new ScrolledWindow();
             scroll.Add(log);
 
+            //시간 표시하는 레이블 놓을 Grid
+            Grid setTimer = new Grid();
+            setTimer.Attach(time, 1, 1, 1, 1);
+
             //모든 것을 배치
             grid.RowHomogeneous = true;
-            grid.Attach(selectMode, 1, 1, 1, 1);
-            grid.Attach(scroll, 2, 1, 1, 1);
+            
+            grid.Attach(setTimer, 5, 1, 2, 1);
+            grid.Attach(selectMode, 1, 1, 5, 1);
+            grid.Attach(scroll, 6, 1, 5, 1);
             
             //창에 추가
             Add(grid);
@@ -412,23 +523,29 @@ namespace CovidCheckClientGui
             ShowAll();
             
             Thread status = new Thread(new ThreadStart(getStatus));
+            Thread showTime = new Thread(new ThreadStart(timer));
             status.Start();
+            showTime.Start();
             addLog("프로그램 로딩이 완료됨");
         }
         
         string last = "";
         public void addLog(string text)
         {
-            DateTime dt = DateTime.Now;
             if (last == text) return;
             last = text;
-            string time = $" ({dt.Hour}:{dt.Minute}:{dt.Second})";
-            log.Insert(new Label(text + time), 0);
+            string storeTime = time.Text;
+            if (string.IsNullOrEmpty(storeTime))
+            {
+                DateTime dt = DateTime.Now;
+                storeTime = $"{dt.Month}월 {dt.Day}일 {dt.Hour}:{dt.Minute}:{dt.Second}";
+            }
+            log.Insert(new Label($"{text} ({storeTime})"), 0);
             log.ShowAll();
         }
 
 
-        public void getStatus()
+        private void getStatus()
         {
             string url = File.ReadAllLines("config.txt")[0] + "/api";
             WebClient client = new WebClient();
@@ -449,36 +566,23 @@ namespace CovidCheckClientGui
                         System.Threading.Thread.Sleep(10);
                     }
                     result = JObject.Parse(down);
-                    int firstGrade = 0;
-                    int secondGrade = 0;
-                    int thirdGrade = 0;
-                    int etcGrade = 0;
-                    foreach (var a in result["data"])
+                    StatusParsing sp = new StatusParsing();
+                    if (seeMoreInfo.Active)
                     {
-                        if (a["grade"].ToString() == "1")
-                        {
-                            firstGrade++;
-                        }
-                        else if (a["grade"].ToString() == "2")
-                        {
-                            secondGrade++;
-                        }
-                        else if (a["grade"].ToString() == "3")
-                        {
-                            thirdGrade++;
-                        }
-                        else
-                        {
-                            etcGrade++;
-                        }
+
                     }
-                    Application.Invoke(delegate {
-                        firstGradeUserCount.Text = "1학년: " + firstGrade.ToString() + "명";
-                        secondGradeUserCount.Text = "2학년: " + secondGrade.ToString() + "명";
-                        thirdGradeUserCount.Text = "3학년: " + thirdGrade.ToString() + "명";
-                        etcGradeUserCount.Text = "기타: " + etcGrade.ToString() + "명";
-                        allUserCount.Text = "합계: " + (firstGrade + secondGrade + thirdGrade + etcGrade).ToString() + "명";
-                    });
+                    else
+                    {
+                        int[] parse = sp.lessInfo(result);
+                        Application.Invoke(delegate {
+                            userCount[0, 3].Text = "1학년: " + parse[0].ToString() + "명";
+                            userCount[1, 3].Text = "2학년: " + parse[1].ToString() + "명";
+                            userCount[2, 3].Text = "3학년: " + parse[2].ToString() + "명";
+                            userCount[3, 3].Text = "기타: " + parse[3].ToString() + "명";
+                            allUserCount.Text = "합계: " + (parse[0] + parse[1] + parse[2] + parse[3]).ToString() + "명";
+                        });
+                    }
+                    
                 }
                 catch (Exception e)
                 {
@@ -490,7 +594,20 @@ namespace CovidCheckClientGui
                         Environment.Exit(0);
                     });
                 }
-                Thread.Sleep(10000);
+                GC.Collect();
+                Thread.Sleep(3000);
+            }
+        }
+        private void timer()
+        {
+            while (programProcessing)
+            {
+                DateTime dt = DateTime.Now;
+                string text = $"{dt.Month}월 {dt.Day}일 {dt.Hour}:{dt.Minute}:{dt.Second}";
+                Application.Invoke(delegate {
+                    time.Text = text;
+                });
+                Thread.Sleep(100);
             }
         }
     }
