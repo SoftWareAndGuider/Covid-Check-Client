@@ -32,9 +32,9 @@ namespace CovidCheckClientGui
             }
             return new int[4] {firstGrade, secondGrade, thirdGrade, etcGrade};
         }
-        public int[,] moreInfo(JObject result)
+        public double[,] moreInfo(JObject result)
         {
-            int[,] info = new int[4,3] { {0, 0, 0}, {0, 0, 0}, {0, 0, 0}, {0, 0, 0} };
+            double[,] info = new double[4,3] { {0, 0, 0}, {0, 0, 0}, {0, 0, 0}, {0, 0, 0} };
             foreach (var a in result["data"])
             {
                 if (a["grade"].ToString() == "1")

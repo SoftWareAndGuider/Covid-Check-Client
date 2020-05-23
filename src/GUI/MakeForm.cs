@@ -71,31 +71,11 @@ namespace CovidCheckClientGui
 
         //체크 상황 보기
         bool programProcessing = true;
-        Label[,] userCount = new Label[4, 4] { //[0, ]: 1학년, [1, ]: 2학년, [2, ]: 3학년, [3, ]: 기타, [, 0]: 미검사, [, 1]: 검사, [, 2]: 발열, [, 3]: 상세정보 없음
-            {
+        Label[] userCount = new Label[4] { //[0, ]: 1학년, [1, ]: 2학년, [2, ]: 3학년, [3, ]: 기타
                 new Label(""),
                 new Label(""),
                 new Label(""),
                 new Label("")
-            },
-            {
-                new Label(""),
-                new Label(""),
-                new Label(""),
-                new Label("")
-            },
-            {
-                new Label(""),
-                new Label(""),
-                new Label(""),
-                new Label("")
-            },
-            {
-                new Label(""),
-                new Label(""),
-                new Label(""),
-                new Label("")
-            }
         };
         Label allUserCount = new Label("");
 
@@ -103,26 +83,26 @@ namespace CovidCheckClientGui
 
         CheckButton seeMoreInfo = new CheckButton("상세정보 보기");
         Frame[] statusListFrame = new Frame[2] {new Frame("사용자 수 (3초마다 새로고침)"), new Frame("검사 현황 (3초마다 새로고침)")};
-        LevelBar[,] statusLevelBar = new LevelBar[4, 3] { //[0, ]: 1학년, [1, ]: 2학년, [2, ]: 3학년, [3, ]: 기타, [, 0]: 미검사, [, 1]: 검사, [, 2]: 발열
+        ProgressBar[,] statusProgressBar = new ProgressBar[4, 3] { //[0, ]: 1학년, [1, ]: 2학년, [2, ]: 3학년, [3, ]: 기타, [, 0]: 미검사, [, 1]: 검사, [, 2]: 발열
             {
-                new LevelBar(0, 100),
-                new LevelBar(0, 100),
-                new LevelBar(0, 100)
+                new ProgressBar(),
+                new ProgressBar(),
+                new ProgressBar()
             },
             {
-                new LevelBar(0, 100),
-                new LevelBar(0, 100),
-                new LevelBar(0, 100)
+                new ProgressBar(),
+                new ProgressBar(),
+                new ProgressBar()
             },
             {
-                new LevelBar(0, 100),
-                new LevelBar(0, 100),
-                new LevelBar(0, 100)
+                new ProgressBar(),
+                new ProgressBar(),
+                new ProgressBar()
             },
             {
-                new LevelBar(0, 100),
-                new LevelBar(0, 100),
-                new LevelBar(0, 100)
+                new ProgressBar(),
+                new ProgressBar(),
+                new ProgressBar()
             }
         };        
 
@@ -143,7 +123,7 @@ namespace CovidCheckClientGui
             addLog("프로그램이 시작됨");            
             DeleteEvent += delegate {programProcessing = false; Application.Quit();};
 
-            SetDefaultSize(1280, 720);
+            SetDefaultSize(1280, 800);
             
             // 전체를 감싸는 Grid
             Grid grid = new Grid();
@@ -431,10 +411,10 @@ namespace CovidCheckClientGui
             statusList.ColumnHomogeneous = true;
 
             {
-                statusList.Attach(userCount[0, 3], 1, 1, 1, 1);
-                statusList.Attach(userCount[1, 3], 2, 1, 1, 1);
-                statusList.Attach(userCount[2, 3], 1, 2, 1, 1);
-                statusList.Attach(userCount[3, 3], 2, 2, 1, 1);
+                statusList.Attach(userCount[0], 1, 1, 1, 1);
+                statusList.Attach(userCount[1], 2, 1, 1, 1);
+                statusList.Attach(userCount[2], 1, 2, 1, 1);
+                statusList.Attach(userCount[3], 2, 2, 1, 1);
                 statusList.Attach(allUserCount, 3, 1, 1, 2);
             }
             
@@ -442,7 +422,11 @@ namespace CovidCheckClientGui
             statusListMore.RowSpacing = 10;
             statusListMore.Margin = 15;
             statusListMore.ColumnHomogeneous = true;
-            
+
+            foreach (var a in statusProgressBar)
+            {
+                a.ShowText = true;
+            }
             {
                 statusListMore.Attach(new Label("학년"), 1, 1, 1, 1);
                 statusListMore.Attach(new Label("미검사"), 2, 1, 2, 1);
@@ -450,36 +434,24 @@ namespace CovidCheckClientGui
                 statusListMore.Attach(new Label("의심"), 6, 1, 2, 1);
 
                 statusListMore.Attach(new Label("1"), 1, 2, 1, 1);
-                statusListMore.Attach(userCount[0, 0], 3, 2, 1, 1);
-                statusListMore.Attach(statusLevelBar[0, 0], 2, 2, 2, 1);
-                statusListMore.Attach(userCount[0, 1], 5, 2, 1, 1);
-                statusListMore.Attach(statusLevelBar[0, 1], 4, 2, 2, 1);
-                statusListMore.Attach(userCount[0, 2], 7, 2, 1, 1);
-                statusListMore.Attach(statusLevelBar[0, 2], 6, 2, 2, 1);
+                statusListMore.Attach(statusProgressBar[0, 0], 2, 2, 2, 1);
+                statusListMore.Attach(statusProgressBar[0, 1], 4, 2, 2, 1);
+                statusListMore.Attach(statusProgressBar[0, 2], 6, 2, 2, 1);
 
                 statusListMore.Attach(new Label("2"), 1, 3, 1, 1);
-                statusListMore.Attach(userCount[1, 0], 3, 3, 1, 1);
-                statusListMore.Attach(statusLevelBar[1, 0], 2, 3, 2, 1);
-                statusListMore.Attach(userCount[1, 1], 5, 3, 1, 1);
-                statusListMore.Attach(statusLevelBar[1, 1], 4, 3, 2, 1);
-                statusListMore.Attach(userCount[1, 2], 7, 3, 1, 1);
-                statusListMore.Attach(statusLevelBar[1, 2], 6, 3, 2, 1);
+                statusListMore.Attach(statusProgressBar[1, 0], 2, 3, 2, 1);
+                statusListMore.Attach(statusProgressBar[1, 1], 4, 3, 2, 1);
+                statusListMore.Attach(statusProgressBar[1, 2], 6, 3, 2, 1);
 
                 statusListMore.Attach(new Label("3"), 1, 4, 1, 1);
-                statusListMore.Attach(userCount[2, 0], 3, 4, 1, 1);
-                statusListMore.Attach(statusLevelBar[2, 0], 2, 4, 2, 1);
-                statusListMore.Attach(userCount[2, 1], 5, 4, 1, 1);
-                statusListMore.Attach(statusLevelBar[2, 1], 4, 4, 2, 1);
-                statusListMore.Attach(userCount[2, 2], 7, 4, 1, 1);
-                statusListMore.Attach(statusLevelBar[2, 2], 6, 4, 2, 1);
+                statusListMore.Attach(statusProgressBar[2, 0], 2, 4, 2, 1);
+                statusListMore.Attach(statusProgressBar[2, 1], 4, 4, 2, 1);
+                statusListMore.Attach(statusProgressBar[2, 2], 6, 4, 2, 1);
 
                 statusListMore.Attach(new Label("기타"), 1, 5, 1, 1);
-                statusListMore.Attach(userCount[3, 0], 3, 5, 1, 1);
-                statusListMore.Attach(statusLevelBar[3, 0], 2, 5, 2, 1);
-                statusListMore.Attach(userCount[3, 1], 5, 5, 1, 1);
-                statusListMore.Attach(statusLevelBar[3, 1], 4, 5, 2, 1);
-                statusListMore.Attach(userCount[3, 2], 7, 5, 1, 1);
-                statusListMore.Attach(statusLevelBar[3, 2], 6, 5, 2, 1);
+                statusListMore.Attach(statusProgressBar[3, 0], 2, 5, 2, 1);
+                statusListMore.Attach(statusProgressBar[3, 1], 4, 5, 2, 1);
+                statusListMore.Attach(statusProgressBar[3, 2], 6, 5, 2, 1);
             }
 
             statusListFrame[0].Add(statusList);
@@ -490,10 +462,27 @@ namespace CovidCheckClientGui
             manageMode.RowSpacing = 10;
             manageMode.ColumnSpacing = 10;
             manageMode.ColumnHomogeneous = true;
+            statusListFrame[0].MarginBottom = 0;
+            statusListFrame[1].MarginBottom = 0;
+            seeMoreInfo.MarginStart = 10;
+
+            seeMoreInfo.Clicked += (sender, e) => {
+                if (seeMoreInfo.Active)
+                {
+                    statusListFrame[0].Hide();
+                    statusListFrame[1].ShowAll();
+                }
+                else
+                {
+                    statusListFrame[1].Hide();
+                    statusListFrame[0].ShowAll();
+                }
+            };
 
             manageMode.Attach(addUserFrame, 1, 1, 1, 2);
             manageMode.Attach(delUserFrame, 1, 3, 1, 2);
             manageMode.Attach(statusListFrame[0], 1, 5, 1, 1);
+            manageMode.Attach(seeMoreInfo, 1, 6, 1, 1);
             
 
             //Grid들 Notebook에 추가
@@ -525,6 +514,7 @@ namespace CovidCheckClientGui
             statusListFrame[1].Add(statusListMore);
             statusListFrame[1].Margin = 15;
             statusListFrame[1].MarginTop = 0;
+            manageMode.Attach(statusListFrame[1], 1, 5, 1, 1);
 
             Thread status = new Thread(new ThreadStart(getStatus));
             Thread showTime = new Thread(new ThreadStart(timer));
@@ -573,16 +563,58 @@ namespace CovidCheckClientGui
                     StatusParsing sp = new StatusParsing();
                     if (seeMoreInfo.Active)
                     {
+                        double[,] parse = sp.moreInfo(result);
+                        double[] allUsers = new double[4] {
+                            parse[0, 0] + parse[0, 1] + parse[0, 2],
+                            parse[1, 0] + parse[1, 1] + parse[1, 2],
+                            parse[2, 0] + parse[2, 1] + parse[2, 2],
+                            parse[3, 0] + parse[3, 1] + parse[3, 2]
+                        };
+                        Application.Invoke(delegate {
+                            {
+                                statusProgressBar[0, 0].Text = $"{parse[0, 0]}/{allUsers[0]}";
+                                statusProgressBar[0, 1].Text = $"{parse[0, 1]}/{allUsers[0]}";
+                                statusProgressBar[0, 2].Text = $"{parse[0, 2]}/{allUsers[0]}";
 
+                                statusProgressBar[1, 0].Text = $"{parse[1, 0]}/{allUsers[1]}";
+                                statusProgressBar[1, 1].Text = $"{parse[1, 1]}/{allUsers[1]}";
+                                statusProgressBar[1, 2].Text = $"{parse[1, 2]}/{allUsers[1]}";
+
+                                statusProgressBar[2, 0].Text = $"{parse[2, 0]}/{allUsers[2]}";
+                                statusProgressBar[2, 1].Text = $"{parse[2, 1]}/{allUsers[2]}";
+                                statusProgressBar[2, 2].Text = $"{parse[2, 2]}/{allUsers[2]}";
+
+                                statusProgressBar[3, 0].Text = $"{parse[3, 0]}/{allUsers[3]}";
+                                statusProgressBar[3, 1].Text = $"{parse[3, 1]}/{allUsers[3]}";
+                                statusProgressBar[3, 2].Text = $"{parse[3, 2]}/{allUsers[3]}";
+                            }
+                            {
+                                statusProgressBar[0, 0].Fraction = parse[0, 0] / allUsers[0];
+                                statusProgressBar[0, 1].Fraction = parse[0, 1] / allUsers[0];
+                                statusProgressBar[0, 2].Fraction = parse[0, 2] / allUsers[0];
+
+                                statusProgressBar[1, 0].Fraction = parse[1, 0] / allUsers[1];
+                                statusProgressBar[1, 1].Fraction = parse[1, 1] / allUsers[1];
+                                statusProgressBar[1, 2].Fraction = parse[1, 2] / allUsers[1];
+
+                                statusProgressBar[2, 0].Fraction = parse[2, 0] / allUsers[2];
+                                statusProgressBar[2, 1].Fraction = parse[2, 1] / allUsers[2];
+                                statusProgressBar[2, 2].Fraction = parse[2, 2] / allUsers[2];
+                            
+                                statusProgressBar[3, 0].Fraction = parse[3, 0] / allUsers[3];
+                                statusProgressBar[3, 1].Fraction = parse[3, 1] / allUsers[3];
+                                statusProgressBar[3, 2].Fraction = parse[3, 2] / allUsers[3];
+                            }
+                        });
                     }
                     else
                     {
                         int[] parse = sp.lessInfo(result);
                         Application.Invoke(delegate {
-                            userCount[0, 3].Text = "1학년: " + parse[0].ToString() + "명";
-                            userCount[1, 3].Text = "2학년: " + parse[1].ToString() + "명";
-                            userCount[2, 3].Text = "3학년: " + parse[2].ToString() + "명";
-                            userCount[3, 3].Text = "기타: " + parse[3].ToString() + "명";
+                            userCount[0].Text = "1학년: " + parse[0].ToString() + "명";
+                            userCount[1].Text = "2학년: " + parse[1].ToString() + "명";
+                            userCount[2].Text = "3학년: " + parse[2].ToString() + "명";
+                            userCount[3].Text = "기타: " + parse[3].ToString() + "명";
                             allUserCount.Text = "합계: " + (parse[0] + parse[1] + parse[2] + parse[3]).ToString() + "명";
                         });
                     }
