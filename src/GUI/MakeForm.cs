@@ -458,28 +458,28 @@ namespace CovidCheckClientGui
                 statusListMore.Attach(statusLevelBar[0, 2], 6, 2, 2, 1);
 
                 statusListMore.Attach(new Label("2"), 1, 3, 1, 1);
-                statusListMore.Attach(userCount[0, 0], 3, 3, 1, 1);
-                statusListMore.Attach(statusLevelBar[0, 0], 2, 3, 2, 1);
-                statusListMore.Attach(userCount[0, 1], 5, 3, 1, 1);
-                statusListMore.Attach(statusLevelBar[0, 1], 4, 3, 2, 1);
-                statusListMore.Attach(userCount[0, 2], 7, 3, 1, 1);
-                statusListMore.Attach(statusLevelBar[0, 2], 6, 3, 2, 1);
+                statusListMore.Attach(userCount[1, 0], 3, 3, 1, 1);
+                statusListMore.Attach(statusLevelBar[1, 0], 2, 3, 2, 1);
+                statusListMore.Attach(userCount[1, 1], 5, 3, 1, 1);
+                statusListMore.Attach(statusLevelBar[1, 1], 4, 3, 2, 1);
+                statusListMore.Attach(userCount[1, 2], 7, 3, 1, 1);
+                statusListMore.Attach(statusLevelBar[1, 2], 6, 3, 2, 1);
 
                 statusListMore.Attach(new Label("3"), 1, 4, 1, 1);
-                statusListMore.Attach(userCount[0, 0], 3, 4, 1, 1);
-                statusListMore.Attach(statusLevelBar[0, 0], 2, 4, 2, 1);
-                statusListMore.Attach(userCount[0, 1], 5, 4, 1, 1);
-                statusListMore.Attach(statusLevelBar[0, 1], 4, 4, 2, 1);
-                statusListMore.Attach(userCount[0, 2], 7, 4, 1, 1);
-                statusListMore.Attach(statusLevelBar[0, 2], 6, 4, 2, 1);
+                statusListMore.Attach(userCount[2, 0], 3, 4, 1, 1);
+                statusListMore.Attach(statusLevelBar[2, 0], 2, 4, 2, 1);
+                statusListMore.Attach(userCount[2, 1], 5, 4, 1, 1);
+                statusListMore.Attach(statusLevelBar[2, 1], 4, 4, 2, 1);
+                statusListMore.Attach(userCount[2, 2], 7, 4, 1, 1);
+                statusListMore.Attach(statusLevelBar[2, 2], 6, 4, 2, 1);
 
                 statusListMore.Attach(new Label("기타"), 1, 5, 1, 1);
-                statusListMore.Attach(userCount[0, 0], 3, 5, 1, 1);
-                statusListMore.Attach(statusLevelBar[0, 0], 2, 5, 2, 1);
-                statusListMore.Attach(userCount[0, 1], 5, 5, 1, 1);
-                statusListMore.Attach(statusLevelBar[0, 1], 4, 5, 2, 1);
-                statusListMore.Attach(userCount[0, 2], 7, 5, 1, 1);
-                statusListMore.Attach(statusLevelBar[0, 2], 6, 5, 2, 1);
+                statusListMore.Attach(userCount[3, 0], 3, 5, 1, 1);
+                statusListMore.Attach(statusLevelBar[3, 0], 2, 5, 2, 1);
+                statusListMore.Attach(userCount[3, 1], 5, 5, 1, 1);
+                statusListMore.Attach(statusLevelBar[3, 1], 4, 5, 2, 1);
+                statusListMore.Attach(userCount[3, 2], 7, 5, 1, 1);
+                statusListMore.Attach(statusLevelBar[3, 2], 6, 5, 2, 1);
             }
 
             statusListFrame[0].Add(statusList);
