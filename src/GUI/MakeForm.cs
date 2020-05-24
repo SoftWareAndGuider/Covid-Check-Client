@@ -123,7 +123,7 @@ namespace CovidCheckClientGui
             addLog("프로그램이 시작됨");            
             DeleteEvent += delegate {programProcessing = false; Application.Quit();};
 
-            SetDefaultSize(1280, 720);
+            SetDefaultSize(1280, 815);
             
             // 전체를 감싸는 Grid
             Grid grid = new Grid();
