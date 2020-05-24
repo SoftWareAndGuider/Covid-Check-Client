@@ -154,7 +154,7 @@ namespace CovidCheckClientGui
             addInsertClass.Text = "";
             addInsertName.Text = "";
             addInsertGrade.Text = "";
-            addInsertGrade.Text = "";
+            addInsertID.Text = "";
             Thread thread = new Thread(new ThreadStart(() => {addUser(student, info[0], info[1], info[2], info[3], info[4]);}));
             thread.Start();
         }
@@ -460,16 +460,6 @@ namespace CovidCheckClientGui
                 toLog = $"사용자 추가에 실패함 ({grade}학년 {@class}반 {number}번 이름: {name}(ID: {id}))";
             }
             Application.Invoke(delegate {
-                addInsertID.Sensitive = true;
-                addInsertNumber.Sensitive = true;
-                addInsertName.Sensitive = true;
-                addInsertGrade.Sensitive = !addIsTeacher.Active;
-                addInsertClass.Sensitive = !addIsTeacher.Active;
-                addInsertID.Text = "";
-                addInsertNumber.Text = "";
-                addInsertName.Text = "";
-                addInsertClass.Text = "";
-                addInsertGrade.Text = "";
                 addLog(toLog);
             });
         }
