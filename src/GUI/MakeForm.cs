@@ -123,7 +123,7 @@ namespace CovidCheckClientGui
             addLog("프로그램이 시작됨");            
             DeleteEvent += delegate {programProcessing = false; Application.Quit();};
 
-            SetDefaultSize(1280, 800);
+            SetDefaultSize(1280, 720);
             
             // 전체를 감싸는 Grid
             Grid grid = new Grid();
@@ -426,12 +426,13 @@ namespace CovidCheckClientGui
             foreach (var a in statusProgressBar)
             {
                 a.ShowText = true;
+                a.Text = "로딩...";
             }
             {
                 statusListMore.Attach(new Label("학년"), 1, 1, 1, 1);
                 statusListMore.Attach(new Label("미검사"), 2, 1, 2, 1);
-                statusListMore.Attach(new Label("검사"), 4, 1, 2, 1);
-                statusListMore.Attach(new Label("의심"), 6, 1, 2, 1);
+                statusListMore.Attach(new Label("정상"), 4, 1, 2, 1);
+                statusListMore.Attach(new Label("발열"), 6, 1, 2, 1);
 
                 statusListMore.Attach(new Label("1"), 1, 2, 1, 1);
                 statusListMore.Attach(statusProgressBar[0, 0], 2, 2, 2, 1);
@@ -484,16 +485,19 @@ namespace CovidCheckClientGui
             manageMode.Attach(statusListFrame[0], 1, 5, 1, 1);
             manageMode.Attach(seeMoreInfo, 1, 6, 1, 1);
             
+            ScrolledWindow scroll2 = new ScrolledWindow();
+            scroll2.Add(manageMode);
 
             //Grid들 Notebook에 추가
             selectMode.AppendPage(checkAll, new Label("체크"));
             selectMode.AppendPage(uncheck, new Label("체크 해제"));
-            selectMode.AppendPage(manageMode, new Label("사용자 관리"));
+            selectMode.AppendPage(scroll2, new Label("사용자 관리"));
             
             
             //로그 나타내는 ScrolledWindow에 추가
             ScrolledWindow scroll = new ScrolledWindow();
             scroll.Add(log);
+
 
             //시간 표시하는 레이블 놓을 Grid
             Grid setTimer = new Grid();
