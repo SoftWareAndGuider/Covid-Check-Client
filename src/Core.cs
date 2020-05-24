@@ -191,23 +191,16 @@ namespace CheckCovid19
             WebClient del = new WebClient();
             JObject user = new JObject();
 
-            user.Add("process", "info");
+            user.Add("process", "delete");
             user.Add("id", userID);
             string result = "";
 
-            bool did = false;
             client.UploadStringCompleted += (sender, e) => {
-                if (did) return;
                 result = e.Result;
-                did = true;
             };
 
             client.Headers.Add("Content-Type", "application/json");
             client.UploadStringAsync(new Uri(url + "/api"), "PUT", user.ToString());
-            user["process"] = "delete";
-            
-            del.Headers.Add("Content-Type", "application/json");
-            del.UploadStringAsync(new Uri(url + "/api"), "PUT", user.ToString());
 
             while (string.IsNullOrEmpty(result))
             {
@@ -222,25 +215,18 @@ namespace CheckCovid19
             WebClient del = new WebClient();
             JObject user = new JObject();
 
-            user.Add("process", "info");
+            user.Add("process", "delete");
             user.Add("grade", grade);
             user.Add("class", @class);
             user.Add("number", number);
             string result = "";
 
-            bool did = false;
             client.UploadStringCompleted += (sender, e) => {
-                if (did) return;
                 result = e.Result;
-                did = true;
             };
 
             client.Headers.Add("Content-Type", "application/json");
             client.UploadStringAsync(new Uri(url + "/api"), "PUT", user.ToString());
-
-            user["process"] = "delete";
-            del.Headers.Add("Content-Type", "application/json");
-            del.UploadStringAsync(new Uri(url + "/api"), "PUT", user.ToString());
             
             while (string.IsNullOrEmpty(result))
             {

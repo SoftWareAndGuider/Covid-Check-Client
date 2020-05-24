@@ -123,7 +123,7 @@ namespace CovidCheckClientGui
             addLog("프로그램이 시작됨");            
             DeleteEvent += delegate {programProcessing = false; Application.Quit();};
 
-            SetDefaultSize(1280, 800);
+            SetDefaultSize(1280, 815);
             
             // 전체를 감싸는 Grid
             Grid grid = new Grid();
@@ -480,11 +480,13 @@ namespace CovidCheckClientGui
             manageMode.Attach(statusListFrame[0], 1, 5, 1, 1);
             //manageMode.Attach(seeMoreInfo, 1, 6, 1, 1);
             
+            ScrolledWindow scroll2 = new ScrolledWindow();
+            scroll2.Add(manageMode);
 
             //Grid들 Notebook에 추가
             selectMode.AppendPage(checkAll, new Label("확인"));
             selectMode.AppendPage(uncheck, new Label("확인 취소"));
-            selectMode.AppendPage(manageMode, new Label("사용자 관리"));
+            selectMode.AppendPage(scroll2, new Label("사용자 관리"));
             
             
             //로그 나타내는 ScrolledWindow에 추가
