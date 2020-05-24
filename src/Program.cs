@@ -96,9 +96,9 @@ namespace CovidCheckClientGui
             if (uncheckInsertID.Text.Length != uncheckIDLength.Value) return;
             await Task.Delay(10);
             if (uncheckInsertID.Text.Length != uncheckIDLength.Value) return;
-            Thread thread = new Thread(new ThreadStart(() => {uncheck(uncheckInsertID.Text);}));
+            string id = uncheckInsertID.Text;
+            Thread thread = new Thread(new ThreadStart(() => {uncheck(id);}));
             thread.Start();
-            await Task.Delay(10);
             uncheckInsertID.Text = "";
             uncheckOK.Sensitive = false;
         }
@@ -120,41 +120,48 @@ namespace CovidCheckClientGui
         void checkOKClicked(object sender, EventArgs e)
         {
             string id = checkInsertID.Text;
+            checkInsertID.Text = "";
+            checkOK.Sensitive = false;
             Thread thread = new Thread(new ThreadStart(() => {check(id);}));
             thread.Start();
-            checkInsertID.Text = "";
         }
         void checkDoubtOKClicked(object sender, EventArgs e)
         {
             string id = checkDoubtInsertID.Text;
+            checkDoubtInsertID.Text = "";
+            checkDoubtInsertID.Sensitive = false;
             Thread thread = new Thread(new ThreadStart(() => {checkDoubt(id);}));
             thread.Start();
-            checkDoubtInsertID.Text = "";
         }
-        async void uncheckOKClicked(object sender, EventArgs e)
+        void uncheckOKClicked(object sender, EventArgs e)
         {
-            Thread thread = new Thread(new ThreadStart(() => {uncheck(uncheckInsertID.Text);}));
-            thread.Start();
-            await Task.Delay(10);
+            string id = uncheckInsertID.Text;
             uncheckInsertID.Text = "";
+            Thread thread = new Thread(new ThreadStart(() => {uncheck(id);}));
+            thread.Start();
         }
         void insertUserClicked(object sender, EventArgs e)
         {
-            Thread thread = new Thread(new ThreadStart(() => {addUser(addIsTeacher.Active, addInsertID.Text, addInsertNumber.Text, addInsertName.Text, addInsertGrade.Text, addInsertClass.Text);}));
-            addInsertID.Sensitive = false;
-            addInsertNumber.Sensitive = false;
-            addInsertName.Sensitive = false;
-            addInsertGrade.Sensitive = false;
-            addInsertClass.Sensitive = false;
+            bool student = addIsTeacher.Active;
+            string[] info = new string[5] {
+                addInsertID.Text, addInsertNumber.Text, addInsertName.Text, addInsertGrade.Text, addInsertClass.Text
+            };
+            Thread thread = new Thread(new ThreadStart(() => {addUser(student, info[0], info[1], info[2], info[3], info[4]);}));
+            addInsertID.Text = "";
+            addInsertNumber.Text = "";
+            addInsertName.Text = "";
+            addInsertGrade.Text = "";
+            addInsertClass.Text = "";
             insertUser.Sensitive = false;
             thread.Start();
         }
         void delInsertUserClicked(object sender, EventArgs e)
         {
             string id = delInsertID.Text;
+            delInsertID.Text = "";
+            delInsertUser.Sensitive = false;
             Thread thread = new Thread(new ThreadStart(() => {delUser(id);}));
             thread.Start();
-            delInsertID.Text = "";
         }
         void delInsertUserWithoutIDClicked(object sender, EventArgs e)
         {
@@ -163,21 +170,25 @@ namespace CovidCheckClientGui
                 delInsertClass.Text,
                 delInsertNumber.Text
             };
-            Thread thread = new Thread(new ThreadStart(() => {delUser(info[0], info[1], info[2]);}));
-            thread.Start();
             delInsertGrade.Text = "";
             delInsertClass.Text = "";
             delInsertNumber.Text = "";
+            delInsertUserWithoutID.Sensitive = false;
+            Thread thread = new Thread(new ThreadStart(() => {delUser(info[0], info[1], info[2]);}));
+            thread.Start();
         }
         
         //ID 없이 입력하는 버튼이 눌렸을 때 실행되는 이벤트
         void checkInsertUserClicked(object sender, EventArgs e)
         {
-            Thread thread = new Thread(new ThreadStart(() => {check(checkInsertGrade.Text, checkInsertClass.Text, checkInsertNumber.Text);}));
+            string[] info = new string[3] {
+                checkInsertGrade.Text, checkInsertClass.Text, checkInsertNumber.Text
+            };
+            Thread thread = new Thread(new ThreadStart(() => {check(info[0], info[1], info[2]);}));
             thread.Start();
-            checkInsertGrade.Sensitive = false;
-            checkInsertClass.Sensitive = false;
-            checkInsertNumber.Sensitive = false;
+            checkInsertGrade.Text = "";
+            checkInsertClass.Text = "";
+            checkInsertNumber.Text = "";
             checkInsertUser.Sensitive = false;
         }
         void checkDoubtInsertUserClicked(object sender, EventArgs e)
@@ -197,11 +208,14 @@ namespace CovidCheckClientGui
         }
         void uncheckInsertUserClicked(object sender, EventArgs e)
         {
-            Thread thread = new Thread(new ThreadStart(() => {uncheck(uncheckInsertGrade.Text, uncheckInsertClass.Text, uncheckInsertNumber.Text);}));
+            string[] info = new string[3] {
+                uncheckInsertGrade.Text, uncheckInsertClass.Text, uncheckInsertNumber.Text
+            };
+            Thread thread = new Thread(new ThreadStart(() => {uncheck(info[0], info[1], info[2]);}));
             thread.Start();
-            uncheckInsertGrade.Sensitive = false;
-            uncheckInsertClass.Sensitive = false;
-            uncheckInsertNumber.Sensitive = false;
+            uncheckInsertGrade.Text = "";
+            uncheckInsertClass.Text = "";
+            uncheckInsertNumber.Text = "";
             uncheckInsertUser.Sensitive = false;
         }
         
@@ -273,12 +287,6 @@ namespace CovidCheckClientGui
             }
             Application.Invoke (delegate {
                 addLog(toLog);
-                checkInsertGrade.Sensitive = !checkIsTeacher.Active;
-                checkInsertClass.Sensitive = !checkIsTeacher.Active;
-                checkInsertNumber.Sensitive = true;
-                checkInsertGrade.Text = "";
-                checkInsertClass.Text = "";
-                checkInsertNumber.Text = "";
             });
         }
         void checkDoubt(string id)
@@ -413,12 +421,6 @@ namespace CovidCheckClientGui
             }
             Application.Invoke (delegate {
                 addLog(toLog);
-                uncheckInsertGrade.Sensitive = !uncheckIsTeacher.Active;
-                uncheckInsertClass.Sensitive = !uncheckIsTeacher.Active;
-                uncheckInsertNumber.Sensitive = true;
-                uncheckInsertGrade.Text = "";
-                uncheckInsertClass.Text = "";
-                uncheckInsertNumber.Text = "";
             });
         }
         void addUser(bool isNotStudent, string id, string number, string name, string grade, string @class)
@@ -455,16 +457,6 @@ namespace CovidCheckClientGui
                 toLog = $"사용자 추가에 실패함 ({grade}학년 {@class}반 {number}번 이름: {name}(ID: {id}))";
             }
             Application.Invoke(delegate {
-                addInsertID.Sensitive = true;
-                addInsertNumber.Sensitive = true;
-                addInsertName.Sensitive = true;
-                addInsertGrade.Sensitive = !addIsTeacher.Active;
-                addInsertClass.Sensitive = !addIsTeacher.Active;
-                addInsertID.Text = "";
-                addInsertNumber.Text = "";
-                addInsertName.Text = "";
-                addInsertClass.Text = "";
-                addInsertGrade.Text = "";
                 addLog(toLog);
             });
         }
