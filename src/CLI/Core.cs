@@ -2,7 +2,7 @@ using System;
 using System.IO;
 using System.Net;
 using Newtonsoft.Json.Linq;
-using System.Collections.Generic;
+using System.Threading;
 
 namespace CheckCovid19
 {
@@ -36,7 +36,7 @@ namespace CheckCovid19
                 return false;
             }
         }
-        public string addUser(string userID, int grade, int @class, int number, string name)
+        public JObject addUser(string userID, int grade, int @class, int number, string name)
         {
             JObject user = new JObject();
             user.Add("process", "insert");
@@ -48,25 +48,68 @@ namespace CheckCovid19
 
             if (upload(userID, user))
             {
-                return $"{grade}학년 {@class}반 {number}번 {name}(ID: {userID}) 추가가 완료되었습니다.";
+                user.Add("success", true);
+                return user;
             }
             else
             {
-                return $"추가 실패, 정보를 확인 후 다시 시도해주세요.";
+                return JObject.Parse("{\"success\":false}");
             }
         }        
-        public JObject check(string userID)
+        public JObject check(string userID, bool ondo = false)
         {
             string url = File.ReadAllLines("config.txt")[0];
             WebClient client = new WebClient();
             JObject user = new JObject();
 
             user.Add("process", "check");
+            user.Add("ondo", ondo);
             user.Add("id", userID);
             string result = "";
 
             client.UploadStringCompleted += (sender, e) => {
-                result = e.Result;
+                try
+                {
+                    result = e.Result;
+                }
+                catch
+                {
+                    result = "{\"success\":false}";
+                }
+            };
+
+            client.Headers.Add("Content-Type", "application/json");
+            client.UploadStringAsync(new Uri(url + "/api"), "PUT", user.ToString());
+
+            while (string.IsNullOrEmpty(result))
+            {
+                System.Threading.Thread.Sleep(10);
+            }
+
+            return JObject.Parse(result);
+        }
+        public JObject check(string grade, string @class, string number, bool ondo = false)
+        {
+            string url = File.ReadAllLines("config.txt")[0];
+            WebClient client = new WebClient();
+            JObject user = new JObject();
+
+            user.Add("process", "check");
+            user.Add("ondo", ondo);
+            user.Add("grade", grade);
+            user.Add("class", @class);
+            user.Add("number", number);
+            string result = "";
+
+            client.UploadStringCompleted += (sender, e) => {
+                try
+                {
+                    result = e.Result;
+                }
+                catch
+                {
+                    result = "{\"success\":false}";
+                }
             };
 
             client.Headers.Add("Content-Type", "application/json");
@@ -90,7 +133,45 @@ namespace CheckCovid19
             string result = "";
 
             client.UploadStringCompleted += (sender, e) => {
-                result = e.Result;
+                try
+                {
+                    result = e.Result;
+                }
+                catch
+                {
+                    result = "{\"success\":false}";
+                }
+            };
+
+            client.Headers.Add("Content-Type", "application/json");
+            client.UploadStringAsync(new Uri(url + "/api"), "PUT", user.ToString());
+            while (string.IsNullOrEmpty(result))
+            {
+                System.Threading.Thread.Sleep(10);
+            }
+            return JObject.Parse(result);
+        }
+        public JObject uncheck(string grade, string @class, string number)
+        {
+            string url = File.ReadAllLines("config.txt")[0];
+            WebClient client = new WebClient();
+            JObject user = new JObject();
+
+            user.Add("process", "uncheck");
+            user.Add("grade", grade);
+            user.Add("class", @class);
+            user.Add("number", number);
+            string result = "";
+
+            client.UploadStringCompleted += (sender, e) => {
+                try
+                {
+                    result = e.Result;
+                }
+                catch
+                {
+                    result = "{\"success\":false}";
+                }
             };
 
             client.Headers.Add("Content-Type", "application/json");
@@ -101,6 +182,56 @@ namespace CheckCovid19
                 System.Threading.Thread.Sleep(10);
             }
 
+            return JObject.Parse(result);
+        }
+        public JObject delUser(string userID)
+        {
+            string url = File.ReadAllLines("config.txt")[0];
+            WebClient client = new WebClient();
+            WebClient del = new WebClient();
+            JObject user = new JObject();
+
+            user.Add("process", "delete");
+            user.Add("id", userID);
+            string result = "";
+
+            client.UploadStringCompleted += (sender, e) => {
+                result = e.Result;
+            };
+
+            client.Headers.Add("Content-Type", "application/json");
+            client.UploadStringAsync(new Uri(url + "/api"), "PUT", user.ToString());
+
+            while (string.IsNullOrEmpty(result))
+            {
+                System.Threading.Thread.Sleep(10);
+            }
+            return JObject.Parse(result);
+        }
+        public JObject delUser(string grade, string @class, string number)
+        {
+            string url = File.ReadAllLines("config.txt")[0];
+            WebClient client = new WebClient();
+            WebClient del = new WebClient();
+            JObject user = new JObject();
+
+            user.Add("process", "delete");
+            user.Add("grade", grade);
+            user.Add("class", @class);
+            user.Add("number", number);
+            string result = "";
+
+            client.UploadStringCompleted += (sender, e) => {
+                result = e.Result;
+            };
+
+            client.Headers.Add("Content-Type", "application/json");
+            client.UploadStringAsync(new Uri(url + "/api"), "PUT", user.ToString());
+            
+            while (string.IsNullOrEmpty(result))
+            {
+                System.Threading.Thread.Sleep(10);
+            }
             return JObject.Parse(result);
         }
     }

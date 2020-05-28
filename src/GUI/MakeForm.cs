@@ -83,6 +83,7 @@ namespace CovidCheckClientGui
 
         CheckButton seeMoreInfo = new CheckButton("상세정보 보기");
         Frame[] statusListFrame = new Frame[2] {new Frame("사용자 수 (3초마다 새로고침)"), new Frame("검사 현황 (3초마다 새로고침)")};
+
         ProgressBar[,] statusProgressBar = new ProgressBar[4, 3] { //[0, ]: 1학년, [1, ]: 2학년, [2, ]: 3학년, [3, ]: 기타, [, 0]: 미검사, [, 1]: 검사, [, 2]: 발열
             {
                 new ProgressBar(),
@@ -108,6 +109,13 @@ namespace CovidCheckClientGui
 
         public Program() : base("코로나19 예방용 발열체크 프로그램")
         {
+            CssProvider cssProvider = new CssProvider();
+            cssProvider.LoadFromData(@"
+                #add {
+                    font-size: 18px;
+                }
+            ");
+            StyleContext.AddProviderForScreen(Gdk.Screen.Default, cssProvider, 800);
             try
             {
                 System.IO.File.ReadAllText("config.txt");
@@ -538,7 +546,9 @@ namespace CovidCheckClientGui
                 DateTime dt = DateTime.Now;
                 storeTime = $"{dt.Month}월 {dt.Day}일 {dt.Hour}:{dt.Minute}:{dt.Second}";
             }
-            log.Insert(new Label($"{text} ({storeTime})"), 0);
+            Label add = new Label($"{text} ({storeTime})");
+            add.Name = "add";
+            log.Insert(add, 0);
             log.ShowAll();
         }
 

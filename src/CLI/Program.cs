@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Net;
 using System.Text;
-using System.IO;
+using System.Linq;
 using CheckCovid19;
 using Newtonsoft.Json.Linq;
 
@@ -15,17 +15,20 @@ namespace Covid_Check_Client
             string change = "1"; //일단 프로그램을 켰을 땐 체크모드
             while (true)
             {
-                if (change == "1")
+                switch (change)
                 {
-                    change = program.check();
-                }
-                else if (change == "2")
-                {
-                    change = program.uncheck();
-                }
-                else if (change == "3")
-                {
-                    change = program.add();
+                    case "1":
+                        change = program.check();
+                        break;
+                    case "2":
+                        change = program.uncheck();
+                        break;
+                    case "3":
+                        change = program.add();
+                        break;
+                    case "4":
+                        change = program.remove();
+                        break;
                 }
             }
         }
@@ -91,16 +94,8 @@ namespace Covid_Check_Client
             string change = "0";
             while (true)
             {
-                Console.WriteLine("현재는 사용자 추가모드 입니다. 모드를 변경하려면 change를, 프로그램 종료는 exit를 입력해 주세요\n사용자를 추가하려면 사용자의 바코드를 스캔하거나 숫자를 입력하세요.");
-                string scan = Console.ReadLine();
-                if (scan == "change") //모드 바꾸기
-                {
-                    change = changeMode();
-                    break;
-                }
-                else if (scan == "exit") Environment.Exit(0);
-
-                Console.WriteLine("사용자의 학년을 입력해 주세요 (선생님: 0학년)");
+                if (first("추가", out change)) return change;
+                Console.WriteLine("사용자를 추가하려면 사용자의 바코드를 스캔하거나 숫자를 입력하세요\n사용자의 학년을 입력해 주세요 (선생님: 0학년)");
                 int grade = int.Parse(Console.ReadLine());
                 Console.WriteLine("사용자의 반을 입력해 주세요 (선생님: 0반)");
                 int @class = int.Parse(Console.ReadLine());
@@ -108,7 +103,19 @@ namespace Covid_Check_Client
                 int number = int.Parse(Console.ReadLine());
                 Console.WriteLine("사용자의 이름을 입력해 주세요");
                 string name = Console.ReadLine();
-                Console.WriteLine(user.addUser(scan, grade, @class, number, name) + "\n");
+                JObject result = user.addUser(change, grade, @class, number, name)["data"] as JObject;
+                Console.WriteLine($"{result["grade"]}학년 {result["class"]}반 {result["number"]}번 {result["name"]}(ID: {result["id"]})사용자가 추가되었습니다." + "\n");
+            }
+        }
+        string remove()
+        {
+            User user = new User();
+            string change = "";
+            while (true)
+            {
+                string scan = "";
+                if (first("삭제", out scan, "사용자를 삭제하려면 사용자의 바코드를 스캔하거나 숫자를 입력하세요.")) return scan; //모드 바꾸기
+                user.delUser(scan);
             }
             return change;
         }
@@ -117,13 +124,40 @@ namespace Covid_Check_Client
             string change = "";
             while (true)
             {
-                Console.WriteLine("1: 사용자 체크\n2: 사용자 체크 해제\n3: 사용자 추가");
+                Console.WriteLine("1: 사용자 체크\n2: 사용자 체크 해제\n3: 사용자 추가\n4: 사용자 삭제\n5: ID없이 사용자 체크\n6: ID없이 사용자 체크 해제\n7: ID없이 사용자 삭제");
                 change = Console.ReadLine();
-                if (change == "1" || change == "2" || change == "3") break;
+                string[] lists = new string[] {
+                    "1", "2", "3", "4", "5", "6", "7" 
+                };
+                if (lists.Contains(change)) break;
                 Console.WriteLine("올바른 번호를 선택해 주세요");
             }
             Console.WriteLine();
             return change;
+        }
+        bool first(string title, out string what, string and = "")
+        {
+            Console.WriteLine($"현재는 사용자 {title}모드 입니다. 모드를 변경하려면 change를, 프로그램 종료는 exit를 입력해 주세요\n{and}");
+            what = Console.ReadLine();
+            bool turn = false;
+            if (what == "change") //모드 바꾸기
+            {
+                what = changeMode();
+                turn = true;
+            }
+            else if (what == "exit") Environment.Exit(0);
+            return turn;
+        }
+        string[] getManyInfo()
+        {
+            string[] info = new string[3];
+            Console.WriteLine("사용자의 학년을 입력하세요");
+            info[0] = Console.ReadLine();
+            Console.WriteLine("사용자의 반을 입력하세요");
+            info[1] = Console.ReadLine();
+            Console.WriteLine("사용자의 번호을 입력하세요");
+            info[2] = Console.ReadLine();
+            return info;
         }
     }
 }
