@@ -108,6 +108,13 @@ namespace CovidCheckClientGui
 
         public Program() : base("코로나19 예방용 발열확인 프로그램")
         {
+            CssProvider cssProvider = new CssProvider();
+            cssProvider.LoadFromData(@"
+                #add {
+                    font-size: 18px;
+                }
+            ");
+            StyleContext.AddProviderForScreen(Gdk.Screen.Default, cssProvider, 800);
             try
             {
                 System.IO.File.ReadAllText("config.txt");
@@ -532,7 +539,9 @@ namespace CovidCheckClientGui
                 DateTime dt = DateTime.Now;
                 storeTime = $"{dt.Month}월 {dt.Day}일 {dt.Hour}:{dt.Minute}:{dt.Second}";
             }
-            log.Insert(new Label($"{text} ({storeTime})"), 0);
+            Label add = new Label($"{text} ({storeTime})");
+            add.Name = "add"; 
+            log.Insert(add, 0);
             log.ShowAll();
         }
 
