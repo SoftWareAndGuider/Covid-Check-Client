@@ -35,6 +35,9 @@ namespace Covid_Check_Client
                     case "6":
                         change = program.checkWithoutID();
                         break;
+                    case "7":
+                        change = program.ondoCheckWithoutID();
+                        break;
                     case "8":
                         change = program.uncheckWithoutID();
                         break;
@@ -214,7 +217,7 @@ namespace Covid_Check_Client
                 }
             }
         }
-         string removeWithoutID()
+        string removeWithoutID()
         {
             User user = new User();
             string change = "0";
@@ -233,6 +236,28 @@ namespace Covid_Check_Client
                 else
                 {
                     Console.WriteLine("삭제를 실패하였습니다. 확인 후 다시 시도해주세요\n");
+                }
+            }
+        }
+        string ondoCheckWithoutID()
+        {
+            User user = new User();
+            string change = "0";
+            while (true)
+            {
+                if (first("ID없이 발열 체크", out change, "사용자의 학년을 입력해 주세요"))
+                {
+                    return change;
+                }
+                string[] info = getManyInfo();
+                JObject result = user.check(change, info[0], info[1], true);
+                if ((bool)result["success"])
+                {
+                    Console.WriteLine($"{result["data"]["name"]}(ID: {result["data"]["id"]})의 발열 체크가 완료되었습니다.\n");
+                }
+                else
+                {
+                    Console.WriteLine("발열 체크를 실패하였습니다. 확인 후 다시 시도해주세요\n");
                 }
             }
         }
