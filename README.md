@@ -9,14 +9,18 @@
 ### 클라이언트 프로그램 개발시 필요한 것
 * .Net Core SDK(3.1 이상)
 * Nuget
-   * Newtonsoft.Json
+   * Newtonsoft.Json 12.0.3
   
 이 아래는 GUI프로그램 실행시 추가로 필요한 것
 * GTK
 * Nuget
-   * GTK#
+   * GTKSharp 3.22.25.74
+
+### 사용된 Nuget들
+* GTKSharp 3.22.25.74 (GPLv2) https://github.com/GtkSharp/GtkSharp
+* Newtonsoft.Json 12.0.3 (MIT) https://github.com/JamesNK/Newtonsoft.Json
 
 
 #### 여기서 사용하는 단어 설명
-* 관리: 지정한 것을 생성, 수정, 삭제하는 것을 말합니다
+* 관리: 지정한 것을 생성, 삭제하는 것을 말합니다
 * 체크: 지정한 것을 체크하지 않음 상태에서 체크 완료 상태로 바꾸는 것을 말합니다.

@@ -529,7 +529,7 @@ namespace CovidCheckClientGui
             Grid setTimer = new Grid();
             setTimer.Attach(time, 1, 1, 1, 1);
 
-            Label licence = new Label("GPLv3 Licence Copyright (c) 2020 JanggokSWAG, 자세한 저작권 환련 사항과 이 프로그램의 소스코드는 https://github.com/softwareandguider/covid-check-client에서 확인해 주세요.");
+            Label licence = new Label("GPLv2 License Copyright (c) 2020 JanggokSWAG, 자세한 저작권 환련 사항과 이 프로그램의 소스코드는 https://github.com/softwareandguider/covid-check-client에서 확인해 주세요.");
             licence.Margin = 10;
             licence.Valign = Align.End;
             EventBox b = new EventBox();
