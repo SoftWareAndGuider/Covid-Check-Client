@@ -12,6 +12,7 @@ namespace Covid_Check_Client
         static void Main(string[] args)
         {
             Program program = new Program();
+            Console.WriteLine("CovidCheckClient, GPLv3 Licence\nCopyright (c) 2020 JanggokSWAG, 자세한 저작권 관련 사항과 이 프로그램의 소스코드는 https://github.com/softwareandguider/covid-check-client 에서 확인해주세요.\n");
             string change = "1"; //일단 프로그램을 켰을 땐 체크모드
             while (true)
             {
@@ -65,7 +66,7 @@ namespace Covid_Check_Client
                 }
                 else
                 {
-                    Console.WriteLine("체크를 실패하였습니다. 확인 후 다시 시도해주세요\n");
+                    Console.WriteLine("체크를 실패하였습니다. 확인 후 다시 시도해주세요.\n");
                 }
             }
         }
@@ -91,7 +92,7 @@ namespace Covid_Check_Client
                 }
                 else
                 {
-                    Console.WriteLine("체크 해제를 실패하였습니다. 확인 후 다시 시도해주세요\n");
+                    Console.WriteLine("체크 해제를 실패하였습니다. 확인 후 다시 시도해주세요.\n");
                 }
                 Console.WriteLine();
             }
@@ -103,17 +104,18 @@ namespace Covid_Check_Client
             string change = "0";
             while (true)
             {
-                if (first("추가", out change, "추가할 사용자의 ID를 입력하세요")) return change;
-                Console.WriteLine("사용자의 학년을 입력해 주세요");
+                if (first("추가", out change, "추가할 사용자의 ID를 입력하세요.")) return change;
+                Console.WriteLine("사용자의 학년을 입력해 주세요.");
                 int grade = int.Parse(Console.ReadLine());
-                Console.WriteLine("사용자의 반을 입력해 주세요");
+                Console.WriteLine("사용자의 반을 입력해 주세요.");
                 int @class = int.Parse(Console.ReadLine());
-                Console.WriteLine("사용자의 번호를 입력해 주세요");
+                Console.WriteLine("사용자의 번호를 입력해 주세요.");
                 int number = int.Parse(Console.ReadLine());
-                Console.WriteLine("사용자의 이름을 입력해 주세요");
+                Console.WriteLine("사용자의 이름을 입력해 주세요.");
                 string name = Console.ReadLine();
                 JObject result = user.addUser(change, grade, @class, number, name)["data"] as JObject;
-                Console.WriteLine($"{result["data"]["grade"]}학년 {result["data"]["class"]}반 {result["data"]["number"]}번 {result["data"]["name"]}(ID: {result["data"]["id"]})사용자가 추가되었습니다." + "\n");
+                if ((bool)result["success"]) Console.WriteLine($"{result["data"]["grade"]}학년 {result["data"]["class"]}반 {result["data"]["number"]}번 {result["data"]["name"]}(ID: {result["data"]["id"]})사용자가 추가되었습니다." + "\n");
+                else Console.WriteLine("사용자 추가에 실패하였습니다. 확인 후 다시 시도해 주세요.");
             }
         }
         string remove()
@@ -130,7 +132,7 @@ namespace Covid_Check_Client
                 }
                 else
                 {
-                    Console.WriteLine("삭제를 실패하였습니다. 확인 후 다시 시도해주세요\n");
+                    Console.WriteLine("삭제를 실패하였습니다. 확인 후 다시 시도해주세요.\n");
                 }
                 Console.WriteLine();
             }
@@ -149,7 +151,7 @@ namespace Covid_Check_Client
                 }
                 else
                 {
-                    Console.WriteLine("발열 체크를 실패하였습니다. 확인 후 다시 시도해주세요\n");
+                    Console.WriteLine("발열 체크를 실패하였습니다. 확인 후 다시 시도해주세요.\n");
                 }
                 Console.WriteLine();
             }
@@ -165,7 +167,7 @@ namespace Covid_Check_Client
                     "1", "2", "3", "4", "5", "6", "7", "8", "9"
                 };
                 if (lists.Contains(change)) break;
-                Console.WriteLine("올바른 번호를 선택해 주세요");
+                Console.WriteLine("올바른 번호를 선택해 주세요.");
             }
             Console.WriteLine();
             return change;
@@ -179,7 +181,7 @@ namespace Covid_Check_Client
             string change = "0";
             while (true)
             {
-                if (first("ID없이 체크", out change, "사용자의 학년을 입력해 주세요"))
+                if (first("ID없이 체크", out change, "사용자의 학년을 입력해 주세요."))
                 {
                     return change;
                 }
@@ -191,7 +193,7 @@ namespace Covid_Check_Client
                 }
                 else
                 {
-                    Console.WriteLine("체크를 실패하였습니다. 확인 후 다시 시도해주세요\n");
+                    Console.WriteLine("체크를 실패하였습니다. 확인 후 다시 시도해주세요.\n");
                 }
             }
         }
@@ -223,7 +225,7 @@ namespace Covid_Check_Client
             string change = "0";
             while (true)
             {
-                if (first("ID없이 체크 삭제", out change, "사용자의 학년을 입력해 주세요"))
+                if (first("ID없이 체크 삭제", out change, "사용자의 학년을 입력해 주세요."))
                 {
                     return change;
                 }
@@ -235,7 +237,7 @@ namespace Covid_Check_Client
                 }
                 else
                 {
-                    Console.WriteLine("삭제를 실패하였습니다. 확인 후 다시 시도해주세요\n");
+                    Console.WriteLine("삭제를 실패하였습니다. 확인 후 다시 시도해주세요.\n");
                 }
             }
         }
@@ -245,7 +247,7 @@ namespace Covid_Check_Client
             string change = "0";
             while (true)
             {
-                if (first("ID없이 발열 체크", out change, "사용자의 학년을 입력해 주세요"))
+                if (first("ID없이 발열 체크", out change, "사용자의 학년을 입력해 주세요."))
                 {
                     return change;
                 }
@@ -257,14 +259,14 @@ namespace Covid_Check_Client
                 }
                 else
                 {
-                    Console.WriteLine("발열 체크를 실패하였습니다. 확인 후 다시 시도해주세요\n");
+                    Console.WriteLine("발열 체크를 실패하였습니다. 확인 후 다시 시도해주세요.\n");
                 }
             }
         }
         
         bool first(string title, out string what, string and = "")
         {
-            Console.WriteLine($"현재는 사용자 {title}모드 입니다. 모드를 변경하려면 change를, 프로그램 종료는 exit를 입력해 주세요\n{and}");
+            Console.WriteLine($"현재는 사용자 {title}모드 입니다. 모드를 변경하려면 change를, 프로그램 종료는 exit를 입력해 주세요.\n{and}");
             bool turn = false;
             while (true)
             {
@@ -288,7 +290,7 @@ namespace Covid_Check_Client
         string[] getManyInfo()
         {
             string[] info = new string[3];
-            Console.WriteLine("사용자의 반을 입력하세요");
+            Console.WriteLine("사용자의 반을 입력하세요.");
             while (true)
             {
                 info[0] = Console.ReadLine();
@@ -299,7 +301,7 @@ namespace Covid_Check_Client
                 }
                 break;
             }
-            Console.WriteLine("사용자의 번호을 입력하세요");
+            Console.WriteLine("사용자의 번호을 입력하세요.");
             while (true)
             {
                 info[1] = Console.ReadLine();
