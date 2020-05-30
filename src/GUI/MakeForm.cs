@@ -143,7 +143,7 @@ namespace CovidCheckClientGui
             addLog("프로그램이 시작됨");            
             DeleteEvent += delegate {programProcessing = false; Application.Quit();};
 
-            SetDefaultSize(1280, 815);
+            SetDefaultSize(1280, 850);
             
             // 전체를 감싸는 Grid
             Grid grid = new Grid();
@@ -529,13 +529,21 @@ namespace CovidCheckClientGui
             Grid setTimer = new Grid();
             setTimer.Attach(time, 1, 1, 1, 1);
 
+            Label licence = new Label("GPLv3 Licence Copyright (c) 2020 JanggokSWAG, 자세한 저작권 환련 사항과 이 프로그램의 소스코드는 https://github.com/softwareandguider/covid-check-client에서 확인해 주세요.");
+            licence.Margin = 10;
+            licence.Valign = Align.End;
+            EventBox b = new EventBox();
+            b.Add(licence);
+            // b.Window.Raise();
+
             //모든 것을 배치
             grid.RowHomogeneous = true;
-            
-            grid.Attach(setTimer, 5, 1, 2, 1);
-            grid.Attach(selectMode, 1, 1, 5, 1);
-            grid.Attach(scroll, 6, 1, 5, 1);
-            
+            grid.Attach(b, 1, 2, 10, 1);
+            grid.Attach(setTimer, 5, 1, 2, 2);
+            grid.Attach(selectMode, 1, 1, 5, 2);
+            grid.Attach(scroll, 6, 1, 5, 2);
+
+
             //창에 추가
             Add(grid);
             //이제 보여주기
