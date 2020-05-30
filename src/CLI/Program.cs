@@ -32,6 +32,9 @@ namespace Covid_Check_Client
                     case "5":
                         change = program.checkWithoutID();
                         break;
+                    case "6":
+                        change = program.uncheckWithoutID();
+                        break;
                 }
             }
         }
@@ -169,7 +172,30 @@ namespace Covid_Check_Client
                 }
             }
         }
-
+        string uncheckWithoutID()
+        {
+            User user = new User();
+            string change = "0";
+            while (true)
+            {
+                if (first("ID없이 체크 해제", out change, "사용자의 학년을 입력해 주세요"))
+                {
+                    return change;
+                }
+                string[] info = getManyInfo();
+                JObject result = user.uncheck(change, info[0], info[1]);
+                if ((bool)result["success"])
+                {
+                    Console.WriteLine($"{result["data"]["name"]}(ID: {result["data"]["id"]})의 체크 해제가 완료되었습니다.\n");
+                }
+                else
+                {
+                    Console.WriteLine("체크 해제를 실패하였습니다. 확인 후 다시 시도해주세요\n");
+                }
+            }
+        }
+        
+        
         bool first(string title, out string what, string and = "")
         {
             Console.WriteLine($"현재는 사용자 {title}모드 입니다. 모드를 변경하려면 change를, 프로그램 종료는 exit를 입력해 주세요\n{and}");
