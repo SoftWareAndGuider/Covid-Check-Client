@@ -114,6 +114,18 @@ namespace CovidCheckClientGui
                 #add {
                     font-size: 18px;
                 }
+                #gray > trough > progress {
+                    background-image: none;
+                    background-color: gray;
+                }
+                #green > trough > progress {
+                    background-image: none;
+                    background-color: #5DE3BD;
+                }
+                #red > trough > progress {
+                    background-image: none;
+                    background-color: red;
+                }
             ");
             StyleContext.AddProviderForScreen(Gdk.Screen.Default, cssProvider, 800);
             try
@@ -435,6 +447,12 @@ namespace CovidCheckClientGui
             {
                 a.ShowText = true;
                 a.Text = "로딩...";
+            }
+            for (int i = 0; i < 4; i++)
+            {
+                statusProgressBar[i, 0].Name = "gray";
+                statusProgressBar[i, 1].Name = "green";
+                statusProgressBar[i, 2].Name = "red";
             }
             {
                 statusListMore.Attach(new Label("학년"), 1, 1, 1, 1);
