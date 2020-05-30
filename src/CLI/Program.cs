@@ -29,6 +29,9 @@ namespace Covid_Check_Client
                     case "4":
                         change = program.remove();
                         break;
+                    case "5":
+                        change = program.checkWithoutID();
+                        break;
                 }
             }
         }
@@ -50,7 +53,6 @@ namespace Covid_Check_Client
                 JObject result = user.check(scan);
                 if ((bool)result["success"])
                 {
-                    Console.WriteLine(result);
                     Console.WriteLine($"{result["data"]["name"]}(ID: {result["data"]["id"]})의 체크가 완료되었습니다.\n");
                 }
                 else
@@ -95,11 +97,11 @@ namespace Covid_Check_Client
             while (true)
             {
                 if (first("추가", out change)) return change;
-                Console.WriteLine("사용자를 추가하려면 사용자의 바코드를 스캔하거나 숫자를 입력하세요\n사용자의 학년을 입력해 주세요 (선생님: 0학년)");
+                Console.WriteLine("사용자를 추가하려면 사용자의 바코드를 스캔하거나 숫자를 입력하세요\n사용자의 학년을 입력해 주세요");
                 int grade = int.Parse(Console.ReadLine());
-                Console.WriteLine("사용자의 반을 입력해 주세요 (선생님: 0반)");
+                Console.WriteLine("사용자의 반을 입력해 주세요");
                 int @class = int.Parse(Console.ReadLine());
-                Console.WriteLine("사용자의 번호를 입력해 주세요 (선생님: 자신의 바코드 아래 숫자에서 2020뒤)");
+                Console.WriteLine("사용자의 번호를 입력해 주세요");
                 int number = int.Parse(Console.ReadLine());
                 Console.WriteLine("사용자의 이름을 입력해 주세요");
                 string name = Console.ReadLine();
@@ -110,14 +112,21 @@ namespace Covid_Check_Client
         string remove()
         {
             User user = new User();
-            string change = "";
             while (true)
             {
                 string scan = "";
                 if (first("삭제", out scan, "사용자를 삭제하려면 사용자의 바코드를 스캔하거나 숫자를 입력하세요.")) return scan; //모드 바꾸기
-                user.delUser(scan);
+                JObject result = user.delUser(scan);
+                if ((bool)result["success"])
+                {
+                    Console.WriteLine($"{result["data"]["grade"]}학년 {result["data"]["class"]}반 {result["data"]["number"]}번 {result["data"]["name"]}(ID: {result["data"]["id"]})의 삭제가 완료되었습니다.\n");
+                }
+                else
+                {
+                    Console.WriteLine("삭제를 실패하였습니다. 확인 후 다시 시도해주세요\n");
+                }
+                Console.WriteLine();
             }
-            return change;
         }
         string changeMode()
         {
@@ -135,6 +144,32 @@ namespace Covid_Check_Client
             Console.WriteLine();
             return change;
         }
+        
+        
+        
+        string checkWithoutID()
+        {
+            User user = new User();
+            string change = "0";
+            while (true)
+            {
+                if (first("ID없이 체크", out change, "사용자의 학년을 입력해 주세요"))
+                {
+                    return change;
+                }
+                string[] info = getManyInfo();
+                JObject result = user.check(change, info[0], info[1]);
+                if ((bool)result["success"])
+                {
+                    Console.WriteLine($"{result["data"]["name"]}(ID: {result["data"]["id"]})의 체크가 완료되었습니다.\n");
+                }
+                else
+                {
+                    Console.WriteLine("체크를 실패하였습니다. 확인 후 다시 시도해주세요\n");
+                }
+            }
+        }
+
         bool first(string title, out string what, string and = "")
         {
             Console.WriteLine($"현재는 사용자 {title}모드 입니다. 모드를 변경하려면 change를, 프로그램 종료는 exit를 입력해 주세요\n{and}");
@@ -148,15 +183,14 @@ namespace Covid_Check_Client
             else if (what == "exit") Environment.Exit(0);
             return turn;
         }
+              
         string[] getManyInfo()
         {
             string[] info = new string[3];
-            Console.WriteLine("사용자의 학년을 입력하세요");
-            info[0] = Console.ReadLine();
             Console.WriteLine("사용자의 반을 입력하세요");
-            info[1] = Console.ReadLine();
+            info[0] = Console.ReadLine();
             Console.WriteLine("사용자의 번호을 입력하세요");
-            info[2] = Console.ReadLine();
+            info[1] = Console.ReadLine();
             return info;
         }
     }
