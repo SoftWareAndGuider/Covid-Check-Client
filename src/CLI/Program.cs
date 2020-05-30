@@ -35,6 +35,13 @@ namespace Covid_Check_Client
                     case "6":
                         change = program.uncheckWithoutID();
                         break;
+                    case "7":
+                        change = program.removeWithoutID();
+                        break;
+                    default:
+                        Console.WriteLine("오류 기본 체크모드로 전환");
+                        change = program.check();
+                        break;
                 }
             }
         }
@@ -99,8 +106,8 @@ namespace Covid_Check_Client
             string change = "0";
             while (true)
             {
-                if (first("추가", out change)) return change;
-                Console.WriteLine("사용자를 추가하려면 사용자의 바코드를 스캔하거나 숫자를 입력하세요\n사용자의 학년을 입력해 주세요");
+                if (first("추가", out change, "추가할 사용자의 ID를 입력하세요")) return change;
+                Console.WriteLine("사용자의 학년을 입력해 주세요");
                 int grade = int.Parse(Console.ReadLine());
                 Console.WriteLine("사용자의 반을 입력해 주세요");
                 int @class = int.Parse(Console.ReadLine());
@@ -109,7 +116,7 @@ namespace Covid_Check_Client
                 Console.WriteLine("사용자의 이름을 입력해 주세요");
                 string name = Console.ReadLine();
                 JObject result = user.addUser(change, grade, @class, number, name)["data"] as JObject;
-                Console.WriteLine($"{result["grade"]}학년 {result["class"]}반 {result["number"]}번 {result["name"]}(ID: {result["id"]})사용자가 추가되었습니다." + "\n");
+                Console.WriteLine($"{result["data"]["grade"]}학년 {result["data"]["class"]}반 {result["data"]["number"]}번 {result["data"]["name"]}(ID: {result["data"]["id"]})사용자가 추가되었습니다." + "\n");
             }
         }
         string remove()
@@ -194,7 +201,28 @@ namespace Covid_Check_Client
                 }
             }
         }
-        
+         string removeWithoutID()
+        {
+            User user = new User();
+            string change = "0";
+            while (true)
+            {
+                if (first("ID없이 체크 삭제", out change, "사용자의 학년을 입력해 주세요"))
+                {
+                    return change;
+                }
+                string[] info = getManyInfo();
+                JObject result = user.delUser(change, info[0], info[1]);
+                if ((bool)result["success"])
+                {
+                    Console.WriteLine($"{result["data"]["name"]}학년 {result["data"]["name"]}반 {result["data"]["name"]}번 {result["data"]["name"]}(ID: {result["data"]["id"]})의 삭제가 완료되었습니다.\n");
+                }
+                else
+                {
+                    Console.WriteLine("삭제를 실패하였습니다. 확인 후 다시 시도해주세요\n");
+                }
+            }
+        }
         
         bool first(string title, out string what, string and = "")
         {
