@@ -9,6 +9,7 @@ namespace Covid_Check_Client
 {
     class Program
     {
+        User user = new User(System.IO.File.ReadAllLines("config.txt")[0]);
         static void Main(string[] args)
         {
             Program program = new Program();

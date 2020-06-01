@@ -3,6 +3,8 @@ using System.IO;
 using System.Diagnostics;
 using System.Threading;
 using System.Net;
+using System.Linq;
+
 using Gtk;
 using Newtonsoft.Json.Linq;
 
@@ -11,8 +13,16 @@ namespace CovidCheckClientGui
 {
     partial class Program : Window
     {
+        Grid grid = new Grid();
+        
+        ScrolledWindow scroll = new ScrolledWindow();
+        ScrolledWindow timeoutLogScroll = new ScrolledWindow();
+
+
         // 오른쪽에 뜨는 로그
         ListBox log = new ListBox();
+        ListBox timeoutLog = new ListBox();
+        bool hasTimeout = false;
 
         // 사용자 체크
         Entry checkInsertID = new Entry();
@@ -109,7 +119,7 @@ namespace CovidCheckClientGui
 
         public Program() : base("코로나19 예방용 발열체크 프로그램")
         {
-            CssProvider cssProvider = new CssProvider();
+            CssProvider cssProvider = new CssProvider(); //기본 CSS설정
             cssProvider.LoadFromData(@"
                 #add {
                     font-size: 18px;
@@ -126,8 +136,16 @@ namespace CovidCheckClientGui
                     background-image: none;
                     background-color: red;
                 }
+                .nowlog {
+                    background-color: lightpink;
+                }
             ");
             StyleContext.AddProviderForScreen(Gdk.Screen.Default, cssProvider, 800);
+
+
+            new CheckCovid19.User(File.ReadAllLines("config.txt")[0]).getPing();
+
+
             try
             {
                 System.IO.File.ReadAllText("config.txt");
@@ -140,13 +158,14 @@ namespace CovidCheckClientGui
                     dialog.Dispose();
                 Environment.Exit(0);
             }
+
+
             addLog("프로그램이 시작됨");            
             DeleteEvent += delegate {programProcessing = false; Application.Quit();};
 
             SetDefaultSize(1280, 850);
             
             // 전체를 감싸는 Grid
-            Grid grid = new Grid();
             grid.Margin = 20;
             grid.ColumnHomogeneous = true;
             grid.ColumnSpacing = 8;
@@ -521,7 +540,6 @@ namespace CovidCheckClientGui
             
             
             //로그 나타내는 ScrolledWindow에 추가
-            ScrolledWindow scroll = new ScrolledWindow();
             scroll.Add(log);
 
 
@@ -529,12 +547,12 @@ namespace CovidCheckClientGui
             Grid setTimer = new Grid();
             setTimer.Attach(time, 1, 1, 1, 1);
 
-            Label licence = new Label("GPLv2 License Copyright (c) 2020 JanggokSWAG, 자세한 저작권 환련 사항과 이 프로그램의 소스코드는 https://github.com/softwareandguider/covid-check-client에서 확인해 주세요.");
+            Label licence = new Label("GPLv2 License Copyright (c) 2020 JanggokSWAG, 자세한 저작권 관련 사항과 이 프로그램의 소스코드는 https://github.com/softwareandguider/covid-check-client에서 확인해 주세요.");
             licence.Margin = 10;
             licence.Valign = Align.End;
             EventBox b = new EventBox();
             b.Add(licence);
-            // b.Window.Raise();
+
 
             //모든 것을 배치
             grid.RowHomogeneous = true;
@@ -543,9 +561,11 @@ namespace CovidCheckClientGui
             grid.Attach(selectMode, 1, 1, 5, 2);
             grid.Attach(scroll, 6, 1, 5, 2);
 
+            checkInsertID.SetSizeRequest(1, 3);
 
             //창에 추가
             Add(grid);
+
             //이제 보여주기
             ShowAll();
 
@@ -554,6 +574,7 @@ namespace CovidCheckClientGui
             statusListFrame[1].MarginTop = 0;
             manageMode.Attach(statusListFrame[1], 1, 5, 1, 1);
 
+
             Thread status = new Thread(new ThreadStart(getStatus));
             Thread showTime = new Thread(new ThreadStart(timer));
             status.Start();
@@ -561,27 +582,12 @@ namespace CovidCheckClientGui
             addLog("프로그램 로딩이 완료됨");
         }
         
-        string last = "";
-        public void addLog(string text)
-        {
-            if (last == text) return;
-            last = text;
-            string storeTime = time.Text;
-            if (string.IsNullOrEmpty(storeTime))
-            {
-                DateTime dt = DateTime.Now;
-                storeTime = $"{dt.Month}월 {dt.Day}일 {dt.Hour}:{dt.Minute}:{dt.Second}";
-            }
-            Label add = new Label($"{text} ({storeTime})");
-            add.Name = "add";
-            log.Insert(add, 0);
-            log.ShowAll();
-        }
+        
 
 
         private void getStatus()
         {
-            string url = File.ReadAllLines("config.txt")[0] + "/api";
+            string url = "https://" + File.ReadAllLines("config.txt")[0] + "/api";
             WebClient client = new WebClient();
             string uploadString = "{\"process\":\"info\", \"multi\": true}";
             while (programProcessing)
@@ -685,6 +691,74 @@ namespace CovidCheckClientGui
                 });
                 Thread.Sleep(100);
             }
+        }
+        
+        string last = "";
+        Label logLabel = new Label();
+        public void addLog(string text)
+        {
+            if (last == text) return;
+            last = text;
+            string storeTime = time.Text;
+            if (string.IsNullOrEmpty(storeTime))
+            {
+                DateTime dt = DateTime.Now;
+                storeTime = $"{dt.Month}월 {dt.Day}일 {dt.Hour}:{dt.Minute}:{dt.Second}";
+            }
+            
+            logLabel.StyleContext.RemoveClass("nowlog");            
+
+            logLabel = new Label($"{text} ({storeTime})");
+
+            logLabel.StyleContext.AddClass("nowlog");
+            
+            logLabel.Name = "add";
+            log.Insert(logLabel, 0);
+            log.ShowAll();
+        }
+
+        Label timeoutLogLabel = new Label();
+        private void addTimeoutLog(string text)
+        {
+            if (!hasTimeout)
+            {
+                hasTimeout = true;
+                log.SetSizeRequest(5, 1);
+                grid.Remove(scroll);
+                grid.RowSpacing = 10;
+                
+                Frame defaultFrame = new Frame("일반 로그");
+                Frame timeoutFrame = new Frame("재시도 로그");
+
+                timeoutLogScroll.Add(timeoutLog);
+
+                defaultFrame.Add(scroll);
+                timeoutFrame.Add(timeoutLogScroll);
+
+                grid.Attach(defaultFrame, 6, 1, 5, 1);
+                grid.Attach(timeoutFrame, 6, 2, 5, 1);
+
+                timeoutLog.Show();
+                timeoutLogScroll.Show();
+                defaultFrame.Show();
+                timeoutFrame.Show();
+            }
+            
+            string storeTime = time.Text;
+            if (string.IsNullOrEmpty(storeTime))
+            {
+                DateTime dt = DateTime.Now;
+                storeTime = $"{dt.Month}월 {dt.Day}일 {dt.Hour}:{dt.Minute}:{dt.Second}";
+            }
+
+            timeoutLogLabel.StyleContext.RemoveClass("nowlog");
+
+            timeoutLogLabel = new Label($"{text} ({storeTime})");
+            timeoutLogLabel.StyleContext.AddClass("nowlog");
+            timeoutLogLabel.Name = "add";
+
+            timeoutLog.Insert(timeoutLogLabel, 0);
+            timeoutLog.ShowAll();
         }
     }
 }

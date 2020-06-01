@@ -3,14 +3,21 @@ using System.IO;
 using System.Net;
 using Newtonsoft.Json.Linq;
 using System.Threading;
+using System.Net.NetworkInformation;
 
 namespace CheckCovid19
 {
     class User
     {
+        string _url;
+        public User(string url)
+        {
+            _url = "https://" + url;
+        }
+
         public bool upload(string userID, JObject userData)
         {
-            string url = File.ReadAllLines("config.txt")[0];
+            string url = _url;
             WebClient client = new WebClient();
             
             client.Headers.Add("Content-Type","application/json");
@@ -56,15 +63,17 @@ namespace CheckCovid19
                 return JObject.Parse("{\"success\":false}");
             }
         }        
-        public JObject check(string userID, bool ondo = false)
+        public JObject check(string userID, out int err, bool ondo = false)
         {
-            string url = File.ReadAllLines("config.txt")[0];
+            string url = "_url";
             WebClient client = new WebClient();
             JObject user = new JObject();
 
             user.Add("process", "check");
             user.Add("ondo", ondo);
             user.Add("id", userID);
+
+            bool doing = true;
             string result = "";
 
             client.UploadStringCompleted += (sender, e) => {
@@ -72,16 +81,36 @@ namespace CheckCovid19
                 {
                     result = e.Result;
                 }
-                catch
+                catch 
                 {
                     result = "{\"success\":false}";
                 }
+                doing = false;
             };
 
             client.Headers.Add("Content-Type", "application/json");
-            client.UploadStringAsync(new Uri(url + "/api"), "PUT", user.ToString());
+            err = (int)errorType.success; //0
 
-            while (string.IsNullOrEmpty(result))
+            try
+            {
+                client.UploadStringAsync(new Uri(url + "/api"), "PUT", user.ToString());
+            }
+            catch (Exception e)
+            {
+                if (e.HResult == -2146233033) //url이 잘못된 에러
+                {
+                    //err = (int)errorType.urlerror; //2
+                    err = (int)errorType.timeout;
+                }
+                else
+                {
+                    err = (int)errorType.timeout; //1
+                }
+                doing = false;
+                result = "{\"success\":false}";
+            }
+
+            while (doing)
             {
                 System.Threading.Thread.Sleep(10);
             }
@@ -90,7 +119,7 @@ namespace CheckCovid19
         }
         public JObject check(string grade, string @class, string number, bool ondo = false)
         {
-            string url = File.ReadAllLines("config.txt")[0];
+            string url = _url;
             WebClient client = new WebClient();
             JObject user = new JObject();
 
@@ -124,7 +153,7 @@ namespace CheckCovid19
         }
         public JObject uncheck(string userID)
         {
-            string url = File.ReadAllLines("config.txt")[0];
+            string url = _url;
             WebClient client = new WebClient();
             JObject user = new JObject();
 
@@ -153,7 +182,7 @@ namespace CheckCovid19
         }
         public JObject uncheck(string grade, string @class, string number)
         {
-            string url = File.ReadAllLines("config.txt")[0];
+            string url = _url;
             WebClient client = new WebClient();
             JObject user = new JObject();
 
@@ -186,7 +215,7 @@ namespace CheckCovid19
         }
         public JObject delUser(string userID)
         {
-            string url = File.ReadAllLines("config.txt")[0];
+            string url = _url;
             WebClient client = new WebClient();
             WebClient del = new WebClient();
             JObject user = new JObject();
@@ -210,7 +239,7 @@ namespace CheckCovid19
         }
         public JObject delUser(string grade, string @class, string number)
         {
-            string url = File.ReadAllLines("config.txt")[0];
+            string url = _url;
             WebClient client = new WebClient();
             WebClient del = new WebClient();
             JObject user = new JObject();
@@ -233,6 +262,20 @@ namespace CheckCovid19
                 System.Threading.Thread.Sleep(10);
             }
             return JObject.Parse(result);
+        }
+        public int getPing()
+        {
+            Ping p = new Ping();
+            var r = p.Send(File.ReadAllLines("config.txt")[0]);
+            Console.WriteLine(r.RoundtripTime);
+            return 0;
+        }
+
+        enum errorType
+        {
+            success,
+            timeout,
+            urlerror
         }
     }
 }

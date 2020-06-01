@@ -9,6 +9,7 @@ namespace CovidCheckClientGui
 {
     partial class Program : Window
     {
+        User user = new User(System.IO.File.ReadAllLines("config.txt")[0]);
         static void Main(string[] args)
         {
             Application.Init();
@@ -225,15 +226,23 @@ namespace CovidCheckClientGui
         
         
         //실제로 작업을 하는 곳 (별도의 스레드 사용)
-        void check(string id)
+        void check(string id, int loop = 1)
         {
-            User user = new User();
-            JObject result = new JObject();
-            try
+            if (loop > 100)
             {
-                result = user.check(id);;  
-            } 
-            catch
+                Application.Invoke(delegate {
+                    MessageDialog dialog = new MessageDialog(null, DialogFlags.Modal, MessageType.Error, ButtonsType.Close, false, "인터넷이 원활한 환경에서 사용해 주세요.");
+                    dialog.Run();
+                    dialog.Dispose();
+                    Environment.Exit(0);
+                });
+                return;
+            }
+            JObject result = new JObject();
+            int error = 0;
+            result = user.check(id, out error);
+
+            if (error == 2)
             {
                 Application.Invoke(delegate {
                     MessageDialog dialog = new MessageDialog(null, DialogFlags.Modal, MessageType.Error, ButtonsType.Close, false, "./config.txt에 올바른 홈페이지 주소를 입력해 주세요");
@@ -241,8 +250,19 @@ namespace CovidCheckClientGui
                     dialog.Dispose();
                     Environment.Exit(0);
                 });
-                return;  
+                return;
             }
+            else if (error == 1)
+            {
+                Application.Invoke(delegate {
+                    addTimeoutLog($"타임아웃 재시도.... (인식된 ID: {id}) ({loop}번째 재시도)");
+                });
+                Thread.Sleep(1000);
+                check(id, loop + 1);
+                return;
+            }
+
+
             string toLog = "";
             if ((bool)result["success"])
             {
@@ -258,7 +278,6 @@ namespace CovidCheckClientGui
         }
         void check(string grade, string @class, string number)
         {
-            User user = new User();
             JObject result = new JObject();
             if (checkIsTeacher.Active)
             {
@@ -294,13 +313,10 @@ namespace CovidCheckClientGui
         }
         void checkDoubt(string id)
         {
-            User user = new User();
             JObject result = new JObject();
-            try
-            {
-                result = user.check(id, true);  
-            } 
-            catch
+            int error = 0;
+            result = user.check(id, out error, true);
+            if (error == 2)
             {
                 Application.Invoke(delegate {
                     MessageDialog dialog = new MessageDialog(null, DialogFlags.Modal, MessageType.Error, ButtonsType.Close, false, "./config.txt에 올바른 홈페이지 주소를 입력해 주세요");
@@ -310,6 +326,11 @@ namespace CovidCheckClientGui
                 });
                 return;  
             }
+            else if (error == 1)
+            {
+                Console.Write("타임아웃!");
+            }
+
             string toLog = "";
             if ((bool)result["success"])
             {
@@ -325,7 +346,6 @@ namespace CovidCheckClientGui
         }       
         void checkDoubt(string grade, string @class, string number)
         {
-            User user = new User();
             JObject result = new JObject();
             if (checkDoubtIsTeacher.Active)
             {
@@ -361,7 +381,6 @@ namespace CovidCheckClientGui
         }
         void uncheck(string id)
         {
-            User user = new User();
             JObject result = new JObject();
             try
             {
@@ -392,7 +411,6 @@ namespace CovidCheckClientGui
         }
         void uncheck(string grade, string @class, string number)
         {
-            User user = new User();
             JObject result = new JObject();
             if (uncheckIsTeacher.Active)
             {
@@ -428,7 +446,6 @@ namespace CovidCheckClientGui
         }
         void addUser(bool isNotStudent, string id, string number, string name, string grade, string @class)
         {
-            User user = new User();
             JObject result = new JObject();
             
             if (isNotStudent)
@@ -465,7 +482,6 @@ namespace CovidCheckClientGui
         }
         void delUser(string id)
         {
-            User user = new User();
             JObject result = new JObject();
             try
             {
@@ -504,7 +520,6 @@ namespace CovidCheckClientGui
         }
         void delUser(string grade, string @class, string number)
         {
-            User user = new User();
             JObject result = new JObject();
             if (delIsTeacher.Active)
             {
