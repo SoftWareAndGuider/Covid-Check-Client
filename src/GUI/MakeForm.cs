@@ -671,7 +671,7 @@ namespace CovidCheckClientGui
                 }
                 catch
                 {
-                    urlErrorNotice();
+                    
                 }
                 GC.Collect();
                 Thread.Sleep(3000);
