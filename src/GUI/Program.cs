@@ -315,24 +315,29 @@ namespace CovidCheckClientGui
                 addLog(toLog);
             });
         }
-        void checkDoubt(string id)
+        void checkDoubt(string id, int loop = 1)
         {
+            if (loop > 100)
+            {
+                internetErrorNotice();
+                return;
+            }
             JObject result = new JObject();
             int error = 0;
             result = user.check(id, out error, true);
             if (error == 2)
             {
-                Application.Invoke(delegate {
-                    MessageDialog dialog = new MessageDialog(null, DialogFlags.Modal, MessageType.Error, ButtonsType.Close, false, "./config.txt에 올바른 홈페이지 주소를 입력해 주세요");
-                    dialog.Run();
-                    dialog.Dispose();
-                    Environment.Exit(0);
-                });
+                urlErrorNotice();
                 return;  
             }
             else if (error == 1)
             {
-                Console.Write("타임아웃!");
+                Application.Invoke(delegate {
+                    addTimeoutLog($"타임아웃 재시도.... (인식된 ID: {id}) ({loop}번째 재시도)");
+                });
+                Thread.Sleep(1000);
+                checkDoubt(id, loop + 1);
+                return;
             }
 
             string toLog = "";
@@ -348,8 +353,14 @@ namespace CovidCheckClientGui
                 addLog(toLog);
             });
         }       
-        void checkDoubt(string grade, string @class, string number)
+        void checkDoubt(string grade, string @class, string number, int loop = 1)
         {
+            if (loop > 100)
+            {
+                internetErrorNotice();
+                return;
+            }
+
             JObject result = new JObject();
             if (checkDoubtIsTeacher.Active)
             {
@@ -358,18 +369,20 @@ namespace CovidCheckClientGui
             }
 
             int err = 0;
-            try
+            result = user.check(grade, @class, number, out err, true);
+
+            if (err == 2)
             {
-                result = user.check(grade, @class, number, out err, true);
+                urlErrorNotice();
+                return;
             }
-            catch
+            else if (err == 1)
             {
                 Application.Invoke(delegate {
-                    MessageDialog dialog = new MessageDialog(null, DialogFlags.Modal, MessageType.Error, ButtonsType.Close, false, "./config.txt에 올바른 홈페이지 주소를 입력해 주세요");
-                    dialog.Run();
-                    dialog.Dispose();
-                    Environment.Exit(0);
+                    addTimeoutLog($"타임아웃 재시도.... (인식된 정보: {grade}학년 {@class}반 {number}번) ({loop}번째 재시도)");
                 });
+                Thread.Sleep(1000);
+                checkDoubt(grade, @class, number, loop + 1);
                 return;
             }
             string toLog = "";
@@ -385,8 +398,14 @@ namespace CovidCheckClientGui
                 addLog(toLog);
             });
         }
-        void uncheck(string id)
+        void uncheck(string id, int loop = 1)
         {
+            if (loop > 100)
+            {
+                internetErrorNotice();
+                return;
+            }
+            
             JObject result = new JObject();
 
             int err = 0;
@@ -395,14 +414,19 @@ namespace CovidCheckClientGui
 
             if (err == 2)
             {
-                Application.Invoke(delegate {
-                    MessageDialog dialog = new MessageDialog(null, DialogFlags.Modal, MessageType.Error, ButtonsType.Close, false, "./config.txt에 올바른 홈페이지 주소를 입력해 주세요");
-                    dialog.Run();
-                    dialog.Dispose();
-                    Environment.Exit(0);
-                });
+                urlErrorNotice();
                 return;
             }
+            else if (err == 1)
+            {
+                Application.Invoke(delegate {
+                    addTimeoutLog($"타임아웃 재시도.... (인식된 ID: {id}) ({loop}번째 재시도)");
+                });
+                Thread.Sleep(1000);
+                uncheck(id, loop + 1);
+                return;
+            }
+
             string toLog = "";
             if ((bool)result["success"])
             {
@@ -416,8 +440,13 @@ namespace CovidCheckClientGui
                 addLog(toLog);
             });
         }
-        void uncheck(string grade, string @class, string number)
+        void uncheck(string grade, string @class, string number, int loop = 1)
         {
+            if (loop > 100)
+            {
+                internetErrorNotice();
+                return;
+            }
             JObject result = new JObject();
             if (uncheckIsTeacher.Active)
             {
@@ -426,20 +455,23 @@ namespace CovidCheckClientGui
             }
 
             int err = 0;
-            try
+            result = user.uncheck(grade, @class, number, out err);
+
+            if (err == 2)
             {
-                result = user.uncheck(grade, @class, number, out err);
-            }
-            catch
-            {
-                Application.Invoke(delegate {
-                    MessageDialog dialog = new MessageDialog(null, DialogFlags.Modal, MessageType.Error, ButtonsType.Close, false, "./config.txt에 올바른 홈페이지 주소를 입력해 주세요");
-                    dialog.Run();
-                    dialog.Dispose();
-                    Environment.Exit(0);
-                });
+                urlErrorNotice();
                 return;
             }
+            else if (err == 1)
+            {
+                Application.Invoke(delegate {
+                    addTimeoutLog($"타임아웃 재시도.... (인식된 정보: {grade}학년 {@class}반 {number}번) ({loop}번째 재시도)");
+                });
+                Thread.Sleep(1000);
+                uncheck(grade, @class, number, loop + 1);
+                return;
+            }
+
             string toLog = "";
             if ((bool)result["success"])
             {
@@ -453,8 +485,14 @@ namespace CovidCheckClientGui
                 addLog(toLog);
             });
         }
-        void addUser(bool isNotStudent, string id, string number, string name, string grade, string @class)
+        void addUser(bool isNotStudent, string id, string number, string name, string grade, string @class, int loop = 1)
         {
+            if (loop > 100)
+            {
+                internetErrorNotice();
+                return;
+            }
+
             JObject result = new JObject();
             
             if (isNotStudent)
@@ -464,18 +502,20 @@ namespace CovidCheckClientGui
             } 
 
             int err = 0;
-            try
+            result = user.addUser(id, int.Parse(grade), int.Parse(@class), int.Parse(number), name, out err);
+
+            if (err == 2)
             {
-                result = user.addUser(id, int.Parse(grade), int.Parse(@class), int.Parse(number), name, out err);
+                urlErrorNotice();
+                return;
             }
-            catch
+            else if (err == 1)
             {
                 Application.Invoke(delegate {
-                    MessageDialog dialog = new MessageDialog(null, DialogFlags.Modal, MessageType.Error, ButtonsType.Close, false, "./config.txt에 올바른 홈페이지 주소를 입력해 주세요");
-                    dialog.Run();
-                    dialog.Dispose();
-                    Environment.Exit(0);
+                    addTimeoutLog($"타임아웃 재시도.... (인식된 정보: {id}학년 {@class}반 {number}번 {name}({id})) ({loop}번째 재시도)");
                 });
+                Thread.Sleep(1000);
+                addUser(isNotStudent, id, number, name, grade, @class, loop + 1);
                 return;
             }
             string toLog = "";
@@ -491,24 +531,31 @@ namespace CovidCheckClientGui
                 addLog(toLog);
             });
         }
-        void delUser(string id)
+        void delUser(string id, int loop = 1)
         {
+            if (loop > 100)
+            {
+                internetErrorNotice();
+            }
+
             JObject result = new JObject();
 
             int err = 0;
-            try
+            result = user.delUser(id, out err);
+
+            if (err == 2)
             {
-                result = user.delUser(id, out err);
+                urlErrorNotice();
+                return;
             }
-            catch (Exception e)
+            else if (err == 1)
             {
-                Console.WriteLine(e);
                 Application.Invoke(delegate {
-                    MessageDialog dialog = new MessageDialog(null, DialogFlags.Modal, MessageType.Error, ButtonsType.Close, false, "./config.txt에 올바른 홈페이지 주소를 입력해 주세요");
-                    dialog.Run();
-                    dialog.Dispose();
-                    Environment.Exit(0);
+                    addTimeoutLog($"타임아웃 재시도.... (인식된 ID: {id}) ({loop}번째 재시도)");
                 });
+
+                Thread.Sleep(1000);
+                delUser(id, loop + 1);
                 return;
             }
             string toLog = "";
@@ -531,8 +578,12 @@ namespace CovidCheckClientGui
                 addLog(toLog);
             });
         }
-        void delUser(string grade, string @class, string number)
+        void delUser(string grade, string @class, string number, int loop = 1)
         {
+            if (loop > 100)
+            {
+                internetErrorNotice();
+            }
             JObject result = new JObject();
             if (delIsTeacher.Active)
             {
@@ -541,13 +592,20 @@ namespace CovidCheckClientGui
             }
 
             int err = 0;
-            try
+            result = user.delUser(grade, @class, number, out err);
+
+            if (err == 2)
             {
-                result = user.delUser(grade, @class, number, out err);
+                urlErrorNotice();
+                return;
             }
-            catch
+            else if (err == 1)
             {
-                
+                Application.Invoke(delegate {
+                    addTimeoutLog($"타임아웃 재시도.... (인식된 정보: {grade}학년 {@class}반 {number}번) ({loop}번째 재시도)");
+                });
+                Thread.Sleep(1000);
+                delUser(grade, @class, number, loop + 1);
                 return;
             }
             string toLog = "";

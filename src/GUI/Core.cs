@@ -51,6 +51,7 @@ namespace CheckCovid19
                 {
                     err = (int)errorType.timeout;
                 }
+                result = "{\"success\":false}";
                 doing = false;
             }
 
