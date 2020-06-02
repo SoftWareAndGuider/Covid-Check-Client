@@ -15,37 +15,44 @@ namespace CheckCovid19
             _url = "https://" + url;
         }
 
-        public bool upload(string userID, JObject userData)
+        public bool upload(string userID, JObject userData, out int err)
         {
             string url = _url;
             WebClient client = new WebClient();
-            
-            client.Headers.Add("Content-Type","application/json");
+            JObject user = new JObject();
+
+            user.Add("process", "check");
+            user.Add("ondo", ondo);
+            user.Add("grade", grade);
+            user.Add("class", @class);
+            user.Add("number", number);
             string result = "";
-            try
-            {
-                client.UploadStringCompleted += (sender, e) => {
+
+            client.UploadStringCompleted += (sender, e) => {
+                try
+                {
                     result = e.Result;
-                };
-                client.UploadStringAsync(new Uri(url + "/api"), "PUT", userData.ToString());
-                while (string.IsNullOrEmpty(result))
-                {
-                    System.Threading.Thread.Sleep(10);
                 }
-                if ((bool)JObject.Parse(result)["success"])
+                catch
                 {
-                    return true;
+                    result = "{\"success\":false}";
                 }
-                return false;
-            }
-            catch
+            };
+
+            client.Headers.Add("Content-Type", "application/json");
+            client.UploadStringAsync(new Uri(url + "/api"), "PUT", user.ToString());
+
+            while (string.IsNullOrEmpty(result))
             {
-                return false;
+                System.Threading.Thread.Sleep(10);
             }
+
+            return JObject.Parse(result);
         }
         public JObject addUser(string userID, int grade, int @class, int number, string name)
         {
             JObject user = new JObject();
+            int error = 0;
             user.Add("process", "insert");
             user.Add("id", userID);
             user.Add("grade", grade);
@@ -53,7 +60,7 @@ namespace CheckCovid19
             user.Add("number", number);
             user.Add("name", name);
 
-            if (upload(userID, user))
+            if (upload(userID, user, out error))
             {
                 user.Add("success", true);
                 return user;
