@@ -143,8 +143,8 @@ namespace CovidCheckClientGui
             StyleContext.AddProviderForScreen(Gdk.Screen.Default, cssProvider, 800);
 
 
-            new CheckCovid19.User(File.ReadAllLines("config.txt")[0]).getPing();
-
+            long ping = new CheckCovid19.User(File.ReadAllLines("config.txt")[0]).getPing();
+            base.Title = ($"코로나19 예방용 발열체크 프로그램 (통신 속도: {ping}ms)");
 
             try
             {
@@ -664,17 +664,14 @@ namespace CovidCheckClientGui
                             allUserCount.Text = "합계: " + (parse[0] + parse[1] + parse[2] + parse[3]).ToString() + "명";
                         });
                     }
-                    
-                }
-                catch (Exception e)
-                {
-                    Console.WriteLine(e);
+                    long ping = user.getPing();
                     Application.Invoke(delegate {
-                        MessageDialog dialog = new MessageDialog(null, DialogFlags.Modal, MessageType.Error, ButtonsType.Close, false, "./config.txt에 올바른 홈페이지 주소를 입력해 주세요");
-                        dialog.Run();
-                        dialog.Dispose();
-                        Environment.Exit(0);
+                        base.Title = $"코로나19 예방용 발열체크 프로그램 (통신 속도: {ping}ms)";
                     });
+                }
+                catch
+                {
+                    urlErrorNotice();
                 }
                 GC.Collect();
                 Thread.Sleep(3000);

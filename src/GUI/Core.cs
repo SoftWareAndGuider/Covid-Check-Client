@@ -17,7 +17,7 @@ namespace CheckCovid19
 
         public JObject upload(JObject data, out int err)
         {
-            string url = "asdf";
+            string url = _url;
             WebClient client = new WebClient();
             string result = "";
             bool doing = true;
@@ -54,7 +54,8 @@ namespace CheckCovid19
                 doing = false;
             }
 
-            while (doing) {} //작업이 완료될 때 까지 기다리기
+            while (doing) {
+            } //작업이 완료될 때 까지 기다리기
 
             return JObject.Parse(result);
         }
@@ -128,12 +129,11 @@ namespace CheckCovid19
 
             return upload(user, out err);
         }
-        public int getPing()
+        public long getPing()
         {
             Ping p = new Ping();
             var r = p.Send(File.ReadAllLines("config.txt")[0]);
-            Console.WriteLine(r.RoundtripTime);
-            return 0;
+            return r.RoundtripTime;
         }
 
         enum errorType

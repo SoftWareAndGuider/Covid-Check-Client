@@ -230,26 +230,17 @@ namespace CovidCheckClientGui
         {
             if (loop > 100)
             {
-                Application.Invoke(delegate {
-                    MessageDialog dialog = new MessageDialog(null, DialogFlags.Modal, MessageType.Error, ButtonsType.Close, false, "인터넷이 원활한 환경에서 사용해 주세요.");
-                    dialog.Run();
-                    dialog.Dispose();
-                    Environment.Exit(0);
-                });
+                internetErrorNotice();
                 return;
             }
+
             JObject result = new JObject();
             int error = 0;
             result = user.check(id, out error);
 
             if (error == 2)
             {
-                Application.Invoke(delegate {
-                    MessageDialog dialog = new MessageDialog(null, DialogFlags.Modal, MessageType.Error, ButtonsType.Close, false, "./config.txt에 올바른 홈페이지 주소를 입력해 주세요");
-                    dialog.Run();
-                    dialog.Dispose();
-                    Environment.Exit(0);
-                });
+                urlErrorNotice();
                 return;
             }
             else if (error == 1)
@@ -272,32 +263,45 @@ namespace CovidCheckClientGui
             {
                 toLog = $"정상 체크 실패 (인식된 ID: {id})";
             }
+
             Application.Invoke (delegate {
                 addLog(toLog);
             });
         }
-        void check(string grade, string @class, string number)
+        void check(string grade, string @class, string number, int loop = 1)
         {
+            if (loop > 100)
+            {
+                internetErrorNotice();
+                return;
+            }
+
             JObject result = new JObject();
             if (checkIsTeacher.Active)
             {
                 grade = "0";
                 @class = "0";
             }
-            try
+            int err = 0;
+
+            result = user.check(grade, @class, number, out err);
+
+
+            if (err == 2)
             {
-                result = user.check(grade, @class, number);
-            }
-            catch
-            {
-                Application.Invoke(delegate {
-                    MessageDialog dialog = new MessageDialog(null, DialogFlags.Modal, MessageType.Error, ButtonsType.Close, false, "./config.txt에 올바른 홈페이지 주소를 입력해 주세요");
-                    dialog.Run();
-                    dialog.Dispose();
-                    Environment.Exit(0);
-                });
+                urlErrorNotice();
                 return;
             }
+            else if (err == 1)
+            {
+                Application.Invoke(delegate {
+                    addTimeoutLog($"타임아웃 재시도.... (인식된 정보: {grade}학년 {@class}반 {number}번) ({loop}번째 재시도)");
+                });
+                Thread.Sleep(1000);
+                check(grade, @class, number, loop + 1);
+                return;
+            }
+
             string toLog = "";
             if ((bool)result["success"])
             {
@@ -352,9 +356,11 @@ namespace CovidCheckClientGui
                 grade = "0";
                 @class = "0";
             }
+
+            int err = 0;
             try
             {
-                result = user.check(grade, @class, number, true);
+                result = user.check(grade, @class, number, out err, true);
             }
             catch
             {
@@ -382,11 +388,12 @@ namespace CovidCheckClientGui
         void uncheck(string id)
         {
             JObject result = new JObject();
-            try
-            {
-                result = user.uncheck(id);
-            }
-            catch
+
+            int err = 0;
+
+            result = user.uncheck(id, out err);
+
+            if (err == 2)
             {
                 Application.Invoke(delegate {
                     MessageDialog dialog = new MessageDialog(null, DialogFlags.Modal, MessageType.Error, ButtonsType.Close, false, "./config.txt에 올바른 홈페이지 주소를 입력해 주세요");
@@ -417,9 +424,11 @@ namespace CovidCheckClientGui
                 grade = "0";
                 @class = "0";
             }
+
+            int err = 0;
             try
             {
-                result = user.uncheck(grade, @class, number);
+                result = user.uncheck(grade, @class, number, out err);
             }
             catch
             {
@@ -453,9 +462,11 @@ namespace CovidCheckClientGui
                 grade = "0";
                 @class = "0";
             } 
+
+            int err = 0;
             try
             {
-                result = user.addUser(id, int.Parse(grade), int.Parse(@class), int.Parse(number), name);
+                result = user.addUser(id, int.Parse(grade), int.Parse(@class), int.Parse(number), name, out err);
             }
             catch
             {
@@ -483,9 +494,11 @@ namespace CovidCheckClientGui
         void delUser(string id)
         {
             JObject result = new JObject();
+
+            int err = 0;
             try
             {
-                result = user.delUser(id);
+                result = user.delUser(id, out err);
             }
             catch (Exception e)
             {
@@ -526,18 +539,15 @@ namespace CovidCheckClientGui
                 grade = "0";
                 @class = "0";
             }
+
+            int err = 0;
             try
             {
-                result = user.delUser(grade, @class, number);
+                result = user.delUser(grade, @class, number, out err);
             }
             catch
             {
-                Application.Invoke(delegate {
-                    MessageDialog dialog = new MessageDialog(null, DialogFlags.Modal, MessageType.Error, ButtonsType.Close, false, "./config.txt에 올바른 홈페이지 주소를 입력해 주세요");
-                    dialog.Run();
-                    dialog.Dispose();
-                    Environment.Exit(0);
-                });
+                
                 return;
             }
             string toLog = "";
@@ -645,5 +655,23 @@ namespace CovidCheckClientGui
         void addUserKeyRelease(object sender, EventArgs e) => insertUser.Sensitive = isFull(title.add);
         void uncheckWithoutIDKeyRelease(object sender, EventArgs e) => uncheckInsertUser.Sensitive = isFull(title.uncheck);
         void delUserWithoutIDKeyRelease(object sender, EventArgs e) => delInsertUserWithoutID.Sensitive = isFull(title.delete);
+        void urlErrorNotice() //url이 잘못되었다는 에러를 보여주는 함수
+        {
+            Application.Invoke(delegate {
+                    MessageDialog dialog = new MessageDialog(null, DialogFlags.Modal, MessageType.Error, ButtonsType.Close, false, "./config.txt에 올바른 홈페이지 주소를 입력해 주세요");
+                    dialog.Run();
+                    dialog.Dispose();
+                    Environment.Exit(0);
+                });
+        }    
+        void internetErrorNotice()
+        {
+            Application.Invoke(delegate {
+                    MessageDialog dialog = new MessageDialog(null, DialogFlags.Modal, MessageType.Error, ButtonsType.Close, false, "인터넷이 원활한 환경에서 사용해 주세요.");
+                    dialog.Run();
+                    dialog.Dispose();
+                    Environment.Exit(0);
+                });
+        }
     }
 }
