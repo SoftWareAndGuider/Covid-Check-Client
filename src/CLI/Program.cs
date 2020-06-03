@@ -17,6 +17,12 @@ namespace Covid_Check_Client
             Program program = new Program();
             Console.WriteLine("CovidCheckClient, GPLv2 License\nCopyright (c) 2020 JanggokSWAG, 자세한 저작권 관련 사항과 이 프로그램의 소스코드는 https://github.com/softwareandguider/covid-check-client 에서 확인해주세요.\n");
             Console.WriteLine("서버와의 통신 속도: " + p + "ms");
+
+            string verName = "";
+            if (user.hasNewVersion(1, out verName))
+            {
+                Console.WriteLine("새로운 버전 {0}이(가) 출시되었습니다. https://github.com/SoftWareAndGuider/Covid-Check-Client/releases/ 에서 확인해 주세요.\n", verName);
+            }
             string change = "1"; //일단 프로그램을 켰을 땐 체크모드
             while (true)
             {
