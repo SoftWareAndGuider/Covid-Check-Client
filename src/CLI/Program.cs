@@ -53,7 +53,7 @@ namespace Covid_Check_Client
                 }
             }
         }
-        string check(int loop = 1)
+        string check()
         {
             string change = "0";
             while (true)
@@ -72,7 +72,7 @@ namespace Covid_Check_Client
                 }
             }
         }
-        string uncheck(int loop = 1)
+        string uncheck()
         {
             string change = "0";
             while (true)
@@ -100,7 +100,7 @@ namespace Covid_Check_Client
             }
             return change;
         }
-        string add(int loop = 1)
+        string add()
         {
             string change = "0";
             while (true)
@@ -121,7 +121,7 @@ namespace Covid_Check_Client
                 else Console.WriteLine("사용자 추가에 실패하였습니다. 확인 후 다시 시도해 주세요.");
             }
         }
-        string remove(int loop = 1)
+        string remove()
         {
             while (true)
             {
@@ -141,7 +141,7 @@ namespace Covid_Check_Client
                 Console.WriteLine();
             }
         }
-        string ondoCheck(int loop = 1)
+        string ondoCheck()
         {
             while (true)
             {
@@ -161,7 +161,7 @@ namespace Covid_Check_Client
                 Console.WriteLine();
             }
         }
-        string changeMode(int loop = 1)
+        string changeMode()
         {
             string change = "";
             while (true)
@@ -180,7 +180,7 @@ namespace Covid_Check_Client
         
         
         
-        string checkWithoutID(int loop = 1)
+        string checkWithoutID()
         {
             string change = "0";
             while (true)
@@ -203,7 +203,7 @@ namespace Covid_Check_Client
                 }
             }
         }
-        string uncheckWithoutID(int loop = 1)
+        string uncheckWithoutID()
         {
             string change = "0";
             while (true)
@@ -226,7 +226,7 @@ namespace Covid_Check_Client
                 }
             }
         }
-        string removeWithoutID(int loop = 1)
+        string removeWithoutID()
         {
             string change = "0";
             while (true)
@@ -249,7 +249,7 @@ namespace Covid_Check_Client
                 }
             }
         }
-        string ondoCheckWithoutID(int loop = 1)
+        string ondoCheckWithoutID()
         {
             string change = "0";
             while (true)
