@@ -9,6 +9,7 @@ namespace CheckCovid19
 {
     class User
     {
+        const int versions = 0;
         string _url;
         public User(string url)
         {
@@ -136,7 +137,23 @@ namespace CheckCovid19
             var r = p.Send(File.ReadAllLines("config.txt")[0]);
             return r.RoundtripTime;
         }
+        public bool hasNewVersion(int now, out string name)
+        {
+            WebClient client = new WebClient();
+            client.Encoding = System.Text.Encoding.UTF8;
+            client.Headers.Add("user-agent", "CovidCheckClientCheckUpdate");
+            JArray down = JArray.Parse(client.DownloadString("https://api.github.com/repos/SoftWareAndGuider/Covid-Check-Client/releases"));
 
+            name = "";
+
+            if (down.Count == 0) return false;
+            if (down.Count > now)
+            {
+                name = down.Last["name"].ToString();
+                return true;
+            }
+            return false;
+        }
         enum errorType
         {
             success,

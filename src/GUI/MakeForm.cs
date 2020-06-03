@@ -119,6 +119,7 @@ namespace CovidCheckClientGui
 
         public Program() : base("코로나19 예방용 발열체크 프로그램")
         {
+            string newVersion = "";
             CssProvider cssProvider = new CssProvider(); //기본 CSS설정
             cssProvider.LoadFromData(@"
                 #add {
@@ -580,6 +581,13 @@ namespace CovidCheckClientGui
             status.Start();
             showTime.Start();
             addLog("프로그램 로딩이 완료됨");
+
+            if (user.hasNewVersion(0, out newVersion))
+            {
+                MessageDialog dialog = new MessageDialog(null, DialogFlags.Modal, MessageType.Info, ButtonsType.Close, true, $"프로그램의 새 버전({newVersion})을 찾았습니다. <a href=\"https://github.com/SoftWareAndGuider/Covid-Check-Client/releases\">여기를 눌러</a> 확인해 주세요.");
+                dialog.Run();
+                dialog.Dispose();
+            }
         }
         
         
