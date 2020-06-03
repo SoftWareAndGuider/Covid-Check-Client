@@ -580,6 +580,9 @@ namespace CovidCheckClientGui
             Thread showTime = new Thread(new ThreadStart(timer));
             status.Start();
             showTime.Start();
+
+            selectMode.Page = 2;
+            selectMode.Page = 0;
             addLog("프로그램 로딩이 완료됨");
 
             if (user.hasNewVersion(0, out newVersion))
