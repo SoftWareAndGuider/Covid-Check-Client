@@ -9,11 +9,14 @@ namespace Covid_Check_Client
 {
     class Program
     {
-        User user = new User(System.IO.File.ReadAllLines("config.txt")[0]);
+        static User user = new User(System.IO.File.ReadAllLines("config.txt")[0]);
         static void Main(string[] args)
         {
+            long p = user.getPing();
+            Console.Title = $"코로나19 예방용 발열체크 프로그램 (CLI)(통신 속도: {p}ms)";
             Program program = new Program();
             Console.WriteLine("CovidCheckClient, GPLv2 License\nCopyright (c) 2020 JanggokSWAG, 자세한 저작권 관련 사항과 이 프로그램의 소스코드는 https://github.com/softwareandguider/covid-check-client 에서 확인해주세요.\n");
+            Console.WriteLine("서버와의 통신 속도: " + p + "ms");
             string change = "1"; //일단 프로그램을 켰을 땐 체크모드
             while (true)
             {
