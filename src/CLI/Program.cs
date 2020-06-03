@@ -53,14 +53,15 @@ namespace Covid_Check_Client
                 }
             }
         }
-        string check()
+        string check(int loop = 1)
         {
-            User user = new User();
             string change = "0";
             while (true)
             {
                 if (first("체크", out change, "체크하려면 사용자의 바코드를 스캔하거나 숫자를 입력하세요.")) return change;
-                JObject result = user.check(change);
+
+                int err = 0;
+                JObject result = user.check(change, out err);
                 if ((bool)result["success"])
                 {
                     Console.WriteLine($"{result["data"]["name"]}(ID: {result["data"]["id"]})의 체크가 완료되었습니다.\n");
@@ -71,9 +72,8 @@ namespace Covid_Check_Client
                 }
             }
         }
-        string uncheck()
+        string uncheck(int loop = 1)
         {
-            User user = new User();
             string change = "0";
             while (true)
             {
@@ -86,7 +86,8 @@ namespace Covid_Check_Client
                 }
                 else if (scan == "exit") Environment.Exit(0);
                 
-                JObject result = user.uncheck(scan);
+                int err = 0;
+                JObject result = user.uncheck(scan, out err);
                 if ((bool)result["success"])
                 {
                     Console.WriteLine($"{result["data"]["name"]}(ID: {result["data"]["id"]})의 체크 해제가 완료되었습니다.\n");
@@ -99,9 +100,8 @@ namespace Covid_Check_Client
             }
             return change;
         }
-        string add()
+        string add(int loop = 1)
         {
-            User user = new User();
             string change = "0";
             while (true)
             {
@@ -114,19 +114,22 @@ namespace Covid_Check_Client
                 int number = int.Parse(Console.ReadLine());
                 Console.WriteLine("사용자의 이름을 입력해 주세요.");
                 string name = Console.ReadLine();
-                JObject result = user.addUser(change, grade, @class, number, name)["data"] as JObject;
+
+                int err = 0;
+                JObject result = user.addUser(change, grade, @class, number, name, out err)["data"] as JObject;
                 if ((bool)result["success"]) Console.WriteLine($"{result["data"]["grade"]}학년 {result["data"]["class"]}반 {result["data"]["number"]}번 {result["data"]["name"]}(ID: {result["data"]["id"]})사용자가 추가되었습니다." + "\n");
                 else Console.WriteLine("사용자 추가에 실패하였습니다. 확인 후 다시 시도해 주세요.");
             }
         }
-        string remove()
+        string remove(int loop = 1)
         {
-            User user = new User();
             while (true)
             {
                 string scan = "";
                 if (first("삭제", out scan, "사용자를 삭제하려면 사용자의 바코드를 스캔하거나 숫자를 입력하세요.")) return scan; //모드 바꾸기
-                JObject result = user.delUser(scan);
+
+                int err = 0;
+                JObject result = user.delUser(scan, out err);
                 if ((bool)result["success"])
                 {
                     Console.WriteLine($"{result["data"]["grade"]}학년 {result["data"]["class"]}반 {result["data"]["number"]}번 {result["data"]["name"]}(ID: {result["data"]["id"]})의 삭제가 완료되었습니다.\n");
@@ -138,14 +141,15 @@ namespace Covid_Check_Client
                 Console.WriteLine();
             }
         }
-        string ondoCheck()
+        string ondoCheck(int loop = 1)
         {
-            User user = new User();
             while (true)
             {
                 string scan = "";
                 if (first("삭제", out scan, "사용자를 발열 체크하려면 사용자의 바코드를 스캔하거나 숫자를 입력하세요.")) return scan; //모드 바꾸기
-                JObject result = user.check(scan, true);
+
+                int err = 0;
+                JObject result = user.check(scan, out err, true);
                 if ((bool)result["success"])
                 {
                     Console.WriteLine($"{result["data"]["name"]}(ID: {result["data"]["id"]})의 발열 체크가 완료되었습니다.\n");
@@ -157,7 +161,7 @@ namespace Covid_Check_Client
                 Console.WriteLine();
             }
         }
-        string changeMode()
+        string changeMode(int loop = 1)
         {
             string change = "";
             while (true)
@@ -176,9 +180,8 @@ namespace Covid_Check_Client
         
         
         
-        string checkWithoutID()
+        string checkWithoutID(int loop = 1)
         {
-            User user = new User();
             string change = "0";
             while (true)
             {
@@ -187,7 +190,9 @@ namespace Covid_Check_Client
                     return change;
                 }
                 string[] info = getManyInfo();
-                JObject result = user.check(change, info[0], info[1]);
+
+                int err = 0;
+                JObject result = user.check(change, info[0], info[1], out err);
                 if ((bool)result["success"])
                 {
                     Console.WriteLine($"{result["data"]["name"]}(ID: {result["data"]["id"]})의 체크가 완료되었습니다.\n");
@@ -198,9 +203,8 @@ namespace Covid_Check_Client
                 }
             }
         }
-        string uncheckWithoutID()
+        string uncheckWithoutID(int loop = 1)
         {
-            User user = new User();
             string change = "0";
             while (true)
             {
@@ -209,7 +213,9 @@ namespace Covid_Check_Client
                     return change;
                 }
                 string[] info = getManyInfo();
-                JObject result = user.uncheck(change, info[0], info[1]);
+
+                int err = 0;
+                JObject result = user.uncheck(change, info[0], info[1], out err);
                 if ((bool)result["success"])
                 {
                     Console.WriteLine($"{result["data"]["name"]}(ID: {result["data"]["id"]})의 체크 해제가 완료되었습니다.\n");
@@ -220,9 +226,8 @@ namespace Covid_Check_Client
                 }
             }
         }
-        string removeWithoutID()
+        string removeWithoutID(int loop = 1)
         {
-            User user = new User();
             string change = "0";
             while (true)
             {
@@ -231,7 +236,9 @@ namespace Covid_Check_Client
                     return change;
                 }
                 string[] info = getManyInfo();
-                JObject result = user.delUser(change, info[0], info[1]);
+
+                int err = 0;
+                JObject result = user.delUser(change, info[0], info[1], out err);
                 if ((bool)result["success"])
                 {
                     Console.WriteLine($"{result["data"]["name"]}학년 {result["data"]["name"]}반 {result["data"]["name"]}번 {result["data"]["name"]}(ID: {result["data"]["id"]})의 삭제가 완료되었습니다.\n");
@@ -242,9 +249,8 @@ namespace Covid_Check_Client
                 }
             }
         }
-        string ondoCheckWithoutID()
+        string ondoCheckWithoutID(int loop = 1)
         {
-            User user = new User();
             string change = "0";
             while (true)
             {
@@ -253,7 +259,9 @@ namespace Covid_Check_Client
                     return change;
                 }
                 string[] info = getManyInfo();
-                JObject result = user.check(change, info[0], info[1], true);
+
+                int err = 0;
+                JObject result = user.check(change, info[0], info[1], out err, true);
                 if ((bool)result["success"])
                 {
                     Console.WriteLine($"{result["data"]["name"]}(ID: {result["data"]["id"]})의 발열 체크가 완료되었습니다.\n");

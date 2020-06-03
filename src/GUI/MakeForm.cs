@@ -582,10 +582,11 @@ namespace CovidCheckClientGui
             showTime.Start();
 
             selectMode.Page = 2;
-            selectMode.Page = 0;
+            selectMode.Page = 0; //이런식으로 하지 않으면 종종 발열체크를 선택할 수 없을 때가 있음
+
             addLog("프로그램 로딩이 완료됨");
 
-            if (user.hasNewVersion(0, out newVersion))
+            if (user.hasNewVersion(1, out newVersion))
             {
                 MessageDialog dialog = new MessageDialog(null, DialogFlags.Modal, MessageType.Info, ButtonsType.Close, true, $"프로그램의 새 버전({newVersion})을 찾았습니다. <a href=\"https://github.com/SoftWareAndGuider/Covid-Check-Client/releases\">여기를 눌러</a> 확인해 주세요.");
                 dialog.Run();
