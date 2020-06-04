@@ -250,7 +250,7 @@ namespace Covid_Check_Client
                 JObject result = user.delUser(change, info[0], info[1], out err);
                 if ((bool)result["success"])
                 {
-                    Console.WriteLine($"{result["data"]["name"]}학년 {result["data"]["name"]}반 {result["data"]["name"]}번 {result["data"]["name"]}(ID: {result["data"]["id"]})의 삭제가 완료되었습니다.\n");
+                    Console.WriteLine($"{result["data"]["grade"]}학년 {result["data"]["class"]}반 {result["data"]["number"]}번 {result["data"]["name"]}(ID: {result["data"]["id"]})의 삭제가 완료되었습니다.\n");
                 }
                 else
                 {
