@@ -125,7 +125,7 @@ namespace Covid_Check_Client
                 string name = Console.ReadLine();
 
                 int err = 0;
-                JObject result = user.addUser(change, grade, @class, number, name, out err)["data"] as JObject;
+                JObject result = user.addUser(change, grade, @class, number, name, out err);
                 if ((bool)result["success"]) Console.WriteLine($"{result["data"]["grade"]}학년 {result["data"]["class"]}반 {result["data"]["number"]}번 {result["data"]["name"]}(ID: {result["data"]["id"]})사용자가 추가되었습니다." + "\n");
                 else Console.WriteLine("사용자 추가에 실패하였습니다. 확인 후 다시 시도해 주세요.");
             }
