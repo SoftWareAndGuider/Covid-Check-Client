@@ -26,7 +26,7 @@
 * GTK(GUI 한정)
 
 ### 사용된 Nuget들
-* GTKSharp 3.22.25.74 (GPLv2) https://github.com/GtkSharp/GtkSharp
+* GTKSharp 3.22.25.74 (LGPLv2) https://github.com/GtkSharp/GtkSharp
 * Newtonsoft.Json 12.0.3 (MIT) https://github.com/JamesNK/Newtonsoft.Json
 
 
