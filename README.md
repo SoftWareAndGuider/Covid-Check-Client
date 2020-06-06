@@ -2,7 +2,7 @@
 
 이 프로그램은 [여기서 볼 수 있는](https://github.com/SoftWareAndGuider/Covid-Check) Covid-Check의 클라이언트입니다.
 
-이 프로젝트는 GPL에서 추가로 [이런](https://checks.trinets.xyz/rights) 추가적인 것이 적용됩니다.
+이 프로젝트는 [이런](https://checks.trinets.xyz/rights) 추가적인 라이선스가 적용됩니다.
 
 ### 클라이언트 프로그램이 하는 일
 * 사용자 *관리
