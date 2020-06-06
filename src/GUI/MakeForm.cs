@@ -680,6 +680,10 @@ namespace CovidCheckClientGui
                                 statusProgressBar[3, 1].Text = $"{parse[3, 1]}/{allUsers[3]}";
                                 statusProgressBar[3, 2].Text = $"{parse[3, 2]}/{allUsers[3]}";
                             }
+                            for (int i = 0; i < 4; i++)
+                            {
+                                if (allUsers[i] == 0) allUsers[i] = 1;
+                            }
                             {
                                 statusProgressBar[0, 0].Fraction = parse[0, 0] / allUsers[0];
                                 statusProgressBar[0, 1].Fraction = parse[0, 1] / allUsers[0];
