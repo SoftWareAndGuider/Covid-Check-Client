@@ -599,9 +599,43 @@ namespace CovidCheckClientGui
 
         private void getStatus()
         {
-            string url = "https://" + File.ReadAllLines("config.txt")[0] + "/api";
+            string url = "http://" + File.ReadAllLines("config.txt")[0] + "/api";
             WebClient client = new WebClient();
             string uploadString = "{\"process\":\"info\", \"multi\": true}";
+            try
+            {
+                client.Headers.Add("Content-Type", "application/json");
+                client.UploadString(url, "PUT", uploadString);
+            }
+            catch
+            {
+                url = "https://" + File.ReadAllLines("config.txt")[0] + "/api";
+                client.Headers.Add("Content-Type", "application/json");
+                bool doing = true;
+                client.UploadStringCompleted += (sender, e) => {
+                    try
+                    {
+                        var a = e.Result;
+                        doing = false;
+                    }
+                    catch
+                    {
+                        Application.Invoke(delegate {
+                            MessageDialog dialog = new MessageDialog(null, DialogFlags.Modal, MessageType.Error, ButtonsType.Close, false, "사용자 정보를 불러오는데 실패했습니다. URL이나 인터넷을 확인해 주세요.");
+                            dialog.Run();
+                            dialog.Dispose();
+                            Environment.Exit(0);
+                        });
+                    }
+                };
+                client.UploadStringAsync(new Uri(url), "PUT", uploadString);
+                while (doing)
+                {
+
+                }
+                client = new WebClient();
+            }
+
             while (programProcessing)
             {
                 client.Headers.Add("Content-Type", "application/json");

@@ -10,15 +10,15 @@ namespace CheckCovid19
     class User
     {
         const int versions = 0;
-        string _url;
+        string[] _url = new string[2];
         public User(string url)
         {
-            _url = "https://" + url;
+            _url[0] = "http://" + url;
+            _url[1] = "https://" + url;
         }
 
         public JObject upload(JObject data, out int err)
         {
-            string url = _url;
             WebClient client = new WebClient();
             string result = "";
             bool doing = true;
@@ -40,19 +40,37 @@ namespace CheckCovid19
             client.Headers.Add("Content-Type", "application/json");
             try
             {
-                client.UploadStringAsync(new Uri(url + "/api"), "PUT", data.ToString());
+                client.UploadStringAsync(new Uri(_url[0] + "/api"), "PUT", data.ToString());
             }
             catch (Exception e)
-            {
+            {   
                 if (e.HResult == -2146233033) //Uri 잘못된거
                 {
-                    err = (int)errorType.urlerror;
+                    try
+                    {
+                        client.Headers.Add("Content-Type", "application/json");
+                        client.UploadStringAsync(new Uri(_url[1] + "/api"), "PUT", data.ToString());
+                    }
+                    catch (Exception ee)
+                    {
+                        if (ee.HResult == -2146233033)
+                        {
+                            err = (int)errorType.urlerror;
+                            result = "{\"success\":false}";
+                        }
+                        else
+                        {
+                            err = (int)errorType.timeout;   
+                            result = "{\"success\":false}";
+                        }                    
+                    }
                 }
                 else
                 {
                     err = (int)errorType.timeout;
+                    result = "{\"success\":false}";
                 }
-                result = "{\"success\":false}";
+                
                 doing = false;
             }
 
@@ -134,8 +152,16 @@ namespace CheckCovid19
         public long getPing()
         {
             Ping p = new Ping();
-            var r = p.Send(File.ReadAllLines("config.txt")[0]);
-            return r.RoundtripTime;
+            PingReply pr = null;
+            try
+            {
+               pr = p.Send(File.ReadAllLines("config.txt")[0]);
+               return pr.RoundtripTime;
+            }
+            catch
+            {
+                return 0;
+            }
         }
         public bool hasNewVersion(int now, out string name)
         {
