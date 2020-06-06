@@ -32,6 +32,7 @@ namespace CovidCheckClientGui
         Entry checkInsertNumber = new Entry();
         CheckButton checkIsTeacher = new CheckButton("학생이 아님");
 
+        Button checkOK = new Button("정상 확인하기");
         Button checkInsertUser = new Button("정상 확인하기");
 
 
@@ -183,9 +184,11 @@ namespace CovidCheckClientGui
             checkInsertClass.PlaceholderText = "사용자의 반을 입력해 주세요";
             checkInsertNumber.PlaceholderText = "사용자의 번호를 입력해 주세요";
             checkInsertUser.Sensitive = false;
+            checkOK.Sensitive = false;
 
             //사용자 확인 이벤트 설정
             checkInsertID.KeyReleaseEvent += checkInsertIDChangeText;
+            checkOK.Clicked += checkOKClicked;
             checkIsTeacher.Clicked += delegate {unlessStudent(title.check);};
             checkInsertUser.Clicked += checkInsertUserClicked;
             checkInsertGrade.KeyReleaseEvent += checkWithoutIDKeyRelease;
@@ -194,7 +197,6 @@ namespace CovidCheckClientGui
 
             //사용자 확인 배치(ID)
             {
-                check.Attach(new Label("실제 바코드의 길이가 지정한 바코드의 길이와 다를 경우 확인하기 버튼을 눌러 확인해주세요."), 1, 1, 5, 1); // 공지 추가
                 check.Attach(checkInsertID, 1, 2, 5, 1); // 텍스트박스 추가
 
                 check.Attach(new Separator(Orientation.Horizontal), 1, 4, 5, 1);
@@ -216,6 +218,7 @@ namespace CovidCheckClientGui
             Frame checkFrame = new Frame("정상");
             checkFrame.Margin = 15;
             checkFrame.MarginBottom = 0;
+            checkFrame.MarginTop = 0;
             checkFrame.Add(check);
 
             Grid checkDoubt = new Grid();
@@ -238,7 +241,6 @@ namespace CovidCheckClientGui
             checkDoubtInsertNumber.KeyReleaseEvent += checkDoubtWithoutIDKeyRelease;
 
             //사용자 확인 배치(ID)
-            checkDoubt.Attach(new Label("실제 바코드의 길이가 지정한 바코드의 길이와 다를 경우 확인하기 버튼을 눌러 확인해주세요."), 1, 1, 5, 1); // 공지 추가
             checkDoubt.Attach(checkDoubtInsertID, 1, 2, 5, 1); // 텍스트박스 추가
 
             checkDoubt.Attach(new Separator(Orientation.Horizontal), 1, 4, 5, 1);
@@ -265,7 +267,7 @@ namespace CovidCheckClientGui
             Grid checkAll = new Grid();
             checkAll.ColumnHomogeneous = true;
             checkAll.RowSpacing = 10;
-            checkAll.Attach(checkFrame, 1, 1, 5, 1);
+            checkAll.Attach(checkFrame, 1, 2, 5, 1);
             checkAll.Attach(checkDoubtFrame, 1, 3, 5, 1);            
 
 
@@ -285,6 +287,7 @@ namespace CovidCheckClientGui
 
             //사용자 확인 취소 이벤트 설정
             uncheckInsertID.KeyReleaseEvent += uncheckInsertIDChangeText;
+            uncheckInsertGrade.KeyReleaseEvent += uncheckWithoutIDKeyRelease;
             uncheckInsertClass.KeyReleaseEvent += uncheckWithoutIDKeyRelease;
             uncheckInsertNumber.KeyReleaseEvent += uncheckWithoutIDKeyRelease;
             uncheckIsTeacher.Clicked += delegate {unlessStudent(title.uncheck);};
@@ -292,7 +295,6 @@ namespace CovidCheckClientGui
 
 
             //사용자 확인 취소 배치(ID)
-            uncheck.Attach(new Label("실제 바코드의 길이가 지정한 바코드의 길이와 다를 경우 확인 취소하기 버튼을 눌러 확인해주세요."), 1, 1, 5, 1); // 공지 추가
             uncheck.Attach(uncheckInsertID, 1, 2, 5, 1); // 텍스트박스 추가
             
             uncheck.Attach(new Separator(Orientation.Horizontal), 1, 4, 5, 1);
@@ -518,7 +520,7 @@ namespace CovidCheckClientGui
             Grid setTimer = new Grid();
             setTimer.Attach(time, 1, 1, 1, 1);
 
-            Label licence = new Label("GPLv2 License Copyright (c) 2020 JanggokSWAG, 자세한 저작권 관련 사항과 이 프로그램의 소스코드는 https://github.com/softwareandguider/covid-check-client에서 확인해 주세요.");
+            Label licence = new Label("MIT + ɑ License Copyright (c) 2020 SoftWareAndGuider, csnewcs, pmh-only, Noeul-Night / 자세한 저작권 관련 사항과 이 프로그램의 소스코드는 https://github.com/softwareandguider/covid-check-client에서 확인해 주세요.");
             licence.Margin = 10;
             licence.Valign = Align.End;
             EventBox b = new EventBox();
@@ -569,9 +571,43 @@ namespace CovidCheckClientGui
 
         private void getStatus()
         {
-            string url = "https://" + File.ReadAllLines("config.txt")[0] + "/api";
+            string url = "http://" + File.ReadAllLines("config.txt")[0] + "/api";
             WebClient client = new WebClient();
             string uploadString = "{\"process\":\"info\", \"multi\": true}";
+            try
+            {
+                client.Headers.Add("Content-Type", "application/json");
+                client.UploadString(url, "PUT", uploadString);
+            }
+            catch
+            {
+                url = "https://" + File.ReadAllLines("config.txt")[0] + "/api";
+                client.Headers.Add("Content-Type", "application/json");
+                bool doing = true;
+                client.UploadStringCompleted += (sender, e) => {
+                    try
+                    {
+                        var a = e.Result;
+                        doing = false;
+                    }
+                    catch
+                    {
+                        Application.Invoke(delegate {
+                            MessageDialog dialog = new MessageDialog(null, DialogFlags.Modal, MessageType.Error, ButtonsType.Close, false, "사용자 정보를 불러오는데 실패했습니다. URL이나 인터넷을 확인해 주세요.");
+                            dialog.Run();
+                            dialog.Dispose();
+                            Environment.Exit(0);
+                        });
+                    }
+                };
+                client.UploadStringAsync(new Uri(url), "PUT", uploadString);
+                while (doing)
+                {
+
+                }
+                client = new WebClient();
+            }
+
             while (programProcessing)
             {
                 client.Headers.Add("Content-Type", "application/json");
@@ -598,6 +634,7 @@ namespace CovidCheckClientGui
                             parse[2, 0] + parse[2, 1] + parse[2, 2],
                             parse[3, 0] + parse[3, 1] + parse[3, 2]
                         };
+
                         Application.Invoke(delegate {
                             {
                                 statusProgressBar[0, 0].Text = $"{parse[0, 0]}/{allUsers[0]}";
@@ -615,6 +652,10 @@ namespace CovidCheckClientGui
                                 statusProgressBar[3, 0].Text = $"{parse[3, 0]}/{allUsers[3]}";
                                 statusProgressBar[3, 1].Text = $"{parse[3, 1]}/{allUsers[3]}";
                                 statusProgressBar[3, 2].Text = $"{parse[3, 2]}/{allUsers[3]}";
+                            }
+                            for (int i = 0; i < 4; i++)
+                            {
+                                if (allUsers[i] == 0) allUsers[i] = 1;
                             }
                             {
                                 statusProgressBar[0, 0].Fraction = parse[0, 0] / allUsers[0];

@@ -17,7 +17,7 @@ namespace CovidCheckClientGui
             Application.Run();
         }
         
-        //학생이 아님이 체크됐을 때 실행하는 것
+        //학생이 아님이 확인됐을 때 실행하는 것
         void unlessStudent(title t)
         {
             if (t == title.check)
@@ -52,7 +52,7 @@ namespace CovidCheckClientGui
             }
         }
         
-        //체크인지 체크 해제인지 사용자 만들기인지 확인하는 것
+        //확인인지 확인 취소인지 사용자 만들기인지 확인하는 것
         enum title
         {
             check,
@@ -65,6 +65,8 @@ namespace CovidCheckClientGui
         //ID가 입력되는 Entry(사용자 추가 제외)의 텍스트가 바뀌었을 때 실행되는 이벤트
         async void checkInsertIDChangeText(object sender, EventArgs e)
         {
+            if (checkInsertID.Text.Length == 0) checkOK.Sensitive = false;
+            else checkOK.Sensitive = true;
             if (checkInsertID.Text.Length != 8) return;
             await Task.Delay(10);
             if (checkInsertID.Text.Length != 8) return;
@@ -72,6 +74,7 @@ namespace CovidCheckClientGui
             Thread thread = new Thread(new ThreadStart(() => {check(id);}));
             thread.Start();
             checkInsertID.Text = "";
+            checkOK.Sensitive = false;
         }
         async void uncheckInsertIDChangeText(object sender, EventArgs e)
         {
@@ -98,6 +101,7 @@ namespace CovidCheckClientGui
         void checkOKClicked(object sender, EventArgs e)
         {
             string id = checkInsertID.Text;
+            checkOK.Sensitive = false;
             checkInsertID.Text = "";
             Thread thread = new Thread(new ThreadStart(() => {check(id);}));
             thread.Start();
@@ -231,11 +235,11 @@ namespace CovidCheckClientGui
             string toLog = "";
             if ((bool)result["success"])
             {
-                toLog = $"{result["data"]["grade"]}학년 {result["data"]["class"]}반 {result["data"]["number"]}번 {result["data"]["name"]}(ID: {result["data"]["id"]}) 정상 체크됨";
+                toLog = $"{result["data"]["grade"]}학년 {result["data"]["class"]}반 {result["data"]["number"]}번 {result["data"]["name"]}(ID: {result["data"]["id"]}) 정상 확인됨";
             }
             else
             {
-                toLog = $"정상 체크 실패 (인식된 ID: {id})";
+                toLog = $"정상 확인 실패 (인식된 ID: {id})";
             }
 
             Application.Invoke (delegate {
@@ -279,11 +283,11 @@ namespace CovidCheckClientGui
             string toLog = "";
             if ((bool)result["success"])
             {
-                toLog = $"{result["data"]["grade"]}학년 {result["data"]["class"]}반 {result["data"]["number"]}번 {result["data"]["name"]}(ID: {result["data"]["id"]}) 체크됨";
+                toLog = $"{result["data"]["grade"]}학년 {result["data"]["class"]}반 {result["data"]["number"]}번 {result["data"]["name"]}(ID: {result["data"]["id"]}) 확인됨";
             }
             else
             {
-                toLog = $"체크 실패 (인식된 정보: {grade}학년 {@class}반 {number}번)";
+                toLog = $"확인 실패 (인식된 정보: {grade}학년 {@class}반 {number}번)";
             }
             Application.Invoke (delegate {
                 addLog(toLog);
@@ -317,11 +321,11 @@ namespace CovidCheckClientGui
             string toLog = "";
             if ((bool)result["success"])
             {
-                toLog = $"{result["data"]["grade"]}학년 {result["data"]["class"]}반 {result["data"]["number"]}번 {result["data"]["name"]}(ID: {result["data"]["id"]}) 발열 체크됨";
+                toLog = $"{result["data"]["grade"]}학년 {result["data"]["class"]}반 {result["data"]["number"]}번 {result["data"]["name"]}(ID: {result["data"]["id"]}) 발열 확인됨";
             }
             else
             {
-                toLog = $"발열 체크 실패 (인식된 ID: {id})";
+                toLog = $"발열 확인 실패 (인식된 ID: {id})";
             }
             Application.Invoke (delegate {
                 addLog(toLog);
@@ -362,11 +366,11 @@ namespace CovidCheckClientGui
             string toLog = "";
             if ((bool)result["success"])
             {
-                toLog = $"{result["data"]["grade"]}학년 {result["data"]["class"]}반 {result["data"]["number"]}번 {result["data"]["name"]}(ID: {result["data"]["id"]}) 발열 체크됨";
+                toLog = $"{result["data"]["grade"]}학년 {result["data"]["class"]}반 {result["data"]["number"]}번 {result["data"]["name"]}(ID: {result["data"]["id"]}) 발열 확인됨";
             }
             else
             {
-                toLog = $"발열 체크 실패 (인식된 정보: {grade}학년 {@class}반 {number}번)";
+                toLog = $"발열 확인 실패 (인식된 정보: {grade}학년 {@class}반 {number}번)";
             }
             Application.Invoke (delegate {
                 addLog(toLog);
@@ -404,11 +408,11 @@ namespace CovidCheckClientGui
             string toLog = "";
             if ((bool)result["success"])
             {
-                toLog = $"{result["data"]["grade"]}학년 {result["data"]["class"]}반 {result["data"]["number"]}번 {result["data"]["name"]}(ID: {id}) 체크 해제됨";
+                toLog = $"{result["data"]["grade"]}학년 {result["data"]["class"]}반 {result["data"]["number"]}번 {result["data"]["name"]}(ID: {id}) 확인 취소됨";
             }
             else
             {
-                toLog = $"체크 해제 실패 (인식된 ID: {id})";
+                toLog = $"확인 취소 실패 (인식된 ID: {id})";
             }
             Application.Invoke (delegate {
                 addLog(toLog);
@@ -449,11 +453,11 @@ namespace CovidCheckClientGui
             string toLog = "";
             if ((bool)result["success"])
             {
-                toLog = $"{result["data"]["grade"]}학년 {result["data"]["class"]}반 {result["data"]["number"]}번 {result["data"]["name"]}(ID: {result["data"]["id"]}) 체크 해제됨";
+                toLog = $"{result["data"]["grade"]}학년 {result["data"]["class"]}반 {result["data"]["number"]}번 {result["data"]["name"]}(ID: {result["data"]["id"]}) 확인 취소됨";
             }
             else
             {
-                toLog = $"체크 해제 실패 (인식된 정보: {grade}학년 {@class}반 {number}번)";
+                toLog = $"확인 취소 실패 (인식된 정보: {grade}학년 {@class}반 {number}번)";
             }
             Application.Invoke (delegate {
                 addLog(toLog);
