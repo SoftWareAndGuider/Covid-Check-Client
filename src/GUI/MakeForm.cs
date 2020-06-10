@@ -3,6 +3,7 @@ using System.IO;
 using System.Diagnostics;
 using System.Threading;
 using System.Net;
+using System.Collections.Generic;
 using System.Linq;
 
 using Gtk;
@@ -473,6 +474,8 @@ namespace CovidCheckClientGui
                 statusListMore.ColumnHomogeneous = true;
             }
 
+            
+            
             foreach (var a in statusProgressBar)
             {
                 a.ShowText = true;
@@ -546,13 +549,78 @@ namespace CovidCheckClientGui
                 scroll2.Add(manageMode);
             }
             
-            
+            Grid setting = new Grid();
+            {
+                Dictionary<string, Grid> grids = new Dictionary<string, Grid>();
+
+                Frame setUrlFrame = new Frame("URL 설정");
+                Frame setTimeoutRetryFrame = new Frame("타임아웃 재시도 횟수 설정");
+                Frame setUpdateCheckFrame = new Frame("업데이트 설정");
+                Frame getSettingFileFrame = new Frame("설정 파일 가져오기");
+
+                {
+                    setting.ColumnHomogeneous = true;
+                    setting.RowSpacing = 10;
+                    setting.Margin = 10;
+                }
+                {
+                    setting.Attach(setUrlFrame, 1, 1, 1, 1);
+                    setting.Attach(setTimeoutRetryFrame, 1, 2, 1, 1);
+                }                
+
+                grids.Add("setUrl", new Grid());
+                {
+                    Entry url = new Entry();
+
+                    {
+                        url.PlaceholderText = "웹 사이트의 URL을 입력하세요.";
+                        grids["setUrl"].Attach(new Label("http://, https://"), 1, 1, 1, 1);
+                        grids["setUrl"].Attach(url, 2, 1, 5, 1);
+                    }
+                    setUrlFrame.Add(grids["setUrl"]);                    
+                }
+
+                grids.Add("setTimeoutRetry", new Grid());
+                {
+                    Scale time = new Scale(Orientation.Horizontal, new Adjustment(100, 0, 500, 0, 1, 0));
+                    SpinButton helpSet = new SpinButton(new Adjustment(100, 0, 500, 1, 1, 0), 1, 0);
+
+                    {
+                        time.RoundDigits = 0;
+                        time.Digits = 0;
+                        time.DrawValue = false;
+
+                        grids["setTimeoutRetry"].Attach(new Label("타임아웃시 재시도 횟수를 설정해 주세요."), 1, 1, 5, 1);
+                        grids["setTimeoutRetry"].Attach(time, 1, 2, 4, 1);
+                        grids["setTimeoutRetry"].Attach(helpSet, 5, 2, 1, 1);
+                    }
+
+                    {
+                        time.ValueChanged += delegate {
+                            helpSet.Value = time.Value;
+                        };
+                        helpSet.ValueChanged += delegate {
+                            time.Value = helpSet.Value;
+                        };
+
+                    }
+                    setTimeoutRetryFrame.Add(grids["setTimeoutRetry"]);
+                }
+
+                foreach (var a in grids)
+                {
+                    a.Value.ColumnHomogeneous = true;
+                    a.Value.Margin = 10;
+                    a.Value.MarginTop = 0;
+                }
+
+            }
 
             //Grid들 Notebook에 추가
             selectMode.AppendPage(checkAll, new Label("체크"));
             selectMode.AppendPage(uncheck, new Label("체크 해제"));
             selectMode.AppendPage(scroll2, new Label("사용자 관리"));
-            
+            selectMode.AppendPage(setting, new Label("설정"));
             
             //로그 나타내는 ScrolledWindow에 추가
             scroll.Add(log);
@@ -600,7 +668,7 @@ namespace CovidCheckClientGui
 
             addLog("프로그램 로딩이 완료됨");
 
-            if (user.hasNewVersion(1, out newVersion))
+            if (user.hasNewVersion(2, out newVersion))
             {
                 MessageDialog dialog = new MessageDialog(null, DialogFlags.Modal, MessageType.Info, ButtonsType.Close, true, $"프로그램의 새 버전({newVersion})을 찾았습니다. <a href=\"https://github.com/SoftWareAndGuider/Covid-Check-Client/releases\">여기를 눌러</a> 확인해 주세요.");
                 dialog.Run();
@@ -613,59 +681,15 @@ namespace CovidCheckClientGui
 
         private void getStatus()
         {
-            string url = "http://" + File.ReadAllLines("config.txt")[0] + "/api";
-            WebClient client = new WebClient();
-            string uploadString = "{\"process\":\"info\", \"multi\": true}";
-            try
-            {
-                client.Headers.Add("Content-Type", "application/json");
-                client.UploadString(url, "PUT", uploadString);
-            }
-            catch
-            {
-                url = "https://" + File.ReadAllLines("config.txt")[0] + "/api";
-                client.Headers.Add("Content-Type", "application/json");
-                bool doing = true;
-                client.UploadStringCompleted += (sender, e) => {
-                    try
-                    {
-                        var a = e.Result;
-                        doing = false;
-                    }
-                    catch
-                    {
-                        Application.Invoke(delegate {
-                            MessageDialog dialog = new MessageDialog(null, DialogFlags.Modal, MessageType.Error, ButtonsType.Close, false, "사용자 정보를 불러오는데 실패했습니다. URL이나 인터넷을 확인해 주세요.");
-                            dialog.Run();
-                            dialog.Dispose();
-                            Environment.Exit(0);
-                        });
-                    }
-                };
-                client.UploadStringAsync(new Uri(url), "PUT", uploadString);
-                while (doing)
-                {
-
-                }
-                client = new WebClient();
-            }
-
             while (programProcessing)
             {
-                client.Headers.Add("Content-Type", "application/json");
-                JObject result = new JObject();
                 try
                 {
-                    string down = "";
-                    client.UploadStringCompleted += (sender, e) => {
-                        down = e.Result;
-                    };
-                    client.UploadStringAsync(new Uri(url), "PUT", uploadString);
-                    while (down == "")
-                    {
-                        System.Threading.Thread.Sleep(10);
-                    }
+                    JObject result = new JObject();
+                    string down = up();
+
                     result = JObject.Parse(down);
+
                     StatusParsing sp = new StatusParsing();
                     if (seeMoreInfo.Active)
                     {
@@ -733,13 +757,65 @@ namespace CovidCheckClientGui
                         base.Title = $"코로나19 예방용 발열체크 프로그램 (통신 속도: {ping}ms)";
                     });
                 }
-                catch
+                catch (Exception e)
                 {
-                    
+                    Console.WriteLine(e);
+
                 }
                 GC.Collect();
                 Thread.Sleep(3000);
             }
+        }
+        private string up()
+        {
+            WebClient client = new WebClient();
+            string url = "";
+            string uploadString = "{\"process\":\"info\", \"multi\": true}";
+            bool doing = true;
+            bool success = false;
+            string result = "";
+            client.UploadStringCompleted += (sender, e) => {
+                try
+                {
+                    result = e.Result;
+                    success = true;
+                }
+                catch
+                {
+                    Application.Invoke(delegate {
+                        addTimeoutLog("사용자 정보를 불러오는데 실패함.");
+                    });
+                }
+                doing = false;
+            };
+            
+            try
+            {
+                url = "http://" + File.ReadAllLines("config.txt")[0] + "/api";
+                client.Headers.Add("Content-Type", "application/json");
+                client.UploadStringAsync(new Uri(url), "PUT", uploadString);
+                while (doing)
+                {
+
+                }
+            }
+            catch
+            {
+                url = "https://" + File.ReadAllLines("config.txt")[0] + "/api";
+
+                client.Headers.Add("Content-Type", "application/json");
+                
+                client.UploadStringAsync(new Uri(url), "PUT", uploadString);
+                while (doing)
+                {
+
+                }
+            }
+            if (success)
+            {
+                return result;
+            }
+            return null;
         }
         private void timer()
         {
