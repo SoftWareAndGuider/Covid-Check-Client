@@ -558,14 +558,17 @@ namespace CovidCheckClientGui
                 Frame setUpdateCheckFrame = new Frame("업데이트 설정");
                 Frame getSettingFileFrame = new Frame("설정 파일 가져오기");
 
+                //setting Grid 설정
                 {
                     setting.ColumnHomogeneous = true;
                     setting.RowSpacing = 10;
                     setting.Margin = 10;
                 }
+                //setting Grid 배치
                 {
                     setting.Attach(setUrlFrame, 1, 1, 1, 1);
                     setting.Attach(setTimeoutRetryFrame, 1, 2, 1, 1);
+                    setting.Attach(setUpdateCheckFrame, 1, 3, 1, 1);
                 }                
 
                 grids.Add("setUrl", new Grid());
@@ -607,13 +610,38 @@ namespace CovidCheckClientGui
                     setTimeoutRetryFrame.Add(grids["setTimeoutRetry"]);
                 }
 
+                grids.Add("setUpdateCheck", new Grid());
+                {
+                    Gtk.Switch checkUpdate = new Gtk.Switch();
+                    Gtk.Switch autoUpdate = new Gtk.Switch();
+
+                    {
+                        checkUpdate.Drawn += delegate {
+                            autoUpdate.Sensitive = checkUpdate.State;
+                        };
+                    }
+
+                    {
+                        grids["setUpdateCheck"].Attach(new Label("프로그램을 킬 때마다 업데이트를 확인하기"), 1, 1, 5, 1);
+                        Grid checkgrid = new Grid();
+                        checkgrid.Add(checkUpdate);
+                        grids["setUpdateCheck"].Attach(checkgrid, 6, 1, 1, 1);
+
+                        Grid autogrid = new Grid();
+                        autogrid.Add(autoUpdate);
+                        autoUpdate.Sensitive = false;
+                        grids["setUpdateCheck"].Attach(new Label("업데이트 확인시 자동으로 업데이트하기"), 1, 2, 5, 1);
+                        grids["setUpdateCheck"].Attach(autogrid, 6, 2, 1, 1);
+                    }
+                    setUpdateCheckFrame.Add(grids["setUpdateCheck"]);
+
+                }
                 foreach (var a in grids)
                 {
                     a.Value.ColumnHomogeneous = true;
                     a.Value.Margin = 10;
                     a.Value.MarginTop = 0;
                 }
-
             }
 
             //Grid들 Notebook에 추가
