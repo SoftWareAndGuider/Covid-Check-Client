@@ -14,6 +14,10 @@ namespace CovidCheckClientGui
 {
     partial class Program : Window
     {
+        string _url = "";
+
+        JObject settingJson = new JObject();
+
         Grid grid = new Grid();
         
         ScrolledWindow scroll = new ScrolledWindow();
@@ -120,6 +124,7 @@ namespace CovidCheckClientGui
 
         public Program() : base("코로나19 예방용 발열체크 프로그램")
         {
+            const string settingPath = "config.json";
             string newVersion = "";
             CssProvider cssProvider = new CssProvider(); //기본 CSS설정
             cssProvider.LoadFromData(@"
@@ -144,6 +149,23 @@ namespace CovidCheckClientGui
             ");
             StyleContext.AddProviderForScreen(Gdk.Screen.Default, cssProvider, 800);
 
+            JObject settingJson = new JObject();
+            try
+            {
+                settingJson = JObject.Parse(File.ReadAllText(settingPath));
+            }
+            catch
+            {
+                string defaultSetting = @"{
+                    ""url"": ""localhost"",
+                    ""barcodeLength"": 8,
+                    ""timeoutRetry"": 100,
+                    ""checkUpdate"": true,
+                    ""autoUpdate"": false
+                }";
+                File.WriteAllText(settingPath, defaultSetting);
+                settingJson = JObject.Parse(defaultSetting);
+            }
 
             long ping = new CheckCovid19.User(File.ReadAllLines("config.txt")[0]).getPing();
             base.Title = ($"코로나19 예방용 발열체크 프로그램 (통신 속도: {ping}ms)");
@@ -574,9 +596,17 @@ namespace CovidCheckClientGui
                 grids.Add("setUrl", new Grid());
                 {
                     Entry url = new Entry();
-
                     {
                         url.PlaceholderText = "웹 사이트의 URL을 입력하세요.";
+                        url.Text = settingJson["url"].ToString();
+                    }
+                    {
+                        url.KeyReleaseEvent += delegate {
+                            settingJson["url"] = url.Text;
+                            File.WriteAllText(settingPath, settingJson.ToString());
+                        };
+                    }
+                    {
                         grids["setUrl"].Attach(new Label("http://, https://"), 1, 1, 1, 1);
                         grids["setUrl"].Attach(url, 2, 1, 5, 1);
                     }
@@ -585,8 +615,8 @@ namespace CovidCheckClientGui
 
                 grids.Add("setTimeoutRetry", new Grid());
                 {
-                    Scale time = new Scale(Orientation.Horizontal, new Adjustment(100, 0, 500, 0, 1, 0));
-                    SpinButton helpSet = new SpinButton(new Adjustment(100, 0, 500, 1, 1, 0), 1, 0);
+                    Scale time = new Scale(Orientation.Horizontal, new Adjustment((double)settingJson["timeoutRetry"], 0, 500, 0, 1, 0));
+                    SpinButton helpSet = new SpinButton(new Adjustment((double)settingJson["timeoutRetry"], 0, 500, 1, 1, 0), 1, 0);
 
                     {
                         time.RoundDigits = 0;
@@ -597,13 +627,14 @@ namespace CovidCheckClientGui
                         grids["setTimeoutRetry"].Attach(time, 1, 2, 4, 1);
                         grids["setTimeoutRetry"].Attach(helpSet, 5, 2, 1, 1);
                     }
-
                     {
                         time.ValueChanged += delegate {
                             helpSet.Value = time.Value;
                         };
                         helpSet.ValueChanged += delegate {
                             time.Value = helpSet.Value;
+                            settingJson["timeoutRetry"] = time.Value;
+                            File.WriteAllText(settingPath, settingJson.ToString());
                         };
 
                     }
@@ -636,6 +667,7 @@ namespace CovidCheckClientGui
                     setUpdateCheckFrame.Add(grids["setUpdateCheck"]);
 
                 }
+                
                 foreach (var a in grids)
                 {
                     a.Value.ColumnHomogeneous = true;
@@ -785,10 +817,8 @@ namespace CovidCheckClientGui
                         base.Title = $"코로나19 예방용 발열체크 프로그램 (통신 속도: {ping}ms)";
                     });
                 }
-                catch (Exception e)
+                catch
                 {
-                    Console.WriteLine(e);
-
                 }
                 GC.Collect();
                 Thread.Sleep(3000);
