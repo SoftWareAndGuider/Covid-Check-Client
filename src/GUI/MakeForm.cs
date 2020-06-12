@@ -14,11 +14,13 @@ namespace CovidCheckClientGui
 {
     partial class Program : Window
     {
-        string _url = "";
-
         JObject settingJson = new JObject();
 
         Grid grid = new Grid();
+
+
+            //왼쪽의 탭들 (체크, 체크 해제, 추가)
+        Notebook selectMode = new Notebook();
         
         ScrolledWindow scroll = new ScrolledWindow();
         ScrolledWindow timeoutLogScroll = new ScrolledWindow();
@@ -161,11 +163,15 @@ namespace CovidCheckClientGui
                     ""barcodeLength"": 8,
                     ""timeoutRetry"": 100,
                     ""checkUpdate"": true,
-                    ""autoUpdate"": false
+                    ""autoUpdate"": false,
+                    ""usePassword"": false,
+                    ""password"": ""password""
                 }";
                 File.WriteAllText(settingPath, defaultSetting);
                 settingJson = JObject.Parse(defaultSetting);
             }
+
+            user = new CheckCovid19.User(settingJson["url"].ToString());
 
             long ping = new CheckCovid19.User(File.ReadAllLines("config.txt")[0]).getPing();
             base.Title = ($"코로나19 예방용 발열체크 프로그램 (통신 속도: {ping}ms)");
@@ -193,8 +199,6 @@ namespace CovidCheckClientGui
             grid.Margin = 20;
             grid.ColumnHomogeneous = true;
             grid.ColumnSpacing = 8;
-            //왼쪽의 탭들 (체크, 체크 해제, 추가)
-            Notebook selectMode = new Notebook();
 
 
             //사용자 체크 Grid
@@ -579,6 +583,7 @@ namespace CovidCheckClientGui
                 Frame setTimeoutRetryFrame = new Frame("타임아웃 재시도 횟수 설정");
                 Frame setUpdateCheckFrame = new Frame("업데이트 설정");
                 Frame getSettingFileFrame = new Frame("설정 파일 가져오기");
+                Frame setPasswordFrame = new Frame("비밀번호 설정");
 
                 //setting Grid 설정
                 {
@@ -645,10 +650,16 @@ namespace CovidCheckClientGui
                 {
                     Gtk.Switch checkUpdate = new Gtk.Switch();
                     Gtk.Switch autoUpdate = new Gtk.Switch();
-
                     {
-                        checkUpdate.Drawn += delegate {
-                            autoUpdate.Sensitive = checkUpdate.State;
+                        checkUpdate.StateChanged += delegate {
+                            autoUpdate.Sensitive = checkUpdate.State;                            
+                            settingJson["checkUpdate"] = checkUpdate.State;
+                            File.WriteAllText(settingPath, settingJson.ToString());
+                        };
+
+                        autoUpdate.StateChanged += delegate {
+                            settingJson["autoUpdate"] = autoUpdate.State;
+                            File.WriteAllText(settingPath, settingJson.ToString());
                         };
                     }
 
@@ -665,6 +676,11 @@ namespace CovidCheckClientGui
                         grids["setUpdateCheck"].Attach(autogrid, 6, 2, 1, 1);
                     }
                     setUpdateCheckFrame.Add(grids["setUpdateCheck"]);
+
+                }
+
+                grids.Add("setPassword", new Grid());
+                {
 
                 }
                 
@@ -849,7 +865,7 @@ namespace CovidCheckClientGui
             
             try
             {
-                url = "http://" + File.ReadAllLines("config.txt")[0] + "/api";
+                url = "http://" + settingJson["url"] + "/api";
                 client.Headers.Add("Content-Type", "application/json");
                 client.UploadStringAsync(new Uri(url), "PUT", uploadString);
                 while (doing)
@@ -859,7 +875,7 @@ namespace CovidCheckClientGui
             }
             catch
             {
-                url = "https://" + File.ReadAllLines("config.txt")[0] + "/api";
+                url = "https://" + settingJson["url"] + "/api";
 
                 client.Headers.Add("Content-Type", "application/json");
                 

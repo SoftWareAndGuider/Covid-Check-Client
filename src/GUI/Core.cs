@@ -24,17 +24,53 @@ namespace CheckCovid19
             bool doing = true;
 
             err = (int)errorType.success;
+            int errTemp = 0;
+            int tryUpload = 0;
 
             client.UploadStringCompleted += (sender, e) => {
+                tryUpload++;
                 try
                 {
                     result = e.Result;
                 }
-                catch
+                catch (Exception ex)
                 {
-                    result = "{\"success\":false}";
+                    if (ex.HResult == -2146232828) //Uri 잘못된거
+                    {
+                        if (tryUpload < 2)
+                        {
+                            try
+                            {
+                                client.Headers.Add("Content-Type", "application/json");
+                                client.UploadStringAsync(new Uri(_url[1] + "/api"), "PUT", data.ToString());
+                            }
+                            catch (Exception ee)
+                            {
+                                if (ee.HResult == -2146232828)
+                                {
+                                    errTemp = (int)errorType.urlerror;
+                                }
+                                else
+                                {
+                                    errTemp = (int)errorType.timeout;
+                                }
+                                result = "{\"success\":false}";
+                            }
+                        }
+                        else
+                        {
+                            result = "{\"success\":false}";
+                            errTemp = (int)errorType.urlerror;
+                            doing = false;
+                        }
+                    }
+                    else
+                    {
+                        errTemp = (int)errorType.timeout;
+                        result = "{\"success\":false}";
+                    }
                 }
-                doing = false;
+                
             };
 
             client.Headers.Add("Content-Type", "application/json");
@@ -43,7 +79,8 @@ namespace CheckCovid19
                 client.UploadStringAsync(new Uri(_url[0] + "/api"), "PUT", data.ToString());
             }
             catch (Exception e)
-            {   
+            {
+                Console.WriteLine(e);
                 if (e.HResult == -2146233033) //Uri 잘못된거
                 {
                     try
@@ -55,19 +92,19 @@ namespace CheckCovid19
                     {
                         if (ee.HResult == -2146233033)
                         {
-                            err = (int)errorType.urlerror;
+                            errTemp = (int)errorType.urlerror;
                             result = "{\"success\":false}";
                         }
                         else
                         {
-                            err = (int)errorType.timeout;   
+                            errTemp = (int)errorType.timeout;   
                             result = "{\"success\":false}";
                         }                    
                     }
                 }
                 else
                 {
-                    err = (int)errorType.timeout;
+                    errTemp = (int)errorType.timeout;
                     result = "{\"success\":false}";
                 }
                 
@@ -76,6 +113,7 @@ namespace CheckCovid19
 
             while (doing) {
             } //작업이 완료될 때 까지 기다리기
+            err = errTemp;
 
             return JObject.Parse(result);
         }

@@ -9,7 +9,7 @@ namespace CovidCheckClientGui
 {
     partial class Program : Window
     {
-        User user = new User(System.IO.File.ReadAllLines("config.txt")[0]);
+        User user;
         static void Main(string[] args)
         {
             Application.Init();
@@ -716,10 +716,10 @@ namespace CovidCheckClientGui
         void urlErrorNotice() //url이 잘못되었다는 에러를 보여주는 함수
         {
             Application.Invoke(delegate {
-                    MessageDialog dialog = new MessageDialog(null, DialogFlags.Modal, MessageType.Error, ButtonsType.Close, false, "./config.txt에 올바른 홈페이지 주소를 입력해 주세요");
+                    MessageDialog dialog = new MessageDialog(null, DialogFlags.Modal, MessageType.Error, ButtonsType.Close, false, "설정에 올바른 홈페이지 주소를 입력해 주세요");
                     dialog.Run();
                     dialog.Dispose();
-                    Environment.Exit(0);
+                    selectMode.Page = 3;
                 });
         }    
         void internetErrorNotice()
