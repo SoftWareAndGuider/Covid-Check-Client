@@ -750,7 +750,7 @@ namespace CovidCheckClientGui
             if ((bool)settingJson["checkUpdate"] && !doneUpdate)
             {
                 JArray update = new JArray();
-                if (user.hasNewVersion(0, out update))
+                if (user.hasNewVersion(2, out update))
                 {
                     if ((bool)settingJson["autoUpdate"])
                     {
