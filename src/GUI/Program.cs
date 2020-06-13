@@ -24,25 +24,35 @@ namespace CovidCheckClientGui
             else if (args[0] == "update")
             {
                 Thread.Sleep(1000);
-                File.Delete("../*.zip");
-                Console.WriteLine(Environment.CurrentDirectory);
-                DirectoryInfo dictInfo = new DirectoryInfo("./");
-                foreach (var file in dictInfo.GetFiles())
+                string[] fileInfos = Directory.GetFiles("../", "*.zip");
+                foreach (string f in fileInfos)
                 {
-                    if (file.Name == "config.json") continue;
-                    file.CopyTo("../" + file.Name, true);
+                    File.Delete(f);
                 }
+                Console.WriteLine(Environment.CurrentDirectory);
 
                 if (args[1] == "linux")
                 {
+                    DirectoryInfo dictInfo = new DirectoryInfo("./");
+                    foreach (var file in dictInfo.GetFiles())
+                    {
+                        if (file.Name == "config.json") continue;
+                        file.CopyTo("../" + file.Name, true);
+                    }
                     ProcessStartInfo info = new ProcessStartInfo("../CovidCheckClientGui", "done");
                     info.WorkingDirectory = "../";
                     Process.Start(info);
                     Environment.Exit(0);
                 }
-                else if (args[2] == "windows")
+                else if (args[1] == "windows") // 시작 위치: ./files
                 {
-                    ProcessStartInfo info = new ProcessStartInfo("../CovidCheckClientGui.exe", "done");
+                    DirectoryInfo dictInfo = new DirectoryInfo("../update");
+                    foreach (var file in dictInfo.GetFiles())
+                    {
+                        if (file.Name == "config.json") continue;
+                        file.CopyTo("../" + file.Name, true);
+                    }
+                    ProcessStartInfo info = new ProcessStartInfo("../CovidCheckClientGui.exe", "done windows");
                     info.WorkingDirectory = "../";
                     Process.Start(info);
                     Environment.Exit(0);
@@ -50,6 +60,11 @@ namespace CovidCheckClientGui
             }
             else if (args[0] == "done")
             {
+                if (args[1] == "windows")
+                {
+                    Directory.Delete("update", true);
+                    Directory.Delete("files", true);
+                }
                 doneUpdate = true;
                 Application.Init();
                 new Program();

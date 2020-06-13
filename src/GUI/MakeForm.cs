@@ -798,9 +798,18 @@ namespace CovidCheckClientGui
                         else if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
                         {
                             ZipFile.ExtractToDirectory("./win-x64.zip", "./update", true);
-                            ProcessStartInfo info = new ProcessStartInfo("update/CovidCheckClientGui.exe", "update windows");
+                            Directory.CreateDirectory("files");
+
+                            DirectoryInfo updateDictInfo = new DirectoryInfo("update");
+                            foreach (var file in updateDictInfo.GetFiles())
+                            {
+                                file.CopyTo("files/" + file.Name, true);
+                            }
+
+                            ProcessStartInfo info = new ProcessStartInfo("files/CovidCheckClientGui.exe", "update windows");
                             info.WorkingDirectory = "./update";
                             Process.Start(info);
+                            Environment.Exit(0);
                         }
                     }
                     else
