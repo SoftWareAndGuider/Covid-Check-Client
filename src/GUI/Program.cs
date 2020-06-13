@@ -29,6 +29,7 @@ namespace CovidCheckClientGui
                 DirectoryInfo dictInfo = new DirectoryInfo("./");
                 foreach (var file in dictInfo.GetFiles())
                 {
+                    if (file.Name == "config.json") continue;
                     file.CopyTo("../" + file.Name, true);
                 }
 
