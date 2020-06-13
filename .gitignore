@@ -4,3 +4,4 @@ src/CLI/config.txt
 src/GUI/obj
 src/GUI/bin
 src/GUI/config.txt
+src/GUI/config.json

@@ -1,6 +1,8 @@
 ﻿using System;
+using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Diagnostics;
 using CheckCovid19;
 using Newtonsoft.Json.Linq;
 using Gtk;
@@ -10,11 +12,48 @@ namespace CovidCheckClientGui
     partial class Program : Window
     {
         User user;
+        static bool doneUpdate = false;
         static void Main(string[] args)
         {
-            Application.Init();
-            new Program();
-            Application.Run();
+            if (args.Length == 0)
+            {
+                Application.Init();
+                new Program();
+                Application.Run();
+            }
+            else if (args[0] == "update")
+            {
+                Thread.Sleep(1000);
+                File.Delete("../*.zip");
+                Console.WriteLine(Environment.CurrentDirectory);
+                DirectoryInfo dictInfo = new DirectoryInfo("./");
+                foreach (var file in dictInfo.GetFiles())
+                {
+                    file.CopyTo("../" + file.Name, true);
+                }
+
+                if (args[1] == "linux")
+                {
+                    ProcessStartInfo info = new ProcessStartInfo("../CovidCheckClientGui", "done");
+                    info.WorkingDirectory = "../";
+                    Process.Start(info);
+                    Environment.Exit(0);
+                }
+                else if (args[2] == "windows")
+                {
+                    ProcessStartInfo info = new ProcessStartInfo("../CovidCheckClientGui.exe", "done");
+                    info.WorkingDirectory = "../";
+                    Process.Start(info);
+                    Environment.Exit(0);
+                }
+            }
+            else if (args[0] == "done")
+            {
+                doneUpdate = true;
+                Application.Init();
+                new Program();
+                Application.Run();
+            }
         }
         
         //학생이 아님이 체크됐을 때 실행하는 것
@@ -728,7 +767,6 @@ namespace CovidCheckClientGui
                     MessageDialog dialog = new MessageDialog(null, DialogFlags.Modal, MessageType.Error, ButtonsType.Close, false, "인터넷이 원활한 환경에서 사용해 주세요.");
                     dialog.Run();
                     dialog.Dispose();
-                    Environment.Exit(0);
                 });
         }
     }

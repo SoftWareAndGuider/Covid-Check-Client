@@ -11,6 +11,15 @@ namespace CheckCovid19
     {
         const int versions = 0;
         string[] _url = new string[2];
+
+        public string url
+        {
+            set 
+            {
+                _url[0] = "http://" + value;
+                _url[1] = "https://" + value;
+            }
+        }
         public User(string url)
         {
             _url[0] = "http://" + url;
@@ -187,13 +196,13 @@ namespace CheckCovid19
 
             return upload(user, out err);
         }
-        public long getPing()
+        public long getPing(string url)
         {
             Ping p = new Ping();
             PingReply pr = null;
             try
             {
-               pr = p.Send(File.ReadAllLines("config.txt")[0]);
+               pr = p.Send(url);
                return pr.RoundtripTime;
             }
             catch
@@ -201,19 +210,19 @@ namespace CheckCovid19
                 return 0;
             }
         }
-        public bool hasNewVersion(int now, out string name)
+        public bool hasNewVersion(int now, out JArray result)
         {
             WebClient client = new WebClient();
             client.Encoding = System.Text.Encoding.UTF8;
             client.Headers.Add("user-agent", "CovidCheckClientCheckUpdate");
             JArray down = JArray.Parse(client.DownloadString("https://api.github.com/repos/SoftWareAndGuider/Covid-Check-Client/releases"));
 
-            name = "";
+            result = new JArray();
 
             if (down.Count == 0) return false;
             if (down.Count > now)
             {
-                name = down.Last["name"].ToString();
+                result = down;
                 return true;
             }
             return false;

@@ -4,7 +4,9 @@ using System.Diagnostics;
 using System.Threading;
 using System.Net;
 using System.Collections.Generic;
+using System.Runtime.InteropServices;
 using System.Linq;
+using System.IO.Compression;
 
 using Gtk;
 using Newtonsoft.Json.Linq;
@@ -127,7 +129,6 @@ namespace CovidCheckClientGui
         public Program() : base("코로나19 예방용 발열체크 프로그램")
         {
             const string settingPath = "config.json";
-            string newVersion = "";
             CssProvider cssProvider = new CssProvider(); //기본 CSS설정
             cssProvider.LoadFromData(@"
                 #add {
@@ -152,6 +153,13 @@ namespace CovidCheckClientGui
             StyleContext.AddProviderForScreen(Gdk.Screen.Default, cssProvider, 800);
 
             JObject settingJson = new JObject();
+
+            if (doneUpdate)
+            {
+                MessageDialog dialog = new MessageDialog(null, DialogFlags.Modal, MessageType.Error, ButtonsType.Close, false, "새로운 버전으로 업데이트를 완료했습니다!");
+                    dialog.Run();
+                    dialog.Dispose();
+            }
             try
             {
                 settingJson = JObject.Parse(File.ReadAllText(settingPath));
@@ -173,21 +181,10 @@ namespace CovidCheckClientGui
 
             user = new CheckCovid19.User(settingJson["url"].ToString());
 
-            long ping = new CheckCovid19.User(File.ReadAllLines("config.txt")[0]).getPing();
+            long ping = new CheckCovid19.User(settingJson["url"].ToString()).getPing(settingJson["url"].ToString());
             base.Title = ($"코로나19 예방용 발열체크 프로그램 (통신 속도: {ping}ms)");
 
-            try
-            {
-                System.IO.File.ReadAllText("config.txt");
-            }
-            catch
-            {
-                File.WriteAllText("config.txt", "홈페이지 URL을 입력해 주세요... (마지막에 / 빼고)");
-                MessageDialog dialog = new MessageDialog(null, DialogFlags.Modal, MessageType.Error, ButtonsType.Close, false, "./config.txt에 홈페이지 주소를 입력해 주세요");
-                    dialog.Run();
-                    dialog.Dispose();
-                Environment.Exit(0);
-            }
+            
 
 
             addLog("프로그램이 시작됨");            
@@ -608,6 +605,7 @@ namespace CovidCheckClientGui
                     {
                         url.KeyReleaseEvent += delegate {
                             settingJson["url"] = url.Text;
+                            user.url = url.Text;
                             File.WriteAllText(settingPath, settingJson.ToString());
                         };
                     }
@@ -661,6 +659,11 @@ namespace CovidCheckClientGui
                             settingJson["autoUpdate"] = autoUpdate.State;
                             File.WriteAllText(settingPath, settingJson.ToString());
                         };
+                    }
+
+                    {
+                        checkUpdate.State = (bool)settingJson["checkUpdate"];
+                        autoUpdate.State = (bool)settingJson["autoUpdate"];
                     }
 
                     {
@@ -744,11 +747,67 @@ namespace CovidCheckClientGui
 
             addLog("프로그램 로딩이 완료됨");
 
-            if (user.hasNewVersion(2, out newVersion))
+            if ((bool)settingJson["checkUpdate"] && !doneUpdate)
             {
-                MessageDialog dialog = new MessageDialog(null, DialogFlags.Modal, MessageType.Info, ButtonsType.Close, true, $"프로그램의 새 버전({newVersion})을 찾았습니다. <a href=\"https://github.com/SoftWareAndGuider/Covid-Check-Client/releases\">여기를 눌러</a> 확인해 주세요.");
-                dialog.Run();
-                dialog.Dispose();
+                JArray update = new JArray();
+                if (user.hasNewVersion(0, out update))
+                {
+                    if ((bool)settingJson["autoUpdate"])
+                    {
+                        WebClient client = new WebClient();
+                        client.Encoding = System.Text.Encoding.UTF8;
+                        client.Headers.Add("user-agent", "CovidCheckClientCheckUpdate");
+                        JArray files = update.First()["assets"] as JArray;
+
+                        foreach (var file in files)
+                        {
+                            if (file["name"].ToString() == "Default-Version.zip")
+                            {
+                                client.DownloadFile(file["browser_download_url"].ToString(), "update.zip");
+                                break;
+                            }
+                        }
+                        ZipFile.ExtractToDirectory("./update.zip", "./", true);
+                        ZipFile.ExtractToDirectory("./GUI.zip", "./", true);
+                        Directory.CreateDirectory("update");
+
+
+                        if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+                        {
+                            ZipFile.ExtractToDirectory("./linux-x64.zip", "./update", true);
+                            ProcessStartInfo info = new ProcessStartInfo("update/CovidCheckClientGui", "update linux");
+                            info.WorkingDirectory = "./update";
+                            try
+                            {
+                                Process.Start(info);
+                            }
+                            catch
+                            {
+                                info = new ProcessStartInfo("./update/CovidCheckClientGui", "update linux");
+                                info.UseShellExecute = true;
+                                Process.Start("chmod", "777 update");
+                                Thread.Sleep(1000);
+                                //info.WorkingDirectory = "./update";
+                                Process process = new Process();
+                                process.StartInfo = info;
+                                process.Start();
+                            }
+
+                            Environment.Exit(0);
+                        }
+                        else if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+                        {
+                            ZipFile.ExtractToDirectory("./win-x64.zip", "./update");
+                        }
+                    }
+                    else
+                    {
+                        string name = update.First()["name"].ToString();
+                        MessageDialog dialog = new MessageDialog(null, DialogFlags.Modal, MessageType.Info, ButtonsType.Close, true, $"프로그램의 새 버전({name})을 찾았습니다. <a href=\"https://github.com/SoftWareAndGuider/Covid-Check-Client/releases\">여기를 눌러</a> 확인해 주세요.");
+                        dialog.Run();
+                        dialog.Dispose();
+                    }
+                }                
             }
         }
         
@@ -828,7 +887,7 @@ namespace CovidCheckClientGui
                             allUserCount.Text = "합계: " + (parse[0] + parse[1] + parse[2] + parse[3]).ToString() + "명";
                         });
                     }
-                    long ping = user.getPing();
+                    long ping = user.getPing(settingJson["url"].ToString());
                     Application.Invoke(delegate {
                         base.Title = $"코로나19 예방용 발열체크 프로그램 (통신 속도: {ping}ms)";
                     });
