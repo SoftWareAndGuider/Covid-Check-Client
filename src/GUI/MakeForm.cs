@@ -104,6 +104,9 @@ namespace CovidCheckClientGui
         CheckButton seeMoreInfo = new CheckButton("상세정보 보기");
         Frame[] statusListFrame = new Frame[2] {new Frame("사용자 수 (3초마다 새로고침)"), new Frame("검사 현황 (3초마다 새로고침)")};
 
+
+        SpinButton helpSet;
+
         ProgressBar[,] statusProgressBar = new ProgressBar[4, 3] { //[0, ]: 1학년, [1, ]: 2학년, [2, ]: 3학년, [3, ]: 기타, [, 0]: 미검사, [, 1]: 검사, [, 2]: 발열
             {
                 new ProgressBar(),
@@ -185,6 +188,7 @@ namespace CovidCheckClientGui
             long ping = new CheckCovid19.User(settingJson["url"].ToString()).getPing(settingJson["url"].ToString());
             base.Title = ($"코로나19 예방용 발열체크 프로그램 (통신 속도: {ping}ms)");
 
+            helpSet = new SpinButton(new Adjustment((double)settingJson["timeoutRetry"], 0, 500, 1, 1, 0), 1, 0);
             checkIDLength = new Scale(Orientation.Horizontal, new Adjustment((double)settingJson["barcodeLength"], 5, 10, 0, 1, 0));
             uncheckIDLength = new Scale(Orientation.Horizontal, new Adjustment((double)settingJson["barcodeLength"], 5, 10, 0, 1, 0));
 
@@ -628,7 +632,6 @@ namespace CovidCheckClientGui
                 grids.Add("setTimeoutRetry", new Grid());
                 {
                     Scale time = new Scale(Orientation.Horizontal, new Adjustment((double)settingJson["timeoutRetry"], 0, 500, 0, 1, 0));
-                    SpinButton helpSet = new SpinButton(new Adjustment((double)settingJson["timeoutRetry"], 0, 500, 1, 1, 0), 1, 0);
 
                     {
                         time.RoundDigits = 0;
