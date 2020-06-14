@@ -17,6 +17,7 @@ namespace CovidCheckClientGui
     partial class Program : Window
     {
         JObject settingJson = new JObject();
+        const string settingPath = "config.json";
 
         Grid grid = new Grid();
 
@@ -35,7 +36,7 @@ namespace CovidCheckClientGui
 
         // 사용자 체크
         Entry checkInsertID = new Entry();
-        Scale checkIDLength = new Scale(Orientation.Horizontal, new Adjustment(8, 5, 10, 0, 1, 0));
+        Scale checkIDLength;
 
         Entry checkInsertGrade = new Entry();
         Entry checkInsertClass = new Entry();
@@ -128,7 +129,7 @@ namespace CovidCheckClientGui
 
         public Program() : base("코로나19 예방용 발열체크 프로그램")
         {
-            const string settingPath = "config.json";
+            addLog("프로그램이 시작됨");   
             CssProvider cssProvider = new CssProvider(); //기본 CSS설정
             cssProvider.LoadFromData(@"
                 #add {
@@ -184,10 +185,10 @@ namespace CovidCheckClientGui
             long ping = new CheckCovid19.User(settingJson["url"].ToString()).getPing(settingJson["url"].ToString());
             base.Title = ($"코로나19 예방용 발열체크 프로그램 (통신 속도: {ping}ms)");
 
-            
+            checkIDLength = new Scale(Orientation.Horizontal, new Adjustment((double)settingJson["barcodeLength"], 5, 10, 0, 1, 0));
+            uncheckIDLength = new Scale(Orientation.Horizontal, new Adjustment((double)settingJson["barcodeLength"], 5, 10, 0, 1, 0));
 
 
-            addLog("프로그램이 시작됨");            
             DeleteEvent += delegate {programProcessing = false; Application.Quit();};
 
             SetDefaultSize(1280, 850);
@@ -220,6 +221,10 @@ namespace CovidCheckClientGui
                 //사용자 체크 이벤트 설정
                 checkInsertID.KeyReleaseEvent += checkInsertIDChangeText;
                 checkIDLength.ValueChanged += checkIDLengthChangeValue;
+                checkIDLength.ValueChanged += delegate {
+                    settingJson["barcodeLength"] = checkIDLength.Value;
+                    File.WriteAllText(settingPath, settingJson.ToString());
+                };
                 checkOK.Clicked += checkOKClicked;
                 checkIsTeacher.Clicked += delegate {unlessStudent(title.check);};
                 checkInsertUser.Clicked += checkInsertUserClicked;
@@ -336,6 +341,10 @@ namespace CovidCheckClientGui
                 //사용자 체크 해제 이벤트 설정
                 uncheckInsertID.KeyReleaseEvent += uncheckInsertIDChangeText;
                 uncheckIDLength.ValueChanged += uncheckIDLengthChangeValue;
+                uncheckIDLength.ValueChanged += delegate {
+                    settingJson["barcodeLength"] = uncheckIDLength.Value;
+                    File.WriteAllText(settingPath, settingJson.ToString());
+                };
                 uncheckOK.Clicked += uncheckOKClicked;
                 uncheckInsertGrade.KeyReleaseEvent += uncheckWithoutIDKeyRelease;
                 uncheckInsertClass.KeyReleaseEvent += uncheckWithoutIDKeyRelease;
@@ -664,6 +673,7 @@ namespace CovidCheckClientGui
                     {
                         checkUpdate.State = (bool)settingJson["checkUpdate"];
                         autoUpdate.State = (bool)settingJson["autoUpdate"];
+                        autoUpdate.Sensitive = (bool)settingJson["checkUpdate"];
                     }
 
                     {
@@ -674,7 +684,6 @@ namespace CovidCheckClientGui
 
                         Grid autogrid = new Grid();
                         autogrid.Add(autoUpdate);
-                        autoUpdate.Sensitive = false;
                         grids["setUpdateCheck"].Attach(new Label("업데이트 확인시 자동으로 업데이트하기"), 1, 2, 5, 1);
                         grids["setUpdateCheck"].Attach(autogrid, 6, 2, 1, 1);
                     }
@@ -750,7 +759,7 @@ namespace CovidCheckClientGui
             if ((bool)settingJson["checkUpdate"] && !doneUpdate)
             {
                 JArray update = new JArray();
-                if (user.hasNewVersion(1, out update))
+                if (user.hasNewVersion(2, out update))
                 {
                     if ((bool)settingJson["autoUpdate"])
                     {
