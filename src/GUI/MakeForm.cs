@@ -750,7 +750,7 @@ namespace CovidCheckClientGui
             if ((bool)settingJson["checkUpdate"] && !doneUpdate)
             {
                 JArray update = new JArray();
-                if (user.hasNewVersion(2, out update))
+                if (user.hasNewVersion(1, out update))
                 {
                     if ((bool)settingJson["autoUpdate"])
                     {
@@ -776,22 +776,13 @@ namespace CovidCheckClientGui
                         {
                             ZipFile.ExtractToDirectory("./linux-x64.zip", "./update", true);
                             ProcessStartInfo info = new ProcessStartInfo("update/CovidCheckClientGui", "update linux");
-                            info.WorkingDirectory = "./update";
-                            try
-                            {
-                                Process.Start(info);
-                            }
-                            catch
-                            {
-                                info = new ProcessStartInfo("./update/CovidCheckClientGui", "update linux");
-                                info.UseShellExecute = true;
-                                Process.Start("chmod", "777 update");
-                                Thread.Sleep(1000);
-                                //info.WorkingDirectory = "./update";
-                                Process process = new Process();
-                                process.StartInfo = info;
-                                process.Start();
-                            }
+                            info.UseShellExecute = true;
+                            Process.Start("chmod", "777 update");
+                            Process.Start("chmod", "777 update/CovidCheckClientGui");
+                            Thread.Sleep(1000);
+                            Process process = new Process();
+                            process.StartInfo = info;
+                            process.Start();
 
                             Environment.Exit(0);
                         }

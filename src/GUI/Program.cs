@@ -24,23 +24,22 @@ namespace CovidCheckClientGui
             else if (args[0] == "update")
             {
                 Thread.Sleep(1000);
-                string[] fileInfos = Directory.GetFiles("../", "*.zip");
+                string[] fileInfos = Directory.GetFiles("./", "*.zip");
                 foreach (string f in fileInfos)
                 {
                     File.Delete(f);
                 }
-                Console.WriteLine(Environment.CurrentDirectory);
 
                 if (args[1] == "linux")
                 {
-                    DirectoryInfo dictInfo = new DirectoryInfo("./");
+                    DirectoryInfo dictInfo = new DirectoryInfo("./update");
                     foreach (var file in dictInfo.GetFiles())
                     {
                         if (file.Name == "config.json") continue;
-                        file.CopyTo("../" + file.Name, true);
+                        file.CopyTo("./" + file.Name, true);
                     }
-                    ProcessStartInfo info = new ProcessStartInfo("../CovidCheckClientGui", "done");
-                    info.WorkingDirectory = "../";
+
+                    ProcessStartInfo info = new ProcessStartInfo("./CovidCheckClientGui", "done linux");
                     Process.Start(info);
                     Environment.Exit(0);
                 }
