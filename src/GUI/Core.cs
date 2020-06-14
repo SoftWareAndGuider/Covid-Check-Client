@@ -43,45 +43,41 @@ namespace CheckCovid19
                     result = e.Result;
                 }
                 catch (Exception ex)
-                {
-                    result = "{\"success\":false}";
-                    errTemp = (int)errorType.timeout;
-                    doing = false;
-                        
-                    // if (ex.HResult == -2146232828) //Uri 잘못된거
-                    // {
-                    //     if (tryUpload < 2)
-                    //     {
-                    //         try
-                    //         {
-                    //             client.Headers.Add("Content-Type", "application/json");
-                    //             client.UploadStringAsync(new Uri(_url[1] + "/api"), "PUT", data.ToString());
-                    //         }
-                    //         catch (Exception ee)
-                    //         {
-                    //             if (ee.HResult == -2146232828)
-                    //             {
-                    //                 errTemp = (int)errorType.urlerror;
-                    //             }
-                    //             else
-                    //             {
-                    //                 errTemp = (int)errorType.timeout;
-                    //             }
-                    //             result = "{\"success\":false}";
-                    //         }
-                    //     }
-                    //     else
-                    //     {
-                    //         result = "{\"success\":false}";
-                    //         errTemp = (int)errorType.urlerror;
-                    //         doing = false;
-                    //     }
-                    // }
-                    // else
-                    // {
-                    //     errTemp = (int)errorType.timeout;
-                    //     result = "{\"success\":false}";
-                    // }
+                {                        
+                    if (ex.HResult == -2146232828) //Uri 잘못된거
+                    {
+                        if (tryUpload < 2)
+                        {
+                            try
+                            {
+                                client.Headers.Add("Content-Type", "application/json");
+                                client.UploadStringAsync(new Uri(_url[1] + "/api"), "PUT", data.ToString());
+                            }
+                            catch (Exception ee)
+                            {
+                                if (ee.HResult == -2146232828)
+                                {
+                                    errTemp = (int)errorType.urlerror;
+                                }
+                                else
+                                {
+                                    errTemp = (int)errorType.timeout;
+                                }
+                                result = "{\"success\":false}";
+                            }
+                        }
+                        else
+                        {
+                            result = "{\"success\":false}";
+                            errTemp = (int)errorType.urlerror;
+                            doing = false;
+                        }
+                    }
+                    else
+                    {
+                        errTemp = (int)errorType.timeout;
+                        result = "{\"success\":false}";
+                    }
                 }
                 
             };

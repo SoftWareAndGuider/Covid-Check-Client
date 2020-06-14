@@ -185,7 +185,7 @@ namespace CovidCheckClientGui
 
             user = new CheckCovid19.User(settingJson["url"].ToString());
 
-            long ping = new CheckCovid19.User(settingJson["url"].ToString()).getPing(settingJson["url"].ToString());
+            long ping = user.getPing(settingJson["url"].ToString());
             base.Title = ($"코로나19 예방용 발열체크 프로그램 (통신 속도: {ping}ms)");
 
             helpSet = new SpinButton(new Adjustment((double)settingJson["timeoutRetry"], 0, 500, 1, 1, 0), 1, 0);
@@ -193,7 +193,10 @@ namespace CovidCheckClientGui
             uncheckIDLength = new Scale(Orientation.Horizontal, new Adjustment((double)settingJson["barcodeLength"], 5, 10, 0, 1, 0));
 
 
-            DeleteEvent += delegate {programProcessing = false; Application.Quit();};
+            DeleteEvent += delegate {
+                programProcessing = false;
+                Application.Quit();
+            };
 
             SetDefaultSize(1280, 850);
             
@@ -592,8 +595,8 @@ namespace CovidCheckClientGui
                 Frame setUrlFrame = new Frame("URL 설정");
                 Frame setTimeoutRetryFrame = new Frame("타임아웃 재시도 횟수 설정");
                 Frame setUpdateCheckFrame = new Frame("업데이트 설정");
-                Frame getSettingFileFrame = new Frame("설정 파일 가져오기");
                 Frame setPasswordFrame = new Frame("비밀번호 설정");
+                Frame getSettingFrame = new Frame("설정 파일 불러오기");
 
                 //setting Grid 설정
                 {
@@ -606,6 +609,7 @@ namespace CovidCheckClientGui
                     setting.Attach(setUrlFrame, 1, 1, 1, 1);
                     setting.Attach(setTimeoutRetryFrame, 1, 2, 1, 1);
                     setting.Attach(setUpdateCheckFrame, 1, 3, 1, 1);
+                    setting.Attach(getSettingFrame, 1, 4, 1, 1);
                 }                
 
                 grids.Add("setUrl", new Grid());
@@ -694,6 +698,66 @@ namespace CovidCheckClientGui
 
                 }
 
+                grids.Add("getSetting", new Grid());
+                {
+                    Entry filePath = new Entry(new FileInfo(settingPath).FullName);
+                    Button getFile = new Button("파일 불러오기");
+                    FileChooserDialog fileChooser = new FileChooserDialog("설정 파일 불러오기", null, FileChooserAction.Open, "불러오기", ResponseType.Accept);
+                    FileFilter filter = new FileFilter();
+                    filter.AddPattern("*.json");
+                    filter.AddMimeType("application/json");
+                    fileChooser.Filter = filter;
+                    {
+                        getFile.Clicked += delegate {
+                            if (fileChooser.Run() == -3)
+                            {
+                                filePath.Text = fileChooser.Filename;
+                                try
+                                {
+                                    JObject.Parse(File.ReadAllText(fileChooser.Filename))
+                                }
+                                catch
+                                {
+                                    MessageDialog dialog = new MessageDialog(null, DialogFlags.DestroyWithParent, MessageType.Info, ButtonsType.Ok, false, "잘못된 설정 파일입니다. 설정 값이 변하지 않습니다.");
+                                    dialog.Run();
+                                    dialog.Dispose();
+                                    return;
+                                }
+                                JObject newSetting = JObject.Parse(File.ReadAllText(fileChooser.Filename));
+                                if (newSetting.ContainsKey("url") && newSetting.ContainsKey("barcodeLength") && newSetting.ContainsKey("timeoutRetry") && newSetting.ContainsKey("checkUpdate") && newSetting.ContainsKey("autoUpdate") && newSetting.ContainsKey("usePassword") && newSetting.ContainsKey("password"))
+                                {
+                                    File.Copy(fileChooser.Filename, "./config.json", true);
+                                    MessageDialog dialog = new MessageDialog(null, DialogFlags.DestroyWithParent, MessageType.Info, ButtonsType.Ok, false, "설정 파일을 불러왔습니다. 프로그램을 다시 시작합니다.");
+                                    dialog.Run();
+                                    dialog.Dispose();
+                                    base.Close();
+                                    Program.Main(new string[0]);
+                                }
+                                else
+                                {
+                                    MessageDialog dialog = new MessageDialog(null, DialogFlags.DestroyWithParent, MessageType.Info, ButtonsType.Ok, false, "잘못된 설정 파일입니다. 설정 값이 변하지 않습니다.");
+                                    dialog.Run();
+                                    dialog.Dispose();
+                                }
+                            }
+                            fileChooser.Dispose();
+                            fileChooser = new FileChooserDialog("설정 파일 불러오기", null, FileChooserAction.Open, "불러오기", ResponseType.Accept);
+                            fileChooser.Filter = filter;
+                        };
+                    }
+
+                    {
+                        filePath.IsEditable = false;
+                        fileChooser.SelectMultiple = false;
+                    }
+                    {
+                        grids["getSetting"].Attach(filePath, 1, 1, 4, 1);
+                        grids["getSetting"].Attach(getFile, 5, 1, 1, 1);
+                    }
+                    getSettingFrame.Add(grids["getSetting"]);
+
+                }
+                
                 grids.Add("setPassword", new Grid());
                 {
 
@@ -825,8 +889,6 @@ namespace CovidCheckClientGui
                 }                
             }
         }
-        
-        
 
 
         private void getStatus()
