@@ -5,12 +5,13 @@ using System.Threading;
 using System.Net;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
+using System.Security.Cryptography;
 using System.Linq;
 using System.IO.Compression;
 
 using Gtk;
 using Newtonsoft.Json.Linq;
-
+using System.Text;
 
 namespace CovidCheckClientGui
 {
@@ -130,6 +131,8 @@ namespace CovidCheckClientGui
             }
         };        
 
+        
+        
         public Program() : base("코로나19 예방용 발열체크 프로그램")
         {
             addLog("프로그램이 시작됨");   
@@ -166,7 +169,7 @@ namespace CovidCheckClientGui
             }
             try
             {
-                settingJson = JObject.Parse(File.ReadAllText(settingPath));
+                settingJson = loadSetting(settingPath);
             }
             catch
             {
@@ -179,7 +182,7 @@ namespace CovidCheckClientGui
                     ""usePassword"": false,
                     ""password"": ""password""
                 }";
-                File.WriteAllText(settingPath, defaultSetting);
+                saveSetting(defaultSetting);
                 settingJson = JObject.Parse(defaultSetting);
             }
 
@@ -230,7 +233,7 @@ namespace CovidCheckClientGui
                 checkIDLength.ValueChanged += checkIDLengthChangeValue;
                 checkIDLength.ValueChanged += delegate {
                     settingJson["barcodeLength"] = checkIDLength.Value;
-                    File.WriteAllText(settingPath, settingJson.ToString());
+                    saveSetting(settingJson.ToString());
                 };
                 checkOK.Clicked += checkOKClicked;
                 checkIsTeacher.Clicked += delegate {unlessStudent(title.check);};
@@ -350,7 +353,7 @@ namespace CovidCheckClientGui
                 uncheckIDLength.ValueChanged += uncheckIDLengthChangeValue;
                 uncheckIDLength.ValueChanged += delegate {
                     settingJson["barcodeLength"] = uncheckIDLength.Value;
-                    File.WriteAllText(settingPath, settingJson.ToString());
+                    saveSetting(settingJson.ToString());
                 };
                 uncheckOK.Clicked += uncheckOKClicked;
                 uncheckInsertGrade.KeyReleaseEvent += uncheckWithoutIDKeyRelease;
@@ -610,24 +613,28 @@ namespace CovidCheckClientGui
                     setting.Attach(setTimeoutRetryFrame, 1, 2, 1, 1);
                     setting.Attach(setUpdateCheckFrame, 1, 3, 1, 1);
                     setting.Attach(getSettingFrame, 1, 4, 1, 1);
+                    setting.Attach(setPasswordFrame, 1, 5, 1, 1);
                 }                
 
                 grids.Add("setUrl", new Grid());
                 {
+                    Label label = new Label("http://, https://");
                     Entry url = new Entry();
                     {
                         url.PlaceholderText = "웹 사이트의 URL을 입력하세요.";
+                        label.Halign = Align.End;
                         url.Text = settingJson["url"].ToString();
+                        grids["setUrl"].ColumnSpacing = 10;
                     }
                     {
                         url.KeyReleaseEvent += delegate {
                             settingJson["url"] = url.Text;
                             user.url = url.Text;
-                            File.WriteAllText(settingPath, settingJson.ToString());
+                            saveSetting(settingJson.ToString());
                         };
                     }
                     {
-                        grids["setUrl"].Attach(new Label("http://, https://"), 1, 1, 1, 1);
+                        grids["setUrl"].Attach(label, 1, 1, 1, 1);
                         grids["setUrl"].Attach(url, 2, 1, 5, 1);
                     }
                     setUrlFrame.Add(grids["setUrl"]);                    
@@ -653,7 +660,7 @@ namespace CovidCheckClientGui
                         helpSet.ValueChanged += delegate {
                             time.Value = helpSet.Value;
                             settingJson["timeoutRetry"] = time.Value;
-                            File.WriteAllText(settingPath, settingJson.ToString());
+                            saveSetting(settingJson.ToString());
                         };
 
                     }
@@ -668,12 +675,12 @@ namespace CovidCheckClientGui
                         checkUpdate.StateChanged += delegate {
                             autoUpdate.Sensitive = checkUpdate.State;                            
                             settingJson["checkUpdate"] = checkUpdate.State;
-                            File.WriteAllText(settingPath, settingJson.ToString());
+                            saveSetting(settingJson.ToString());
                         };
 
                         autoUpdate.StateChanged += delegate {
                             settingJson["autoUpdate"] = autoUpdate.State;
-                            File.WriteAllText(settingPath, settingJson.ToString());
+                            saveSetting(settingJson.ToString());
                         };
                     }
 
@@ -700,12 +707,11 @@ namespace CovidCheckClientGui
 
                 grids.Add("getSetting", new Grid());
                 {
-                    Entry filePath = new Entry(new FileInfo(settingPath).FullName);
+                    Entry filePath = new Entry("파일을 선택하세요.");
                     Button getFile = new Button("파일 불러오기");
                     FileChooserDialog fileChooser = new FileChooserDialog("설정 파일 불러오기", null, FileChooserAction.Open, "불러오기", ResponseType.Accept);
                     FileFilter filter = new FileFilter();
                     filter.AddPattern("*.json");
-                    filter.AddMimeType("application/json");
                     fileChooser.Filter = filter;
                     {
                         getFile.Clicked += delegate {
@@ -714,7 +720,7 @@ namespace CovidCheckClientGui
                                 filePath.Text = fileChooser.Filename;
                                 try
                                 {
-                                    JObject.Parse(File.ReadAllText(fileChooser.Filename))
+                                    loadSetting(fileChooser.Filename);
                                 }
                                 catch
                                 {
@@ -723,7 +729,7 @@ namespace CovidCheckClientGui
                                     dialog.Dispose();
                                     return;
                                 }
-                                JObject newSetting = JObject.Parse(File.ReadAllText(fileChooser.Filename));
+                                JObject newSetting = loadSetting(fileChooser.Filename);
                                 if (newSetting.ContainsKey("url") && newSetting.ContainsKey("barcodeLength") && newSetting.ContainsKey("timeoutRetry") && newSetting.ContainsKey("checkUpdate") && newSetting.ContainsKey("autoUpdate") && newSetting.ContainsKey("usePassword") && newSetting.ContainsKey("password"))
                                 {
                                     File.Copy(fileChooser.Filename, "./config.json", true);
@@ -760,7 +766,52 @@ namespace CovidCheckClientGui
                 
                 grids.Add("setPassword", new Grid());
                 {
-
+                    Entry setEnterPassword = new Entry();
+                    Button usePassword = new Button("비밀번호 설정하기");
+                    Button showPassword = new Button("보기");
+                    {
+                        grids["setPassword"].RowSpacing = 5;
+                        grids["setPassword"].ColumnSpacing = 5;
+                        grids["setPassword"].Margin = 5;
+                        setEnterPassword.PlaceholderText = "비밀번호를 입력하세요.";
+                        setEnterPassword.Valign = Align.Center;
+                        setEnterPassword.Visibility = false;
+                    }
+                    {
+                        grids["setPassword"].Attach(setEnterPassword, 1, 1, 4, 2);
+                        grids["setPassword"].Attach(usePassword, 5, 1, 1, 1);
+                        grids["setPassword"].Attach(new Label(), 2, 1, 4, 1);
+                        grids["setPassword"].Attach(showPassword, 5, 2, 1, 1);
+                    }
+                    {
+                        showPassword.Entered += delegate {
+                            setEnterPassword.Visibility = true;
+                            setEnterPassword.IsEditable = false;
+                        };
+                        showPassword.LeaveNotifyEvent += delegate {
+                            setEnterPassword.Visibility = false;
+                            setEnterPassword.IsEditable = true;
+                        };
+                        usePassword.Clicked += delegate {
+                            MessageDialog done = null;
+                            if (setEnterPassword.Text == "")
+                            {
+                                settingJson["usePassword"] = false;
+                                saveSetting(settingJson.ToString());
+                                done = new MessageDialog(null, DialogFlags.DestroyWithParent, MessageType.Info, ButtonsType.Ok, false, "비밀번호 설정 (비밀번호 사용 안함)이 완료되었습니다.");
+                            }
+                            else
+                            {
+                                settingJson["usePassword"] = true;
+                                settingJson["password"] = getSha512(setEnterPassword.Text);
+                                saveSetting(settingJson.ToString());
+                                done = new MessageDialog(null, DialogFlags.DestroyWithParent, MessageType.Info, ButtonsType.Ok, false, $"비밀번호 설정 (비밀번호: {setEnterPassword.Text})이 완료되었습니다.");
+                            }
+                            done.Run();
+                            done.Dispose();                            
+                        };
+                    }
+                    setPasswordFrame.Add(grids["setPassword"]);
                 }
                 
                 foreach (var a in grids)
@@ -801,25 +852,85 @@ namespace CovidCheckClientGui
 
             checkInsertID.SetSizeRequest(1, 3);
 
-            //창에 추가
-            Add(grid);
-
+            
             //이제 보여주기
-            ShowAll();
+            if ((bool)settingJson["usePassword"])
+            {
+                Grid usePassword = new Grid();
+                usePassword.Margin = 15;
+                usePassword.ColumnSpacing = 10;
+                usePassword.RowSpacing = 10;
+                usePassword.RowHomogeneous = true;
+                usePassword.Halign = Align.Center;
+                
+                Label notice = new Label("비밀번호를 입력하고 확인 버튼을 눌러주세요.");
+                notice.Valign = Align.End;
+                
+                Entry enterPassword = new Entry();
+                enterPassword.PlaceholderText = "비밀번호를 입력하세요.";
+                enterPassword.Visibility = false;
+                enterPassword.Valign = Align.Start;
 
-            statusListFrame[1].Add(statusListMore);
-            statusListFrame[1].Margin = 15;
-            statusListFrame[1].MarginTop = 0;
-            manageMode.Attach(statusListFrame[1], 1, 5, 1, 1);
+                Button enter = new Button("입력");
+                enter.Valign = Align.Start;
+
+                usePassword.Attach(notice, 1, 1, 5, 1);
+                usePassword.Attach(enterPassword, 1, 2, 3, 1);
+                usePassword.Attach(enter, 4, 2, 2, 1);
+
+                Add(usePassword);
+                ShowAll();
+
+                enter.Clicked += delegate {
+                    if (getSha512(enterPassword.Text) == settingJson["password"].ToString())
+                    {
+                        Remove(usePassword);
+
+                        //창에 추가
+                        Add(grid);
+                        ShowAll();
+                        statusListFrame[1].Add(statusListMore);
+                        statusListFrame[1].Margin = 15;
+                        statusListFrame[1].MarginTop = 0;
+                        manageMode.Attach(statusListFrame[1], 1, 5, 1, 1);
 
 
-            Thread status = new Thread(new ThreadStart(getStatus));
-            Thread showTime = new Thread(new ThreadStart(timer));
-            status.Start();
-            showTime.Start();
+                        Thread status = new Thread(new ThreadStart(getStatus));
+                        Thread showTime = new Thread(new ThreadStart(timer));
+                        status.Start();
+                        showTime.Start();
 
-            selectMode.Page = 2;
-            selectMode.Page = 0; //이런식으로 하지 않으면 종종 발열체크를 선택할 수 없을 때가 있음
+                        selectMode.Page = 2;
+                        selectMode.Page = 0; //이런식으로 하지 않으면 종종 발열체크를 선택할 수 없을 때가 있음
+                    }
+                    else
+                    {
+                        MessageDialog dialog = new MessageDialog(null, DialogFlags.Modal, MessageType.Error, ButtonsType.Ok, false, "틀렸습니다. 다시 시도해주세요.");
+                        dialog.Run();
+                        dialog.Dispose();
+                    }
+                };
+            }
+            else
+            {
+                //창에 추가
+                Add(grid);
+                ShowAll();
+                statusListFrame[1].Add(statusListMore);
+                statusListFrame[1].Margin = 15;
+                statusListFrame[1].MarginTop = 0;
+                manageMode.Attach(statusListFrame[1], 1, 5, 1, 1);
+
+
+                Thread status = new Thread(new ThreadStart(getStatus));
+                Thread showTime = new Thread(new ThreadStart(timer));
+                status.Start();
+                showTime.Start();
+
+                selectMode.Page = 2;
+                selectMode.Page = 0; //이런식으로 하지 않으면 종종 발열체크를 선택할 수 없을 때가 있음
+            }
+
 
             addLog("프로그램 로딩이 완료됨");
 
@@ -1106,6 +1217,38 @@ namespace CovidCheckClientGui
 
             timeoutLog.Insert(timeoutLogLabel, 0);
             timeoutLog.ShowAll();
+        }
+        
+        private string getSha512(string password)
+        {
+            password += "소금을 쳐볼까요?";
+            SHA512 sha = SHA512.Create();
+            StringBuilder builder = new StringBuilder();
+            byte[] toHash = sha.ComputeHash(Encoding.UTF8.GetBytes(password));
+            foreach (var b in toHash)
+            {
+                builder.AppendFormat("{0:x2}", b);
+            }
+            return builder.ToString();
+        }
+        private void saveSetting(string setting)
+        {
+            byte[] bytes = Encoding.UTF8.GetBytes(setting);
+            for (int i = 0; i < bytes.Length; i++)
+            {
+                bytes[i]++;
+            }
+            File.WriteAllBytes(settingPath, bytes);
+        }
+        private JObject loadSetting(string path)
+        {
+            byte[] bytes = File.ReadAllBytes(path);
+            for (int i = 0; i < bytes.Length; i++)
+            {
+                bytes[i]--;
+            }
+            string getString = Encoding.UTF8.GetString(bytes);
+            return JObject.Parse(getString);
         }
     }
 }
