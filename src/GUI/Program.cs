@@ -11,7 +11,7 @@ namespace CovidCheckClientGui
 {
     partial class Program : Window
     {
-        User user;
+        static User user;
         static bool doneUpdate = false;
         static void Main(string[] args)
         {
@@ -282,11 +282,10 @@ namespace CovidCheckClientGui
         //실제로 작업을 하는 곳 (별도의 스레드 사용)
         void check(string id, int loop = 1)
         {
-
             JObject result = new JObject();
             int error = 0;
             result = user.check(id, out error);
-
+            
             if (error == 2)
             {
                 urlErrorNotice();

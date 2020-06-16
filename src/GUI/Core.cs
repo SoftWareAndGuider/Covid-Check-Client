@@ -10,25 +10,28 @@ namespace CheckCovid19
     class User
     {
         const int versions = 0;
-        string[] _url = new string[2];
+        string _url = "";
+        
 
         public string url
         {
-            set 
+            get
             {
-                _url[0] = "http://" + value;
-                _url[1] = "https://" + value;
+                return _url;
+            }
+            set
+            {
+                _url = value;
             }
         }
         public User(string url)
         {
-            _url[0] = "http://" + url;
-            _url[1] = "https://" + url;
+            _url = url;
         }
 
-        public JObject upload(JObject data, out int err)
+        public JObject upload(JObject data, out int err, bool retry = false)
         {
-            WebClient client = new WebClient();
+            MyWebCient client = new MyWebCient();
             string result = "";
             bool doing = true;
 
@@ -43,87 +46,50 @@ namespace CheckCovid19
                     result = e.Result;
                 }
                 catch (Exception ex)
-                {                        
-                    if (ex.HResult == -2146232828) //Uri 잘못된거
+                {
+                    WebException web = (WebException)ex.InnerException;
+                    if (web.Status == WebExceptionStatus.Timeout)
                     {
-                        if (tryUpload < 2)
-                        {
-                            try
-                            {
-                                client.Headers.Add("Content-Type", "application/json");
-                                client.UploadStringAsync(new Uri(_url[1] + "/api"), "PUT", data.ToString());
-                            }
-                            catch (Exception ee)
-                            {
-                                if (ee.HResult == -2146232828)
-                                {
-                                    errTemp = (int)errorType.urlerror;
-                                }
-                                else
-                                {
-                                    errTemp = (int)errorType.timeout;
-                                }
-                                result = "{\"success\":false}";
-                            }
-                        }
-                        else
-                        {
-                            result = "{\"success\":false}";
-                            errTemp = (int)errorType.urlerror;
-                            doing = false;
-                        }
+                        errTemp = (int)errorType.timeout;
                     }
                     else
                     {
-                        errTemp = (int)errorType.timeout;
-                        result = "{\"success\":false}";
+                        if (retry)
+                        {
+                            errTemp = (int)errorType.urlerror;
+                            result = @"{""sucess"":false}";
+                        }
+                        else
+                        {
+                            result = upload(data, out errTemp, true).ToString();
+                        }
                     }
                 }
-                
+                doing = false;                
             };
 
             client.Headers.Add("Content-Type", "application/json");
             try
             {
-                client.UploadStringAsync(new Uri(_url[0] + "/api"), "PUT", data.ToString());
-            }
-            catch (Exception e)
-            {
-                Console.WriteLine(e);
-                if (e.HResult == -2146233033) //Uri 잘못된거
+                if (retry) //https 우선
                 {
-                    try
-                    {
-                        client.Headers.Add("Content-Type", "application/json");
-                        client.UploadStringAsync(new Uri(_url[1] + "/api"), "PUT", data.ToString());
-                    }
-                    catch (Exception ee)
-                    {
-                        if (ee.HResult == -2146233033)
-                        {
-                            errTemp = (int)errorType.urlerror;
-                            result = "{\"success\":false}";
-                        }
-                        else
-                        {
-                            errTemp = (int)errorType.timeout;   
-                            result = "{\"success\":false}";
-                        }                    
-                    }
+                    client.UploadStringAsync(new Uri("http://" + _url + "/api"), "PUT", data.ToString());
                 }
                 else
                 {
-                    errTemp = (int)errorType.timeout;
-                    result = "{\"success\":false}";
+                    client.UploadStringAsync(new Uri("https://" + _url + "/api"), "PUT", data.ToString());
                 }
-                
+            }
+            catch
+            {
+                result = @"{""success"":false}";
+                errTemp = (int)errorType.urlerror;
                 doing = false;
             }
 
             while (doing) {
             } //작업이 완료될 때 까지 기다리기
             err = errTemp;
-
             return JObject.Parse(result);
         }
         public JObject addUser(string userID, int grade, int @class, int number, string name, out int err)
@@ -196,42 +162,57 @@ namespace CheckCovid19
 
             return upload(user, out err);
         }
-        public long getPing(string url)
+        public long getPing()
         {
-            Ping p = new Ping();
-            PingReply pr = null;
+            if (_url == "localhost") return 0;
             try
             {
-               pr = p.Send(url);
-               return pr.RoundtripTime;
+                return new Ping().Send(_url).RoundtripTime;
             }
             catch
             {
-                return 0;
+                return -1;
             }
         }
         public bool hasNewVersion(int now, out JArray result)
         {
-            WebClient client = new WebClient();
-            client.Encoding = System.Text.Encoding.UTF8;
-            client.Headers.Add("user-agent", "CovidCheckClientCheckUpdate");
-            JArray down = JArray.Parse(client.DownloadString("https://api.github.com/repos/SoftWareAndGuider/Covid-Check-Client/releases"));
-
-            result = new JArray();
-
-            if (down.Count == 0) return false;
-            if (down.Count > now)
+            try
             {
-                result = down;
-                return true;
+                WebClient client = new WebClient();
+                client.Encoding = System.Text.Encoding.UTF8;
+                client.Headers.Add("user-agent", "CovidCheckClientCheckUpdate");
+                JArray down = JArray.Parse(client.DownloadString("https://api.github.com/repos/SoftWareAndGuider/Covid-Check-Client/releases"));
+
+                result = new JArray();
+
+                if (down.Count == 0) return false;
+                if (down.Count > now)
+                {
+                    result = down;
+                    return true;
+                }
+                return false;
             }
-            return false;
+            catch 
+            {
+                result = new JArray();
+                return false;
+            }
         }
         enum errorType
         {
             success,
             timeout,
             urlerror
+        }
+    }
+    class MyWebCient : WebClient
+    {
+        protected override WebRequest GetWebRequest(Uri address)
+        {
+            WebRequest request = base.GetWebRequest(address);
+            request.Timeout = 5000;
+            return request;
         }
     }
 }

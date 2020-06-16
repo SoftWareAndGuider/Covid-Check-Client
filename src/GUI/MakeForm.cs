@@ -188,9 +188,6 @@ namespace CovidCheckClientGui
 
             user = new CheckCovid19.User(settingJson["url"].ToString());
 
-            long ping = user.getPing(settingJson["url"].ToString());
-            base.Title = ($"코로나19 예방용 발열체크 프로그램 (통신 속도: {ping}ms)");
-
             helpSet = new SpinButton(new Adjustment((double)settingJson["timeoutRetry"], 0, 500, 1, 1, 0), 1, 0);
             checkIDLength = new Scale(Orientation.Horizontal, new Adjustment((double)settingJson["barcodeLength"], 5, 10, 0, 1, 0));
             uncheckIDLength = new Scale(Orientation.Horizontal, new Adjustment((double)settingJson["barcodeLength"], 5, 10, 0, 1, 0));
@@ -1006,12 +1003,22 @@ namespace CovidCheckClientGui
         {
             while (programProcessing)
             {
+                long ping = user.getPing();
+                Application.Invoke(delegate {
+                    if (ping == -1)
+                    {
+                        base.Title = $"코로나19 예방용 발열체크 프로그램 (통신 속도: 알 수 없음)";
+                    }
+                    else
+                    {
+                        base.Title = $"코로나19 예방용 발열체크 프로그램 (통신 속도: {ping}ms)";
+                    }
+                });
                 try
                 {
-                    JObject result = new JObject();
-                    string down = up();
-
-                    result = JObject.Parse(down);
+                    int err = 0;
+                    JObject uploadString = JObject.Parse(@"{""process"":""info"", ""multi"":true}");
+                    JObject result = user.upload(uploadString, out err);
 
                     StatusParsing sp = new StatusParsing();
                     if (seeMoreInfo.Active)
@@ -1075,69 +1082,15 @@ namespace CovidCheckClientGui
                             allUserCount.Text = "합계: " + (parse[0] + parse[1] + parse[2] + parse[3]).ToString() + "명";
                         });
                     }
-                    long ping = user.getPing(settingJson["url"].ToString());
-                    Application.Invoke(delegate {
-                        base.Title = $"코로나19 예방용 발열체크 프로그램 (통신 속도: {ping}ms)";
-                    });
+                    
                 }
                 catch
                 {
                 }
-                GC.Collect();
                 Thread.Sleep(3000);
             }
         }
-        private string up()
-        {
-            WebClient client = new WebClient();
-            string url = "";
-            string uploadString = "{\"process\":\"info\", \"multi\": true}";
-            bool doing = true;
-            bool success = false;
-            string result = "";
-            client.UploadStringCompleted += (sender, e) => {
-                try
-                {
-                    result = e.Result;
-                    success = true;
-                }
-                catch
-                {
-                    Application.Invoke(delegate {
-                        addTimeoutLog("사용자 정보를 불러오는데 실패함.");
-                    });
-                }
-                doing = false;
-            };
-            
-            try
-            {
-                url = "http://" + settingJson["url"] + "/api";
-                client.Headers.Add("Content-Type", "application/json");
-                client.UploadStringAsync(new Uri(url), "PUT", uploadString);
-                while (doing)
-                {
-
-                }
-            }
-            catch
-            {
-                url = "https://" + settingJson["url"] + "/api";
-
-                client.Headers.Add("Content-Type", "application/json");
-                
-                client.UploadStringAsync(new Uri(url), "PUT", uploadString);
-                while (doing)
-                {
-
-                }
-            }
-            if (success)
-            {
-                return result;
-            }
-            return null;
-        }
+        
         private void timer()
         {
             while (programProcessing)
