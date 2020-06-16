@@ -860,6 +860,69 @@ namespace CovidCheckClientGui
 
                 toDev.Attach(toClient, 1, 1, 1, 1);
                 toDev.Attach(toServer, 1, 2, 1, 1);
+
+                {
+                    clientRepo.Clicked += delegate {
+                        try 
+                        {
+                            Process.Start("https://github.com/SoftWareAndGuider/Covid-Check-Client");
+                        }
+                        catch 
+                        {
+                            ProcessStartInfo pr = new ProcessStartInfo("https://github.com/SoftWareAndGuider/Covid-Check-Client");
+                            pr.UseShellExecute = true;
+                            Process.Start(pr);
+                        }
+                    };
+                    serverRepo.Clicked += delegate {
+                        try 
+                        {
+                            Process.Start("https://github.com/SoftWareAndGuider/Covid-Check");
+                        }
+                        catch 
+                        {
+                            ProcessStartInfo pr = new ProcessStartInfo("https://github.com/SoftWareAndGuider/Covid-Check");
+                            pr.UseShellExecute = true;
+                            Process.Start(pr);
+                        }
+                    };
+                    clientIssue.Clicked += delegate {
+                        try 
+                        {
+                            Process.Start("https://github.com/SoftWareAndGuider/Covid-Check-Client/issues/new");
+                        }
+                        catch 
+                        {
+                            ProcessStartInfo pr = new ProcessStartInfo("https://github.com/SoftWareAndGuider/Covid-Check-Client/issues/new");
+                            pr.UseShellExecute = true;
+                            Process.Start(pr);
+                        }
+                    };
+                    clientRepo.Clicked += delegate {
+                        try 
+                        {
+                            Process.Start("https://github.com/SoftWareAndGuider/Covid-Check/issues/new");
+                        }
+                        catch 
+                        {
+                            ProcessStartInfo pr = new ProcessStartInfo("https://github.com/SoftWareAndGuider/Covid-Check/issues/new");
+                            pr.UseShellExecute = true;
+                            Process.Start(pr);
+                        }
+                    };
+                    downloadOld.Clicked += delegate {
+                        try 
+                        {
+                            Process.Start("https://github.com/SoftWareAndGuider/Covid-Check-Client/releases");
+                        }
+                        catch 
+                        {
+                            ProcessStartInfo pr = new ProcessStartInfo("https://github.com/SoftWareAndGuider/Covid-Check-Client/releases");
+                            pr.UseShellExecute = true;
+                            Process.Start(pr);
+                        }
+                    };
+                }
             }
             
             //Grid들 Notebook에 추가
