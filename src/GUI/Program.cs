@@ -293,15 +293,15 @@ namespace CovidCheckClientGui
             }
             else if (error == 1)
             {
-                Application.Invoke(delegate {
-                    addTimeoutLog($"타임아웃 재시도.... (인식된 ID: {id}) ({loop}번째 재시도)");
-                });
-                Thread.Sleep(1000);
                 if (loop > (int)helpSet.Value)
                 {
                     internetErrorNotice();
                     return;
                 }
+                Thread.Sleep(1000);
+                Application.Invoke(delegate {
+                    addTimeoutLog($"타임아웃 재시도.... (인식된 ID: {id}) ({loop}번째 재시도)");
+                });
                 check(id, loop + 1);
                 return;
             }
@@ -341,16 +341,16 @@ namespace CovidCheckClientGui
             }
             else if (err == 1)
             {
-                Application.Invoke(delegate {
-                    addTimeoutLog($"타임아웃 재시도.... (인식된 정보: {grade}학년 {@class}반 {number}번) ({loop}번째 재시도)");
-                });
-                Thread.Sleep(1000);
                 
                 if (loop > (int)helpSet.Value)
                 {
                     internetErrorNotice();
                     return;
                 }
+                Thread.Sleep(1000);
+                Application.Invoke(delegate {
+                    addTimeoutLog($"타임아웃 재시도.... (인식된 정보: {grade}학년 {@class}반 {number}번) ({loop}번째 재시도)");
+                });
                 check(grade, @class, number, loop + 1);
                 return;
             }
@@ -380,15 +380,15 @@ namespace CovidCheckClientGui
             }
             else if (error == 1)
             {
-                Application.Invoke(delegate {
-                    addTimeoutLog($"타임아웃 재시도.... (인식된 ID: {id}) ({loop}번째 재시도)");
-                });
-                Thread.Sleep(1000);
                 if (loop > (int)helpSet.Value)
                 {
                     internetErrorNotice();
                     return;
                 }
+                Thread.Sleep(1000);
+                Application.Invoke(delegate {
+                    addTimeoutLog($"타임아웃 재시도.... (인식된 ID: {id}) ({loop}번째 재시도)");
+                });
                 checkDoubt(id, loop + 1);
                 return;
             }
@@ -426,15 +426,15 @@ namespace CovidCheckClientGui
             }
             else if (err == 1)
             {
-                Application.Invoke(delegate {
-                    addTimeoutLog($"타임아웃 재시도.... (인식된 정보: {grade}학년 {@class}반 {number}번) ({loop}번째 재시도)");
-                });
                 if (loop > (int)helpSet.Value)
                 {
                     internetErrorNotice();
                     return;
                 }
                 Thread.Sleep(1000);
+                Application.Invoke(delegate {
+                    addTimeoutLog($"타임아웃 재시도.... (인식된 정보: {grade}학년 {@class}반 {number}번) ({loop}번째 재시도)");
+                });
                 checkDoubt(grade, @class, number, loop + 1);
                 return;
             }
@@ -467,15 +467,15 @@ namespace CovidCheckClientGui
             }
             else if (err == 1)
             {
-                Application.Invoke(delegate {
-                    addTimeoutLog($"타임아웃 재시도.... (인식된 ID: {id}) ({loop}번째 재시도)");
-                });
                 if (loop > (int)helpSet.Value)
                 {
                     internetErrorNotice();
                     return;
                 }
                 Thread.Sleep(1000);
+                Application.Invoke(delegate {
+                    addTimeoutLog($"타임아웃 재시도.... (인식된 ID: {id}) ({loop}번째 재시도)");
+                });
                 uncheck(id, loop + 1);
                 return;
             }
@@ -512,15 +512,15 @@ namespace CovidCheckClientGui
             }
             else if (err == 1)
             {
-                Application.Invoke(delegate {
-                    addTimeoutLog($"타임아웃 재시도.... (인식된 정보: {grade}학년 {@class}반 {number}번) ({loop}번째 재시도)");
-                });
-                Thread.Sleep(1000);
                 if (loop > (int)helpSet.Value)
                 {
                     internetErrorNotice();
                     return;
                 }
+                Thread.Sleep(1000);
+                Application.Invoke(delegate {
+                    addTimeoutLog($"타임아웃 재시도.... (인식된 정보: {grade}학년 {@class}반 {number}번) ({loop}번째 재시도)");
+                });
                 uncheck(grade, @class, number, loop + 1);
                 return;
             }
@@ -559,15 +559,15 @@ namespace CovidCheckClientGui
             }
             else if (err == 1)
             {
-                Application.Invoke(delegate {
-                    addTimeoutLog($"타임아웃 재시도.... (인식된 정보: {id}학년 {@class}반 {number}번 {name}({id})) ({loop}번째 재시도)");
-                });
-                Thread.Sleep(1000);
                 if (loop > (int)helpSet.Value)
                 {
                     internetErrorNotice();
                     return;
                 }
+                Thread.Sleep(1000);
+                Application.Invoke(delegate {
+                    addTimeoutLog($"타임아웃 재시도.... (인식된 정보: {id}학년 {@class}반 {number}번 {name}({id})) ({loop}번째 재시도)");
+                });
                 addUser(isNotStudent, id, number, name, grade, @class, loop + 1);
                 return;
             }
@@ -598,16 +598,16 @@ namespace CovidCheckClientGui
             }
             else if (err == 1)
             {
-                Application.Invoke(delegate {
-                    addTimeoutLog($"타임아웃 재시도.... (인식된 ID: {id}) ({loop}번째 재시도)");
-                });
-
-                Thread.Sleep(1000);
                 if (loop > (int)helpSet.Value)
                 {
                     internetErrorNotice();
                     return;
                 }
+
+                Thread.Sleep(1000);
+                Application.Invoke(delegate {
+                    addTimeoutLog($"타임아웃 재시도.... (인식된 ID: {id}) ({loop}번째 재시도)");
+                });
                 delUser(id, loop + 1);
                 return;
             }
@@ -650,15 +650,15 @@ namespace CovidCheckClientGui
             }
             else if (err == 1)
             {
-                Application.Invoke(delegate {
-                    addTimeoutLog($"타임아웃 재시도.... (인식된 정보: {grade}학년 {@class}반 {number}번) ({loop}번째 재시도)");
-                });
-                Thread.Sleep(1000);
                 if (loop > (int)helpSet.Value)
                 {
                     internetErrorNotice();
                     return;
                 }
+                Thread.Sleep(1000);
+                Application.Invoke(delegate {
+                    addTimeoutLog($"타임아웃 재시도.... (인식된 정보: {grade}학년 {@class}반 {number}번) ({loop}번째 재시도)");
+                });
                 delUser(grade, @class, number, loop + 1);
                 return;
             }

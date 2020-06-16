@@ -135,7 +135,8 @@ namespace CovidCheckClientGui
         
         public Program() : base("코로나19 예방용 발열체크 프로그램")
         {
-            addLog("프로그램이 시작됨");   
+            addLog("프로그램이 시작됨");
+            programProcessing = true;
             CssProvider cssProvider = new CssProvider(); //기본 CSS설정
             cssProvider.LoadFromData(@"
                 #add {
@@ -733,6 +734,7 @@ namespace CovidCheckClientGui
                                     MessageDialog dialog = new MessageDialog(null, DialogFlags.DestroyWithParent, MessageType.Info, ButtonsType.Ok, false, "설정 파일을 불러왔습니다. 프로그램을 다시 시작합니다.");
                                     dialog.Run();
                                     dialog.Dispose();
+                                    programProcessing = false;
                                     base.Close();
                                     Program.Main(new string[0]);
                                 }
@@ -819,11 +821,53 @@ namespace CovidCheckClientGui
                 }
             }
 
+            Grid toDev = new Grid();
+            {
+                toDev.ColumnHomogeneous = true;
+                toDev.RowSpacing = 10;
+                toDev.Margin = 10;
+
+                Grid toClientDev = new Grid();
+                //GitHub Repo: https://github.com/SoftWareAndGuider/Covid-Check-Client
+                //GitHub Issue: https://github.com/SoftWareAndGuider/Covid-Check-Client/issues/new
+                Grid toServerDev = new Grid();
+                //(Server) GitHub Repo: https://github.com/SoftWareAndGuider/Covid-Check
+                //(Server) GitHub Issue: https://github.com/SoftWareAndGuider/Covid-Check/issues/new
+                Frame toClient = new Frame("클라이언트 개발자 (csnewcs)");
+                Frame toServer = new Frame("서버 개발자 (pmh-only, Noeul-Night)");
+
+                Button clientRepo = new Button("클라이언트 프로그램의 소스코드 보러 가기");
+                Button serverRepo = new Button("서버 프로그램의 소스코드 보러 가기");
+
+                Button clientIssue = new Button("클라이언트 개발자에게 건의하기");
+                Button serverIssue = new Button("서버 개발자에게 건의하기");
+
+                Button downloadOld = new Button("클라이언트 프로그램의 릴리즈 보기");
+
+                toClientDev.ColumnSpacing = 10;
+                toClientDev.Margin = 10;
+                toServerDev.ColumnSpacing = 10;
+                toServerDev.Margin = 10;
+
+                toClientDev.Attach(clientRepo, 1, 1, 1, 1);
+                toClientDev.Attach(clientIssue, 2, 1, 1, 1);
+                toClientDev.Attach(downloadOld, 3, 1, 1, 1);
+                toClient.Add(toClientDev);
+
+                toServerDev.Attach(serverRepo, 1, 1, 1, 1);
+                toServerDev.Attach(serverIssue, 2, 1, 1, 1);
+                toServer.Add(toServerDev);
+
+                toDev.Attach(toClient, 1, 1, 1, 1);
+                toDev.Attach(toServer, 1, 2, 1, 1);
+            }
+            
             //Grid들 Notebook에 추가
             selectMode.AppendPage(checkAll, new Label("체크"));
             selectMode.AppendPage(uncheck, new Label("체크 해제"));
             selectMode.AppendPage(scroll2, new Label("사용자 관리"));
             selectMode.AppendPage(setting, new Label("설정"));
+            selectMode.AppendPage(toDev, new Label("개발자들에게"));
             
             //로그 나타내는 ScrolledWindow에 추가
             scroll.Add(log);
