@@ -51,6 +51,7 @@ namespace CheckCovid19
                     if (web.Status == WebExceptionStatus.Timeout)
                     {
                         errTemp = (int)errorType.timeout;
+                        result = @"{""success"":false}";
                     }
                     else
                     {

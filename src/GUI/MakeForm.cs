@@ -17,22 +17,22 @@ namespace CovidCheckClientGui
 {
     partial class Program : Window
     {
-        JObject settingJson = new JObject();
-        const string settingPath = "config.json";
+        JObject settingJson = new JObject(); //설정 JSON
+        const string settingPath = "config.json"; //설정 파일 경로
 
-        Grid grid = new Grid();
+        Grid grid = new Grid(); //전체(비밀번호 제외)를 감싸는 Grid
 
 
-            //왼쪽의 탭들 (체크, 체크 해제, 추가)
+        //왼쪽의 탭들 (체크, 체크 해제, 추가 등등)
         Notebook selectMode = new Notebook();
         
-        ScrolledWindow scroll = new ScrolledWindow();
-        ScrolledWindow timeoutLogScroll = new ScrolledWindow();
+        ScrolledWindow scroll = new ScrolledWindow(); //로그를 위한 ScrolledWindow
+        ScrolledWindow timeoutLogScroll = new ScrolledWindow(); //재시도 로그를 위한 ScrolledWindow
 
 
         // 오른쪽에 뜨는 로그
-        ListBox log = new ListBox();
-        ListBox timeoutLog = new ListBox();
+        ListBox log = new ListBox(); //log (일반)
+        ListBox timeoutLog = new ListBox(); //재시도 로그 (재시도를 한 적이 없으면 보이지 않음)
         bool hasTimeout = false;
 
         // 사용자 체크

@@ -280,7 +280,7 @@ namespace CovidCheckClientGui
         
         
         //실제로 작업을 하는 곳 (별도의 스레드 사용)
-        void check(string id, int loop = 1)
+        void check(string id, int loop = 0)
         {
             JObject result = new JObject();
             int error = 0;
@@ -300,7 +300,7 @@ namespace CovidCheckClientGui
                 }
                 Thread.Sleep(1000);
                 Application.Invoke(delegate {
-                    addTimeoutLog($"타임아웃 재시도.... (인식된 ID: {id}) ({loop}번째 재시도)");
+                    addTimeoutLog($"타임아웃 재시도.... (인식된 ID: {id}) ({loop + 1}번째 재시도)");
                 });
                 check(id, loop + 1);
                 return;
@@ -321,7 +321,7 @@ namespace CovidCheckClientGui
                 addLog(toLog);
             });
         }
-        void check(string grade, string @class, string number, int loop = 1)
+        void check(string grade, string @class, string number, int loop = 0)
         {
             JObject result = new JObject();
             if (checkIsTeacher.Active)
@@ -349,7 +349,7 @@ namespace CovidCheckClientGui
                 }
                 Thread.Sleep(1000);
                 Application.Invoke(delegate {
-                    addTimeoutLog($"타임아웃 재시도.... (인식된 정보: {grade}학년 {@class}반 {number}번) ({loop}번째 재시도)");
+                    addTimeoutLog($"타임아웃 재시도.... (인식된 정보: {grade}학년 {@class}반 {number}번) ({loop + 1}번째 재시도)");
                 });
                 check(grade, @class, number, loop + 1);
                 return;
@@ -368,7 +368,7 @@ namespace CovidCheckClientGui
                 addLog(toLog);
             });
         }
-        void checkDoubt(string id, int loop = 1)
+        void checkDoubt(string id, int loop = 0)
         {
             JObject result = new JObject();
             int error = 0;
@@ -387,7 +387,7 @@ namespace CovidCheckClientGui
                 }
                 Thread.Sleep(1000);
                 Application.Invoke(delegate {
-                    addTimeoutLog($"타임아웃 재시도.... (인식된 ID: {id}) ({loop}번째 재시도)");
+                    addTimeoutLog($"타임아웃 재시도.... (인식된 ID: {id}) ({loop + 1}번째 재시도)");
                 });
                 checkDoubt(id, loop + 1);
                 return;
@@ -406,7 +406,7 @@ namespace CovidCheckClientGui
                 addLog(toLog);
             });
         }       
-        void checkDoubt(string grade, string @class, string number, int loop = 1)
+        void checkDoubt(string grade, string @class, string number, int loop = 0)
         {
 
             JObject result = new JObject();
@@ -451,7 +451,7 @@ namespace CovidCheckClientGui
                 addLog(toLog);
             });
         }
-        void uncheck(string id, int loop = 1)
+        void uncheck(string id, int loop = 0)
         {
             
             JObject result = new JObject();
@@ -474,7 +474,7 @@ namespace CovidCheckClientGui
                 }
                 Thread.Sleep(1000);
                 Application.Invoke(delegate {
-                    addTimeoutLog($"타임아웃 재시도.... (인식된 ID: {id}) ({loop}번째 재시도)");
+                    addTimeoutLog($"타임아웃 재시도.... (인식된 ID: {id}) ({loop + 1}번째 재시도)");
                 });
                 uncheck(id, loop + 1);
                 return;
@@ -493,7 +493,7 @@ namespace CovidCheckClientGui
                 addLog(toLog);
             });
         }
-        void uncheck(string grade, string @class, string number, int loop = 1)
+        void uncheck(string grade, string @class, string number, int loop = 0)
         {
             JObject result = new JObject();
             if (uncheckIsTeacher.Active)
@@ -519,7 +519,7 @@ namespace CovidCheckClientGui
                 }
                 Thread.Sleep(1000);
                 Application.Invoke(delegate {
-                    addTimeoutLog($"타임아웃 재시도.... (인식된 정보: {grade}학년 {@class}반 {number}번) ({loop}번째 재시도)");
+                    addTimeoutLog($"타임아웃 재시도.... (인식된 정보: {grade}학년 {@class}반 {number}번) ({loop + 1}번째 재시도)");
                 });
                 uncheck(grade, @class, number, loop + 1);
                 return;
@@ -538,7 +538,7 @@ namespace CovidCheckClientGui
                 addLog(toLog);
             });
         }
-        void addUser(bool isNotStudent, string id, string number, string name, string grade, string @class, int loop = 1)
+        void addUser(bool isNotStudent, string id, string number, string name, string grade, string @class, int loop = 0)
         {
 
             JObject result = new JObject();
@@ -566,7 +566,7 @@ namespace CovidCheckClientGui
                 }
                 Thread.Sleep(1000);
                 Application.Invoke(delegate {
-                    addTimeoutLog($"타임아웃 재시도.... (인식된 정보: {id}학년 {@class}반 {number}번 {name}({id})) ({loop}번째 재시도)");
+                    addTimeoutLog($"타임아웃 재시도.... (인식된 정보: {id}학년 {@class}반 {number}번 {name}({id})) ({loop + 1}번째 재시도)");
                 });
                 addUser(isNotStudent, id, number, name, grade, @class, loop + 1);
                 return;
@@ -584,7 +584,7 @@ namespace CovidCheckClientGui
                 addLog(toLog);
             });
         }
-        void delUser(string id, int loop = 1)
+        void delUser(string id, int loop = 0)
         {
             JObject result = new JObject();
 
@@ -606,7 +606,7 @@ namespace CovidCheckClientGui
 
                 Thread.Sleep(1000);
                 Application.Invoke(delegate {
-                    addTimeoutLog($"타임아웃 재시도.... (인식된 ID: {id}) ({loop}번째 재시도)");
+                    addTimeoutLog($"타임아웃 재시도.... (인식된 ID: {id}) ({loop + 1}번째 재시도)");
                 });
                 delUser(id, loop + 1);
                 return;
@@ -631,7 +631,7 @@ namespace CovidCheckClientGui
                 addLog(toLog);
             });
         }
-        void delUser(string grade, string @class, string number, int loop = 1)
+        void delUser(string grade, string @class, string number, int loop = 0)
         {
             JObject result = new JObject();
             if (delIsTeacher.Active)
@@ -657,7 +657,7 @@ namespace CovidCheckClientGui
                 }
                 Thread.Sleep(1000);
                 Application.Invoke(delegate {
-                    addTimeoutLog($"타임아웃 재시도.... (인식된 정보: {grade}학년 {@class}반 {number}번) ({loop}번째 재시도)");
+                    addTimeoutLog($"타임아웃 재시도.... (인식된 정보: {grade}학년 {@class}반 {number}번) ({loop + 1}번째 재시도)");
                 });
                 delUser(grade, @class, number, loop + 1);
                 return;
