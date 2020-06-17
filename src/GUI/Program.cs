@@ -776,7 +776,7 @@ namespace CovidCheckClientGui
                     selectMode.Page = 3;
                 });
         }    
-        void internetErrorNotice()
+        void internetErrorNotice() //인터넷이 잘못되었을 때 에러를 보여주는거 (타임아웃)
         {
             Application.Invoke(delegate {
                     MessageDialog dialog = new MessageDialog(null, DialogFlags.Modal, MessageType.Error, ButtonsType.Close, false, "인터넷이 원활한 환경에서 사용해 주세요.");

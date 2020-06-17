@@ -1,16 +1,13 @@
 using System;
-using System.IO;
 using System.Net;
 using Newtonsoft.Json.Linq;
-using System.Threading;
 using System.Net.NetworkInformation;
 
 namespace CheckCovid19
 {
     class User
     {
-        const int versions = 0;
-        string _url = "";
+        string _url = ""; //정보를 주고받을 url
         
 
         public string url
@@ -29,18 +26,16 @@ namespace CheckCovid19
             _url = url;
         }
 
-        public JObject upload(JObject data, out int err, bool retry = false)
+        public JObject upload(JObject data, out int err, bool retry = false) //업로드
         {
-            MyWebCient client = new MyWebCient();
+            MyWebCient client = new MyWebCient(); //타임아웃 시간을 조정한 WebClient
             string result = "";
             bool doing = true;
 
-            err = (int)errorType.success;
-            int errTemp = 0;
-            int tryUpload = 0;
+            err = (int)errorType.success; //기본
+            int errTemp = 0; //catch문 안에서 사용할 err변수
 
             client.UploadStringCompleted += (sender, e) => {
-                tryUpload++;
                 try
                 {
                     result = e.Result;
@@ -48,21 +43,21 @@ namespace CheckCovid19
                 catch (Exception ex)
                 {
                     WebException web = (WebException)ex.InnerException;
-                    if (web.Status == WebExceptionStatus.Timeout)
+                    if (web.Status == WebExceptionStatus.Timeout) //타임아웃
                     {
                         errTemp = (int)errorType.timeout;
                         result = @"{""success"":false}";
                     }
                     else
                     {
-                        if (retry)
+                        if (retry) //이미 재시도한거라면 urlerror
                         {
                             errTemp = (int)errorType.urlerror;
                             result = @"{""sucess"":false}";
                         }
                         else
                         {
-                            result = upload(data, out errTemp, true).ToString();
+                            result = upload(data, out errTemp, true).ToString(); //https://가 아니라 http://를 사용할 수 있으니 다시 시도
                         }
                     }
                 }
@@ -163,26 +158,26 @@ namespace CheckCovid19
 
             return upload(user, out err);
         }
-        public long getPing()
+        public long getPing() //핑
         {
-            if (_url == "localhost") return 0;
+            if (_url == "localhost") return 0; //localhost 입구컷
             try
             {
                 return new Ping().Send(_url).RoundtripTime;
             }
             catch
             {
-                return -1;
+                return -1; //-1: 알 수 없음
             }
         }
-        public bool hasNewVersion(int now, out JArray result)
+        public bool hasNewVersion(int now, out JArray result) //새로운 버전이 있는지 확인하는 것
         {
             try
             {
                 WebClient client = new WebClient();
                 client.Encoding = System.Text.Encoding.UTF8;
-                client.Headers.Add("user-agent", "CovidCheckClientCheckUpdate");
-                JArray down = JArray.Parse(client.DownloadString("https://api.github.com/repos/SoftWareAndGuider/Covid-Check-Client/releases"));
+                client.Headers.Add("user-agent", "CovidCheckClientCheckUpdate"); //user-agent가 없으면 github api가 연결 거부
+                JArray down = JArray.Parse(client.DownloadString("https://api.github.com/repos/SoftWareAndGuider/Covid-Check-Client/releases")); //GitHub Api 사랑해요
 
                 result = new JArray();
 
@@ -212,7 +207,7 @@ namespace CheckCovid19
         protected override WebRequest GetWebRequest(Uri address)
         {
             WebRequest request = base.GetWebRequest(address);
-            request.Timeout = 5000;
+            request.Timeout = 5000; //타임아웃 시간
             return request;
         }
     }
