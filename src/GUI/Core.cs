@@ -1,7 +1,11 @@
 using System;
+using System.IO;
 using System.Net;
-using Newtonsoft.Json.Linq;
+using System.Text;
+using System.Security.Cryptography;
 using System.Net.NetworkInformation;
+
+using Newtonsoft.Json.Linq;
 
 namespace CheckCovid19
 {
@@ -200,6 +204,38 @@ namespace CheckCovid19
             success,
             timeout,
             urlerror
+        }
+    
+        public string getSha512(string password) //sha512 해시
+        {
+            password += "소금을 쳐볼까요?"; //salt
+            SHA512 sha = SHA512.Create();
+            StringBuilder builder = new StringBuilder();
+            byte[] toHash = sha.ComputeHash(Encoding.UTF8.GetBytes(password));
+            foreach (var b in toHash)
+            {
+                builder.AppendFormat("{0:x2}", b);
+            }
+            return builder.ToString();
+        }
+        public void saveSetting(string setting, string settingPath) //세팅 저장
+        {
+            byte[] bytes = Encoding.UTF8.GetBytes(setting); //포멧: UTF-8
+            for (int i = 0; i < bytes.Length; i++)
+            {
+                bytes[i]++; //1씩 더해서 알아보기 힘들도록
+            }
+            File.WriteAllBytes(settingPath, bytes);
+        }
+        public JObject loadSetting(string path) //세팅 불러오기
+        {
+            byte[] bytes = File.ReadAllBytes(path);
+            for (int i = 0; i < bytes.Length; i++)
+            {
+                bytes[i]--; //정상적으로 읽기 위해 1씩 뺌
+            }
+            string getString = Encoding.UTF8.GetString(bytes);
+            return JObject.Parse(getString);
         }
     }
     class MyWebCient : WebClient

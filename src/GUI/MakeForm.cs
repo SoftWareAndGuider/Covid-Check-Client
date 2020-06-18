@@ -5,7 +5,6 @@ using System.Threading;
 using System.Net;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
-using System.Security.Cryptography;
 using System.Linq;
 using System.IO.Compression;
 using System.Threading.Tasks;
@@ -177,9 +176,11 @@ namespace CovidCheckClientGui
                     dialog.Run();
                     dialog.Dispose();
             }
+
+            user = new CheckCovid19.User("localhost"); //User 선언
             try
             {
-                settingJson = loadSetting(settingPath); //설정 JSON파일을 가져와봄
+                settingJson = user.loadSetting(settingPath); //설정 JSON파일을 가져와봄
             }
             catch
             {
@@ -192,11 +193,11 @@ namespace CovidCheckClientGui
                     ""usePassword"": false,
                     ""password"": ""password""
                 }"; //기본 JSON 세팅
-                saveSetting(defaultSetting); //기본 JSON 저장
+                user.saveSetting(defaultSetting, settingPath); //기본 JSON 저장
                 settingJson = JObject.Parse(defaultSetting);
             }
 
-            user = new CheckCovid19.User(settingJson["url"].ToString()); //User 선언
+            user.url = settingJson["url"].ToString(); //설정 속 url 입력
 
             helpSet = new SpinButton(new Adjustment((double)settingJson["timeoutRetry"], 0, 500, 1, 1, 0), 1, 0);
             checkIDLength = new Scale(Orientation.Horizontal, new Adjustment((double)settingJson["barcodeLength"], 5, 10, 0, 1, 0));
@@ -240,7 +241,7 @@ namespace CovidCheckClientGui
                 checkIDLength.ValueChanged += checkIDLengthChangeValue;
                 checkIDLength.ValueChanged += delegate {
                     settingJson["barcodeLength"] = checkIDLength.Value;
-                    saveSetting(settingJson.ToString());
+                    user.saveSetting(settingJson.ToString(), settingPath);
                 };
                 checkOK.Clicked += checkOKClicked;
                 checkIsTeacher.Clicked += delegate {unlessStudent(title.check);};
@@ -360,7 +361,7 @@ namespace CovidCheckClientGui
                 uncheckIDLength.ValueChanged += uncheckIDLengthChangeValue;
                 uncheckIDLength.ValueChanged += delegate {
                     settingJson["barcodeLength"] = uncheckIDLength.Value;
-                    saveSetting(settingJson.ToString());
+                    user.saveSetting(settingJson.ToString(), settingPath);
                 };
                 uncheckOK.Clicked += uncheckOKClicked;
                 uncheckInsertGrade.KeyReleaseEvent += uncheckWithoutIDKeyRelease;
@@ -651,7 +652,7 @@ namespace CovidCheckClientGui
                             {
                                 settingJson["url"] = url.Text;
                                 user.url = url.Text;
-                                saveSetting(settingJson.ToString());
+                                user.saveSetting(settingJson.ToString(), settingPath);
                             }
                         };
                     }
@@ -687,7 +688,7 @@ namespace CovidCheckClientGui
                             if (now == helpSet.Value)
                             {
                                 settingJson["timeoutRetry"] = time.Value;
-                                saveSetting(settingJson.ToString());
+                                user.saveSetting(settingJson.ToString(), settingPath);
                             }
                         };
 
@@ -703,12 +704,12 @@ namespace CovidCheckClientGui
                         checkUpdate.StateChanged += delegate {
                             autoUpdate.Sensitive = checkUpdate.State;
                             settingJson["checkUpdate"] = checkUpdate.State; //여긴 뭐 딜레이 넣을 필요 없겠지
-                            saveSetting(settingJson.ToString());
+                            user.saveSetting(settingJson.ToString(), settingPath);
                         };
 
                         autoUpdate.StateChanged += delegate {
                             settingJson["autoUpdate"] = autoUpdate.State;
-                            saveSetting(settingJson.ToString());
+                            user.saveSetting(settingJson.ToString(), settingPath);
                         };
                     }
 
@@ -748,7 +749,7 @@ namespace CovidCheckClientGui
                                 filePath.Text = fileChooser.Filename;
                                 try
                                 {
-                                    loadSetting(fileChooser.Filename); //파일 가져오기
+                                    user.loadSetting(fileChooser.Filename); //파일 가져오기
                                 }
                                 catch
                                 {
@@ -758,7 +759,7 @@ namespace CovidCheckClientGui
                                     return;
                                 }
                                 
-                                JObject newSetting = loadSetting(fileChooser.Filename); //제대로 된 놈이면 로드
+                                JObject newSetting = user.loadSetting(fileChooser.Filename); //제대로 된 놈이면 로드
                                 if (newSetting.ContainsKey("url") && newSetting.ContainsKey("barcodeLength") && newSetting.ContainsKey("timeoutRetry") && newSetting.ContainsKey("checkUpdate") && newSetting.ContainsKey("autoUpdate") && newSetting.ContainsKey("usePassword") && newSetting.ContainsKey("password")) //원하는 값이 다 있으면 적용
                                 {
                                     File.Copy(fileChooser.Filename, "./config.json", true);
@@ -827,14 +828,14 @@ namespace CovidCheckClientGui
                             if (setEnterPassword.Text == "") //텍스트가 없으면 비밀번호 사용 안함
                             {
                                 settingJson["usePassword"] = false;
-                                saveSetting(settingJson.ToString());
+                                user.saveSetting(settingJson.ToString(), settingPath);
                                 done = new MessageDialog(null, DialogFlags.DestroyWithParent, MessageType.Info, ButtonsType.Ok, false, "비밀번호 설정 (비밀번호 사용 안함)이 완료되었습니다.");
                             }
                             else
                             {
                                 settingJson["usePassword"] = true;
-                                settingJson["password"] = getSha512(setEnterPassword.Text);
-                                saveSetting(settingJson.ToString());
+                                settingJson["password"] = user.getSha512(setEnterPassword.Text);
+                                user.saveSetting(settingJson.ToString(), settingPath);
                                 done = new MessageDialog(null, DialogFlags.DestroyWithParent, MessageType.Info, ButtonsType.Ok, false, $"비밀번호 설정 (비밀번호: {setEnterPassword.Text})이 완료되었습니다.");
                             }
                             done.Run();
@@ -1017,7 +1018,7 @@ namespace CovidCheckClientGui
                 ShowAll();
 
                 enter.Clicked += delegate {
-                    if (getSha512(enterPassword.Text) == settingJson["password"].ToString()) //비밀번호가 맞다면
+                    if (user.getSha512(enterPassword.Text) == settingJson["password"].ToString()) //비밀번호가 맞다면
                     {
                         Remove(usePassword); //이거 지우고
 
@@ -1313,38 +1314,6 @@ namespace CovidCheckClientGui
 
             timeoutLog.Insert(timeoutLogLabel, 0);
             timeoutLog.ShowAll();
-        }
-        
-        private string getSha512(string password) //sha512 해시
-        {
-            password += "소금을 쳐볼까요?"; //salt
-            SHA512 sha = SHA512.Create();
-            StringBuilder builder = new StringBuilder();
-            byte[] toHash = sha.ComputeHash(Encoding.UTF8.GetBytes(password));
-            foreach (var b in toHash)
-            {
-                builder.AppendFormat("{0:x2}", b);
-            }
-            return builder.ToString();
-        }
-        private void saveSetting(string setting) //세팅 저장
-        {
-            byte[] bytes = Encoding.UTF8.GetBytes(setting); //포멧: UTF-8
-            for (int i = 0; i < bytes.Length; i++)
-            {
-                bytes[i]++; //1씩 더해서 알아보기 힘들도록
-            }
-            File.WriteAllBytes(settingPath, bytes);
-        }
-        private JObject loadSetting(string path) //세팅 불러오기
-        {
-            byte[] bytes = File.ReadAllBytes(path);
-            for (int i = 0; i < bytes.Length; i++)
-            {
-                bytes[i]--; //정상적으로 읽기 위해 1씩 뺌
-            }
-            string getString = Encoding.UTF8.GetString(bytes);
-            return JObject.Parse(getString);
-        }
+        }   
     }
 }

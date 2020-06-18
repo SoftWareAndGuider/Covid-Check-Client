@@ -9,20 +9,47 @@ namespace Covid_Check_Client
 {
     class Program
     {
-        static User user = new User(System.IO.File.ReadAllLines("config.txt")[0]);
+        static User user = new User("localhost");
+        const string settingPath = "config.json";
+        static JObject settingJson = new JObject();
+
         static void Main(string[] args)
         {
-            long p = user.getPing();
-            Console.Title = $"코로나19 예방용 발열체크 프로그램 (CLI)(통신 속도: {p}ms)";
             Program program = new Program();
             Console.WriteLine("CovidCheckClient, MIT + ɑ License\nCopyright (c) 2020 SoftWareAndGuider, cnsewcs, pmh-only, Noeul-Night / 자세한 저작권 관련 사항과 이 프로그램의 소스코드는 https://github.com/softwareandguider/covid-check-client 에서 확인해주세요.\n");
-            Console.WriteLine("서버와의 통신 속도: " + p + "ms");
 
-            string verName = "";
+            JArray verName = new JArray();
             if (user.hasNewVersion(1, out verName))
             {
-                Console.WriteLine("새로운 버전 {0}이(가) 출시되었습니다. https://github.com/SoftWareAndGuider/Covid-Check-Client/releases/ 에서 확인해 주세요.\n", verName);
+                Console.WriteLine("새로운 버전 {0}이(가) 출시되었습니다. https://github.com/SoftWareAndGuider/Covid-Check-Client/releases/ 에서 확인해 주세요.\n", verName.First()["name"]);
             }
+
+            try
+            {
+                settingJson = user.loadSetting(settingPath);
+            }
+            catch
+            {
+                settingJson = JObject.Parse(@"{
+                    ""url"": ""localhost"",
+                    ""barcodeLength"": 8,
+                    ""timeoutRetry"": 100,
+                    ""checkUpdate"": true,
+                    ""autoUpdate"": false,
+                    ""usePassword"": false,
+                    ""password"": ""password""
+                }");
+                user.saveSetting(settingJson.ToString(), settingPath);
+            }
+            user.url = settingJson["url"].ToString();
+            
+            var getPing = user.getPing();
+            string ping = "알 수 없음";
+            if (getPing != -1) ping = getPing.ToString() + "ms";
+
+            Console.Title = $"코로나19 예방용 발열체크 프로그램 (CLI)(통신 속도: {ping})";
+            Console.WriteLine("서버({0})와의 통신 속도: " + ping + "\n", settingJson["url"]);
+            
             string change = "1"; //일단 프로그램을 켰을 땐 체크모드
             while (true)
             {
@@ -54,6 +81,9 @@ namespace Covid_Check_Client
                         break;
                     case "9":
                         change = program.removeWithoutID();
+                        break;
+                    case "setting":
+                        change = program.setting();
                         break;
                     default:
                         Console.WriteLine("오류 기본 체크모드로 전환");
@@ -175,13 +205,13 @@ namespace Covid_Check_Client
             string change = "";
             while (true)
             {
-                Console.WriteLine("1: 사용자 체크\n2: 사용자 발열 체크\n3: 사용자 체크 해제\n4: 사용자 추가\n5: 사용자 삭제\n6: ID없이 사용자 체크\n7: ID없이 사용자 발열 체크\n8: ID없이 사용자 체크 해제\n9: ID없이 사용자 삭제");
+                Console.WriteLine("1: 사용자 체크\n2: 사용자 발열 체크\n3: 사용자 체크 해제\n4: 사용자 추가\n5: 사용자 삭제\n6: ID없이 사용자 체크\n7: ID없이 사용자 발열 체크\n8: ID없이 사용자 체크 해제\n9: ID없이 사용자 삭제\nsetting: 설정");
                 change = Console.ReadLine();
                 string[] lists = new string[] {
-                    "1", "2", "3", "4", "5", "6", "7", "8", "9"
+                    "1", "2", "3", "4", "5", "6", "7", "8", "9", "setting"
                 };
                 if (lists.Contains(change)) break;
-                Console.WriteLine("올바른 번호를 선택해 주세요.");
+                Console.WriteLine("올바른 문자를 선택해 주세요.");
             }
             Console.WriteLine();
             return change;
@@ -281,7 +311,141 @@ namespace Covid_Check_Client
                 }
             }
         }
-        
+        string setting()
+        {
+            string what = "";
+            bool turn = false;
+            Console.WriteLine($"설정 모드 입니다. 모드를 변경하려면 change를, 프로그램 종료는 exit를 입력해 주세요. 해당하는 명령어를 입력해 주세요.\nurl [홈페이지 주소]: 홈페이지의 url을 [홈페이지 주소]로 저장\npassword [y/n] [password]: 비밀번호를 [password]로 지정하고 [y/n]에서 y라면 비밀번호를 사용, n이라면 비밀번호 사용 안함\nupdate [y/n]: 프로그램을 시작할 때 업데이트를 [y/n]이 y라면 확인, n이라면 확인하지 않음\n");
+            while (true)
+            {
+                while (true)
+                {
+                    what = Console.ReadLine();
+                    if (string.IsNullOrEmpty(what))
+                    {
+                        Console.WriteLine("정보를 입력하지 않았습니다. 다시 입력해주세요.");
+                        continue;
+                    }
+                    break;
+                }
+                if (what == "change") //모드 바꾸기
+                {
+                    what = changeMode();
+                    turn = true;
+                }
+                else if (what == "exit") Environment.Exit(0);
+                if (turn)
+                {
+                    return what;
+                }
+
+                string[] command = what.Split(' ');
+                switch (command[0])
+                {
+                    case "url":
+                        try
+                        {
+                            settingJson["url"] = command[1];
+                            user.saveSetting(settingJson.ToString(), settingPath);
+                            user.url = command[1];
+
+                            var getPing = user.getPing();
+                            string ping = "알 수 없음";
+                            if (getPing != -1) ping = getPing.ToString() + "ms";
+                            Console.WriteLine($"url 변경({command[1]})이 완료되었습니다. (새로운 서버와 통신 속도: {ping})");
+                        }
+                        catch
+                        {
+                            Console.WriteLine("명령어가 잘못되었습니다. 설정 값이 저장되지 않습니다.");
+                        }
+                    break;
+
+                    case "password":
+                        try
+                        {
+                            string password = "";
+                            for (int i = 2; i < command.Length; i++)
+                            {
+                                password += command[i];
+                                if (i + 1 < command.Length)
+                                {
+                                    password += " ";
+                                }
+                            }
+                            settingJson["password"] = command[2];
+
+
+                            if ((password.Length == 0 && command[1] == "y") || (command[1] != "y" && command[1] != "n"))
+                            {
+                                throw new Exception();
+                            }
+
+                            if (command[1] == "y") settingJson["usePassword"] = true;
+                            else settingJson["usePassword"] = false;
+
+                            settingJson["password"] = user.getSha512(password);
+
+                            user.saveSetting(settingJson.ToString(), settingPath);
+                            string writeLine = "비밀번호 변경(비밀번호 ";
+                            string mask = "";
+                            for (int i = 0; i < password.Length; i++)
+                            {
+                                mask += "*";
+                            }
+                            Console.SetCursorPosition(11, Console.CursorTop - 1);
+                            Console.WriteLine(mask);
+                            if (command[1] == "y")
+                            {
+                                writeLine += $"사용, 비밀번호: {mask})";
+                            }
+                            else
+                            {
+                                if (password.Length == 0)
+                                {
+                                    writeLine += $"사용 안함)";
+                                }
+                                else
+                                {
+                                    writeLine += $"사용 안함, 비밀번호: {mask})";
+                                }
+                            }
+                            writeLine += "이 완료되었습니다.";
+                            Console.WriteLine(writeLine);
+                        }
+                        catch
+                        {
+                            Console.WriteLine("명령어가 잘못되었습니다. 설정 값이 저장되지 않습니다.");
+                        }
+                    break;
+                    case "update":
+                        try
+                        {
+                            if (command[1] == "y")
+                            {
+                                settingJson["checkUpdate"] = true;
+                                Console.WriteLine("업데이트 확인을 하도록 설정했습니다.");
+                            }
+                            else if (command[1] == "n")
+                            {
+                                settingJson["checkUpdate"] = false;
+                                Console.WriteLine("업데이트 확인을 하지 않도록 설정했습니다.");
+                            }
+                            else
+                            {
+                                throw new Exception();
+                            }
+                        }
+                        catch
+                        {
+                            Console.WriteLine("명령어가 잘못되었습니다. 설정 값이 저장되지 않습니다.");
+                        }
+                    break;
+                    default:
+                        Console.WriteLine($"설정 모드 입니다. 모드를 변경하려면 change를, 프로그램 종료는 exit를 입력해 주세요. 해당하는 명령어를 입력해 주세요.\nurl [홈페이지 주소]: 홈페이지의 url을 [홈페이지 주소]로 저장\npassword [y/n] [password]: 비밀번호를 [password]로 지정하고 [y/n]에서 y라면 비밀번호를 사용, n이라면 비밀번호 사용 안함\nupdate [y/n]: 프로그램을 시작할 때 업데이트를 [y/n]이 y라면 확인, n이라면 확인하지 않음\n");
+                        break;
+                }
+            }
+        }
         bool first(string title, out string what, string and = "")
         {
             Console.WriteLine($"현재는 사용자 {title}모드 입니다. 모드를 변경하려면 change를, 프로그램 종료는 exit를 입력해 주세요.\n{and}");
