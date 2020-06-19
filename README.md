@@ -29,6 +29,18 @@
 * GTKSharp 3.22.25.74 (LGPLv2) https://github.com/GtkSharp/GtkSharp
 * Newtonsoft.Json 12.0.3 (MIT) https://github.com/JamesNK/Newtonsoft.Json
 
+## CLI
+이 프로그램은 CLI 버전이 있습니다. 하지만 GUI에 있는 일부 기능이 동작하지 않습니다.
+
+### CLI 버전에서 안되는 GUI 버전의 기능
+* 작업시 비동기로 처리
+* 타임아웃시 자동으로 재시도
+* 학생들 현황 보기
+* 자동 업데이트
+
+### CLI 버전 실행시 필요없는 것
+* 창 관리자
+* GTK
 
 #### 여기서 사용하는 단어 설명
 * 관리: 지정한 것을 생성, 삭제하는 것을 말합니다

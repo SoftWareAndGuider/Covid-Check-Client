@@ -1,4 +1,5 @@
 ﻿using System;
+using System.IO;
 using System.Net;
 using System.Text;
 using System.Linq;
@@ -32,7 +33,6 @@ namespace Covid_Check_Client
             {
                 settingJson = JObject.Parse(@"{
                     ""url"": ""localhost"",
-                    ""barcodeLength"": 8,
                     ""timeoutRetry"": 100,
                     ""checkUpdate"": true,
                     ""autoUpdate"": false,
@@ -315,7 +315,7 @@ namespace Covid_Check_Client
         {
             string what = "";
             bool turn = false;
-            Console.WriteLine($"설정 모드 입니다. 모드를 변경하려면 change를, 프로그램 종료는 exit를 입력해 주세요. 해당하는 명령어를 입력해 주세요.\nurl [홈페이지 주소]: 홈페이지의 url을 [홈페이지 주소]로 저장\npassword [y/n] [password]: 비밀번호를 [password]로 지정하고 [y/n]에서 y라면 비밀번호를 사용, n이라면 비밀번호 사용 안함\nupdate [y/n]: 프로그램을 시작할 때 업데이트를 [y/n]이 y라면 확인, n이라면 확인하지 않음\n");
+            Console.WriteLine($"설정 모드 입니다. 모드를 변경하려면 change를, 프로그램 종료는 exit를 입력해 주세요. 해당하는 명령어를 입력해 주세요.\nurl [홈페이지 주소]: 홈페이지의 url을 [홈페이지 주소]로 저장\npassword [y/n] [password]: 비밀번호를 [password]로 지정하고 [y/n]에서 y라면 비밀번호를 사용, n이라면 비밀번호 사용 안함\nupdate [y/n]: 프로그램을 시작할 때 업데이트를 [y/n]이 y라면 확인, n이라면 확인하지 않음\nsettingfile [파일 경로]: [파일 경로]에 있는 설정 파일을 가져와서 설정을 복사합니다.");
             while (true)
             {
                 while (true)
@@ -440,10 +440,38 @@ namespace Covid_Check_Client
                             Console.WriteLine("명령어가 잘못되었습니다. 설정 값이 저장되지 않습니다.");
                         }
                     break;
+                    case "settingfile":
+                        try
+                        {
+                            string path = "";
+                            for (int i = 1; i < command.Length; i++)
+                            {
+                                path += command[i];
+                                if (i + 1 < command.Length)
+                                {
+                                    path += " ";
+                                }
+                            }
+                            JObject newSetting = user.loadSetting(path);
+                            if (!(newSetting.ContainsKey("url") && newSetting.ContainsKey("timeoutRetry") && newSetting.ContainsKey("checkUpdate") && newSetting.ContainsKey("autoUpdate") && newSetting.ContainsKey("usePassword") && newSetting.ContainsKey("password")))
+                            {
+                                throw new Exception();
+                            }
+                            File.Copy(path, settingPath, true);
+                            Console.WriteLine("설정이 변경되었습니다. 프로그램이 다시 시작되면 이 설정이 적용됩니다.");
+                        }
+                        catch (Exception e)
+                        {
+                            Console.WriteLine(e);
+                            Console.WriteLine("명령어 혹은 파일이 잘못되었습니다. 설정이 변하지 않습니다.");
+                        }
+                        break;
+
                     default:
-                        Console.WriteLine($"설정 모드 입니다. 모드를 변경하려면 change를, 프로그램 종료는 exit를 입력해 주세요. 해당하는 명령어를 입력해 주세요.\nurl [홈페이지 주소]: 홈페이지의 url을 [홈페이지 주소]로 저장\npassword [y/n] [password]: 비밀번호를 [password]로 지정하고 [y/n]에서 y라면 비밀번호를 사용, n이라면 비밀번호 사용 안함\nupdate [y/n]: 프로그램을 시작할 때 업데이트를 [y/n]이 y라면 확인, n이라면 확인하지 않음\n");
+                        Console.WriteLine($"설정 모드 입니다. 모드를 변경하려면 change를, 프로그램 종료는 exit를 입력해 주세요. 해당하는 명령어를 입력해 주세요.\nurl [홈페이지 주소]: 홈페이지의 url을 [홈페이지 주소]로 저장\npassword [y/n] [password]: 비밀번호를 [password]로 지정하고 [y/n]에서 y라면 비밀번호를 사용, n이라면 비밀번호 사용 안함\nupdate [y/n]: 프로그램을 시작할 때 업데이트를 [y/n]이 y라면 확인, n이라면 확인하지 않음\nsettingfile [파일 경로]: [파일 경로]에 있는 설정 파일을 가져와서 설정을 복사합니다.");
                         break;
                 }
+                Console.WriteLine();
             }
         }
         bool first(string title, out string what, string and = "")
