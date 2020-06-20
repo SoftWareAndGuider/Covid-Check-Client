@@ -254,7 +254,7 @@ namespace CovidCheckClientGui
 
                     checkFrame.Margin = 15;
                     checkFrame.MarginBottom = 0;
-                    checkFrame.MarginTop = 0;
+                    checkFrame.MarginTop = 10;
                     checkFrame.Add(check);
             }
             
