@@ -5,7 +5,7 @@ namespace CovidCheckClientGui
 {
     public class StatusParsing
     {
-        public int[] lessInfo(JObject result)
+        public int[] lessInfo(JObject result) //사람 수만 볼 때
         {
             int firstGrade = 0;
             int secondGrade = 0;
@@ -32,22 +32,22 @@ namespace CovidCheckClientGui
             }
             return new int[4] {firstGrade, secondGrade, thirdGrade, etcGrade};
         }
-        public double[,] moreInfo(JObject result)
+        public double[,] moreInfo(JObject result) //검사 현황을 볼 때
         {
             double[,] info = new double[4,3] { {0, 0, 0}, {0, 0, 0}, {0, 0, 0}, {0, 0, 0} };
             foreach (var a in result["data"])
             {
-                if (a["grade"].ToString() == "1")
+                if (a["grade"].ToString() == "1") //1학년
                 {
-                    if ((int)a["checked"] == 0)
+                    if ((int)a["checked"] == 0) //체크 안함
                     {
                         info[0, 0]++;
                     }
-                    else if ((int)a["checked"] == 1)
+                    else if ((int)a["checked"] == 1) //체크함
                     {
                         info[0, 1]++;
                     }
-                    else
+                    else //발열자
                     {
                         info[0, 2]++;
                     }

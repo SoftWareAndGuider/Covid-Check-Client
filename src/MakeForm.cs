@@ -3,48 +3,62 @@ using System.IO;
 using System.Diagnostics;
 using System.Threading;
 using System.Net;
+using System.Collections.Generic;
+using System.Runtime.InteropServices;
 using System.Linq;
+using System.IO.Compression;
+using System.Threading.Tasks;
 
 using Gtk;
 using Newtonsoft.Json.Linq;
-
+using System.Text;
 
 namespace CovidCheckClientGui
 {
     partial class Program : Window
     {
-        Grid grid = new Grid();
+        JObject settingJson = new JObject(); //설정 JSON
+        const string settingPath = "config.json"; //설정 파일 경로
+
+        Grid grid = new Grid(); //전체(비밀번호 제외)를 감싸는 Grid
+
+
+        //왼쪽의 탭들 (체크, 체크 해제, 추가 등등)
+        Notebook selectMode = new Notebook();
         
-        ScrolledWindow scroll = new ScrolledWindow();
-        ScrolledWindow timeoutLogScroll = new ScrolledWindow();
+        ScrolledWindow scroll = new ScrolledWindow(); //로그를 위한 ScrolledWindow
+        ScrolledWindow timeoutLogScroll = new ScrolledWindow(); //재시도 로그를 위한 ScrolledWindow
 
 
         // 오른쪽에 뜨는 로그
-        ListBox log = new ListBox();
-        ListBox timeoutLog = new ListBox();
+        ListBox log = new ListBox(); //log (일반)
+        ListBox timeoutLog = new ListBox(); //재시도 로그 (재시도를 한 적이 없으면 보이지 않음)
         bool hasTimeout = false;
 
-        // 사용자 확인
-        Entry checkInsertID = new Entry();
+        // 사용자 체크
+        Entry checkInsertID = new Entry(); //(체크) 사용자의 ID를 입력하는 Entry
 
-        Entry checkInsertGrade = new Entry();
-        Entry checkInsertClass = new Entry();
-        Entry checkInsertNumber = new Entry();
-        CheckButton checkIsTeacher = new CheckButton("학생이 아님");
+        Entry checkInsertGrade = new Entry(); //(체크) 사용자의 학년을 입력하는 Entry
+        Entry checkInsertClass = new Entry(); //(체크) 사용자의 반을 입력하는 Entry
+        Entry checkInsertNumber = new Entry(); //(체크) 사용자의 번호를 입력하는 Entry
+        CheckButton checkIsTeacher = new CheckButton("학생이 아님"); //(체크) 대상이 학생이 아닐 때 체크하는 체크버튼 (0학년 0반 판정)
 
-        Button checkOK = new Button("정상 확인하기");
-        Button checkInsertUser = new Button("정상 확인하기");
+        Button checkInsertUser = new Button("정상 체크하기"); //(체크) 학년, 반, 번호를 사용시 누르는 버튼
 
 
+
+        // ====================== 발열체크 =======================
         Entry checkDoubtInsertID = new Entry();
         Entry checkDoubtInsertGrade = new Entry();
         Entry checkDoubtInsertClass = new Entry();
         Entry checkDoubtInsertNumber = new Entry();
         CheckButton checkDoubtIsTeacher = new CheckButton("학생이 아님");
 
-        Button checkDoubtInsertUser = new Button("발열 확인하기");
+        Button checkDoubtInsertUser = new Button("발열 체크하기");
 
-        // 사용자 확인 취소        
+        
+        
+        // ===================== 사용자 체크 해제 ==========================
         Entry uncheckInsertID = new Entry();
 
         Entry uncheckInsertGrade = new Entry();
@@ -52,45 +66,50 @@ namespace CovidCheckClientGui
         Entry uncheckInsertNumber = new Entry();
         CheckButton uncheckIsTeacher = new CheckButton("학생이 아님");
 
-        Button uncheckInsertUser = new Button("확인 취소하기");
+        Button uncheckInsertUser = new Button("체크 해제하기");
         
 
-        //사용자 추가
-        Entry addInsertID = new Entry();
-        Entry addInsertGrade = new Entry();
-        Entry addInsertClass = new Entry();
-        Entry addInsertNumber = new Entry();
-        Entry addInsertName = new Entry();
-        CheckButton addIsTeacher = new CheckButton("학생이 아님");
-        Button insertUser = new Button("사용자 만들기");
 
 
-        //사용자 삭제
-        Entry delInsertID = new Entry();
-        Entry delInsertGrade = new Entry();
-        Entry delInsertClass = new Entry();
-        Entry delInsertNumber = new Entry();
-        CheckButton delIsTeacher = new CheckButton("학생이 아님");
-        Button delInsertUser = new Button("사용자 삭제");
-        Button delInsertUserWithoutID = new Button("사용자 삭제");
+        //================== 사용자 추가 ===================
+        Entry addInsertID = new Entry(); //(추가) ID를 입력하는 Entry
+        Entry addInsertGrade = new Entry(); //(추가) 학년을 입력하는 Entry
+        Entry addInsertClass = new Entry(); //(추가) 반을 입력하는 Entry
+        Entry addInsertNumber = new Entry(); //(추가) 번호를 입력하는 Entry
+        Entry addInsertName = new Entry(); //(추거) 이름을 입력하는 Entry
+        CheckButton addIsTeacher = new CheckButton("학생이 아님"); //(추가) 사용자가 학생이 아닐 때(예: 선생님) 체크하는 CheckButton (0학년 0반 처리)
+        Button insertUser = new Button("사용자 만들기"); //(추가) 모든 정보를 입력하고 작업을 시작하는 버튼
 
 
-        //확인 상황 보기
-        bool programProcessing = true;
-        Label[] userCount = new Label[4] { //[0, ]: 1학년, [1, ]: 2학년, [2, ]: 3학년, [3, ]: 기타
+        //=================== 사용자 삭제 ====================
+        Entry delInsertID = new Entry(); //(삭제) ID로 삭제할 때 입력하는 Entry
+        Entry delInsertGrade = new Entry(); //(삭제) 학년, 반, 번호로 삭제할 때 학년을 입력하는 Entry
+        Entry delInsertClass = new Entry(); //(삭제) 학년, 반, 번호로 삭제할 때 반을 입력하는 Entry
+        Entry delInsertNumber = new Entry(); //(삭제) 학년, 반, 번호로 삭제할 때 번호를 입력하는 Entry
+        CheckButton delIsTeacher = new CheckButton("학생이 아님"); //(삭제) 학년, 반, 번호로 삭제할 때 학생이 아닐 때(예: 선생님) 체크하는 CheckButton (0학년 0반 처리)
+        Button delInsertUser = new Button("사용자 삭제"); //(삭제) ID를 입력하고 작업을 시작하는 버튼 (삭제는 자동으로 실행되지 않음)
+        Button delInsertUserWithoutID = new Button("사용자 삭제"); //(삭제) 학년, 반, 번호로 삭제할 때 모든 정보를 입력하고 작업을 시작하는 버튼
+
+
+        //==================== 체크 상황 보기 ===================
+        bool programProcessing = true; //이 값이 false면 루프가 끝나면서 체크 상황을 가져오지 않음
+        Label[] userCount = new Label[4] { //사용자 수만 볼 때 사용하는 배열 (학년이 3개일 때 기준)
+                                           //[0, ]: 1학년, [1, ]: 2학년, [2, ]: 3학년, [3, ]: 기타
                 new Label(""),
                 new Label(""),
                 new Label(""),
                 new Label("")
         };
-        Label allUserCount = new Label("");
+        Label allUserCount = new Label(""); //전체 사용자 수를 보여주는 Label
 
-        Label time = new Label("");
+        Label time = new Label(""); //현재 시각을 보여주는 Label
 
-        CheckButton seeMoreInfo = new CheckButton("상세정보 보기");
-        Frame[] statusListFrame = new Frame[2] {new Frame("사용자 수 (3초마다 새로고침)"), new Frame("검사 현황 (3초마다 새로고침)")};
-
-        ProgressBar[,] statusProgressBar = new ProgressBar[4, 3] { //[0, ]: 1학년, [1, ]: 2학년, [2, ]: 3학년, [3, ]: 기타, [, 0]: 미검사, [, 1]: 검사, [, 2]: 발열
+        CheckButton seeMoreInfo = new CheckButton("상세정보 보기"); //상세정보(체크 현황) 을 볼 건지 아니면 사용자 수만 볼 건지 결정하는 CheckButton
+        Frame[] statusListFrame = new Frame[2] { //상세정보를 보지 않을 때, 상세 정보를 볼 때 Frame
+            new Frame("사용자 수 (3초마다 새로고침)"), new Frame("검사 현황 (3초마다 새로고침)")
+        };
+        ProgressBar[,] statusProgressBar = new ProgressBar[4, 3] { //상세정보를 볼 때 사용하는 ProgressBar들 (학년과 검사 현황을 위해 2차원 배열)
+            //[0, ]: 1학년, [1, ]: 2학년, [2, ]: 3학년, [3, ]: 기타, [, 0]: 미검사, [, 1]: 검사, [, 2]: 발열
             {
                 new ProgressBar(),
                 new ProgressBar(),
@@ -113,9 +132,16 @@ namespace CovidCheckClientGui
             }
         };        
 
-        public Program() : base("코로나19 예방용 발열확인 프로그램")
+        //======================= 설정 =========================
+        SpinButton helpSet; //타임아웃시 재시도 횟수를 설정할 때 오른쪽에 있는 것 (세세하게 조절할 때 도와주는 역할)
+
+
+        
+        
+        public Program() : base("코로나19 예방용 발열체크 프로그램")
         {
-            string newVersion = "";
+            addLog("프로그램이 시작됨");
+            programProcessing = true; //아래에 있는 루프 도는 스레드들 일하도록 true 설정
             CssProvider cssProvider = new CssProvider(); //기본 CSS설정
             cssProvider.LoadFromData(@"
                 #add {
@@ -137,379 +163,765 @@ namespace CovidCheckClientGui
                     background-color: lightpink;
                 }
             ");
-            StyleContext.AddProviderForScreen(Gdk.Screen.Default, cssProvider, 800);
+            StyleContext.AddProviderForScreen(Gdk.Screen.Default, cssProvider, 800); //CSS 적용
 
+            if (doneUpdate) //(자동으로) 업데이트를 했다면
+            {
+                MessageDialog dialog = new MessageDialog(null, DialogFlags.Modal, MessageType.Error, ButtonsType.Close, false, "새로운 버전으로 업데이트를 완료했습니다!");
+                    dialog.Run();
+                    dialog.Dispose();
+            }
 
-            long ping = new CheckCovid19.User(File.ReadAllLines("config.txt")[0]).getPing();
-            base.Title = ($"코로나19 예방용 발열확인 프로그램 (통신 속도: {ping}ms)");
-
+            user = new CheckCovid19.User("localhost"); //User 선언
             try
             {
-                System.IO.File.ReadAllText("config.txt");
+                settingJson = user.loadSetting(settingPath); //설정 JSON파일을 가져와봄
             }
             catch
             {
-                File.WriteAllText("config.txt", "홈페이지 URL을 입력해 주세요... (마지막에 / 빼고)");
-                MessageDialog dialog = new MessageDialog(null, DialogFlags.Modal, MessageType.Error, ButtonsType.Close, false, "./config.txt에 홈페이지 주소를 입력해 주세요");
-                    dialog.Run();
-                    dialog.Dispose();
-                Environment.Exit(0);
+                string defaultSetting = @"{
+                    ""url"": ""localhost"",
+                    ""barcodeLength"": 8,
+                    ""timeoutRetry"": 100,
+                    ""checkUpdate"": true,
+                    ""autoUpdate"": false,
+                    ""usePassword"": false,
+                    ""password"": ""password""
+                }"; //기본 JSON 세팅
+                user.saveSetting(defaultSetting, settingPath); //기본 JSON 저장
+                settingJson = JObject.Parse(defaultSetting);
             }
 
+            user.url = settingJson["url"].ToString(); //설정 속 url 입력
 
-            addLog("프로그램이 시작됨");            
-            DeleteEvent += delegate {programProcessing = false; Application.Quit();};
+            helpSet = new SpinButton(new Adjustment((double)settingJson["timeoutRetry"], 0, 500, 1, 1, 0), 1, 0);
 
-            SetDefaultSize(1280, 850);
+
+            DeleteEvent += delegate {
+                programProcessing = false;
+                Application.Quit();
+            }; //이 창이 삭제되면 프로그램 종료
+
+            SetDefaultSize(1450, 850); //기본 창 사이즈 (권장)
             
-            // 전체를 감싸는 Grid
+            // 전체를 감싸는 Grid의 속성 설정
             grid.Margin = 20;
-            grid.ColumnHomogeneous = true;
-            grid.ColumnSpacing = 8;
-            //왼쪽의 탭들 (확인, 확인 취소, 추가)
-            Notebook selectMode = new Notebook();
+            grid.ColumnHomogeneous = true; //위젯들을 가로로 잡아당길거냐?
+            grid.ColumnSpacing = 8; //각 셀의 간격
 
 
-            //사용자 확인 Grid
+            //사용자 체크 Grid
             Grid check = new Grid();
-
-            //사용자 확인 속성 설정
-            check.ColumnHomogeneous = true; //창의 크기가 달라지면 알아서 위젯 크기 조절해줌
-            check.RowSpacing = 10; //Row는 위아래
-            check.ColumnSpacing = 10; //Column은 양 옆
-            check.Margin = 15;
-            check.MarginTop = 5;
-            checkInsertID.PlaceholderText = "사용자의 ID를 스캔 혹은 입력해 주세요";
-            checkInsertGrade.PlaceholderText = "사용자의 학년을 입력해 주세요";
-            checkInsertClass.PlaceholderText = "사용자의 반을 입력해 주세요";
-            checkInsertNumber.PlaceholderText = "사용자의 번호를 입력해 주세요";
-            checkInsertUser.Sensitive = false;
-            checkOK.Sensitive = false;
-
-            //사용자 확인 이벤트 설정
-            checkInsertID.KeyReleaseEvent += checkInsertIDChangeText;
-            checkOK.Clicked += checkOKClicked;
-            checkIsTeacher.Clicked += delegate {unlessStudent(title.check);};
-            checkInsertUser.Clicked += checkInsertUserClicked;
-            checkInsertGrade.KeyReleaseEvent += checkWithoutIDKeyRelease;
-            checkInsertClass.KeyReleaseEvent += checkWithoutIDKeyRelease;
-            checkInsertNumber.KeyReleaseEvent += checkWithoutIDKeyRelease;
-
-            //사용자 확인 배치(ID)
+            Frame checkFrame = new Frame("정상");
             {
+                //사용자 체크 속성 설정
+                check.ColumnHomogeneous = true; //창의 크기가 달라지면 알아서 위젯 크기 조절해줌
+                check.RowSpacing = 10; //Row는 위아래
+                check.ColumnSpacing = 10; //Column은 양 옆
+                check.Margin = 15;
+                check.MarginTop = 5;
+                checkInsertID.PlaceholderText = "사용자의 ID를 스캔 혹은 입력해 주세요";
+                checkInsertGrade.PlaceholderText = "사용자의 학년을 입력해 주세요";
+                checkInsertClass.PlaceholderText = "사용자의 반을 입력해 주세요";
+                checkInsertNumber.PlaceholderText = "사용자의 번호를 입력해 주세요";
+                checkInsertUser.Sensitive = false;
+
+                //사용자 체크 이벤트 설정
+                checkInsertID.KeyReleaseEvent += checkInsertIDChangeText;
+                checkIsTeacher.Clicked += delegate {unlessStudent(title.check);};
+                checkInsertUser.Clicked += checkInsertUserClicked;
+                checkInsertGrade.KeyReleaseEvent += checkWithoutIDKeyRelease;
+                checkInsertClass.KeyReleaseEvent += checkWithoutIDKeyRelease;
+                checkInsertNumber.KeyReleaseEvent += checkWithoutIDKeyRelease;
+
+                //사용자 체크 배치(ID)
                 check.Attach(checkInsertID, 1, 2, 5, 1); // 텍스트박스 추가
 
                 check.Attach(new Separator(Orientation.Horizontal), 1, 4, 5, 1);
+                    
+                    //사용자 체크 배치(학년, 반, 번호)
+                    {
+                        check.Attach(new Label("ID 없이 체크하기"), 1, 5, 5, 1);
+                        check.Attach(checkIsTeacher, 1, 6, 5, 1);
+                        check.Attach(new Label("학년"), 1, 7, 1, 1);
+                        check.Attach(checkInsertGrade, 2, 7, 4, 1);
+                        check.Attach(new Label("반"), 1, 8, 1, 1);
+                        check.Attach(checkInsertClass, 2, 8, 4, 1);
+                        check.Attach(new Label("번호"), 1, 9, 1, 1);
+                        check.Attach(checkInsertNumber, 2, 9, 4, 1);
+                        check.Attach(checkInsertUser, 1, 10, 5, 1);
+                    }
+
+                    checkFrame.Margin = 15;
+                    checkFrame.MarginBottom = 0;
+                    checkFrame.MarginTop = 0;
+                    checkFrame.Add(check);
             }
             
-            //사용자 확인 배치(학년, 반, 번호)
-            {
-                check.Attach(new Label("ID 없이 확인하기"), 1, 5, 5, 1);
-                check.Attach(checkIsTeacher, 1, 6, 5, 1);
-                check.Attach(new Label("학년"), 1, 7, 1, 1);
-                check.Attach(checkInsertGrade, 2, 7, 4, 1);
-                check.Attach(new Label("반"), 1, 8, 1, 1);
-                check.Attach(checkInsertClass, 2, 8, 4, 1);
-                check.Attach(new Label("번호"), 1, 9, 1, 1);
-                check.Attach(checkInsertNumber, 2, 9, 4, 1);
-                check.Attach(checkInsertUser, 1, 10, 5, 1);
-            }
-
-            Frame checkFrame = new Frame("정상");
-            checkFrame.Margin = 15;
-            checkFrame.MarginBottom = 0;
-            checkFrame.Add(check);
-
             Grid checkDoubt = new Grid();
-            checkDoubt.ColumnHomogeneous = true;
-            checkDoubt.RowSpacing = 10; 
-            checkDoubt.ColumnSpacing = 10;
-            checkDoubt.Margin = 15;
-            checkDoubt.MarginTop = 5;
-            checkDoubtInsertID.PlaceholderText = "사용자의 ID를 스캔 혹은 입력해 주세요";
-            checkDoubtInsertGrade.PlaceholderText = "사용자의 학년을 입력해 주세요";
-            checkDoubtInsertClass.PlaceholderText = "사용자의 반을 입력해 주세요";
-            checkDoubtInsertNumber.PlaceholderText = "사용자의 번호를 입력해 주세요";
-            checkDoubtInsertUser.Sensitive = false;
-
-            checkDoubtInsertID.KeyReleaseEvent += checkDoubtInsertIDChangeText;
-            checkDoubtIsTeacher.Clicked += delegate {unlessStudent(title.checkDoubt);};
-            checkDoubtInsertUser.Clicked += checkDoubtInsertUserClicked;
-            checkDoubtInsertGrade.KeyReleaseEvent += checkDoubtWithoutIDKeyRelease;
-            checkDoubtInsertClass.KeyReleaseEvent += checkDoubtWithoutIDKeyRelease;
-            checkDoubtInsertNumber.KeyReleaseEvent += checkDoubtWithoutIDKeyRelease;
-
-            //사용자 확인 배치(ID)
-            checkDoubt.Attach(checkDoubtInsertID, 1, 2, 5, 1); // 텍스트박스 추가
-
-            checkDoubt.Attach(new Separator(Orientation.Horizontal), 1, 4, 5, 1);
-            
-            //사용자 확인 배치(학년, 반, 번호)
+            Frame checkDoubtFrame = new Frame("발열");
             {
-                checkDoubt.Attach(new Label("ID 없이 확인하기"), 1, 5, 5, 1);
-                checkDoubt.Attach(checkDoubtIsTeacher, 1, 6, 5, 1);
-                checkDoubt.Attach(new Label("학년"), 1, 7, 1, 1);
-                checkDoubt.Attach(checkDoubtInsertGrade, 2, 7, 4, 1);
-                checkDoubt.Attach(new Label("반"), 1, 8, 1, 1);
-                checkDoubt.Attach(checkDoubtInsertClass, 2, 8, 4, 1);
-                checkDoubt.Attach(new Label("번호"), 1, 9, 1, 1);
-                checkDoubt.Attach(checkDoubtInsertNumber, 2, 9, 4, 1);
-                checkDoubt.Attach(checkDoubtInsertUser, 1, 10, 5, 1);
+                checkDoubt.ColumnHomogeneous = true;
+                checkDoubt.RowSpacing = 10; 
+                checkDoubt.ColumnSpacing = 10;
+                checkDoubt.Margin = 15;
+                checkDoubt.MarginTop = 5;
+                checkDoubtInsertID.PlaceholderText = "사용자의 ID를 스캔 혹은 입력해 주세요";
+                checkDoubtInsertGrade.PlaceholderText = "사용자의 학년을 입력해 주세요";
+                checkDoubtInsertClass.PlaceholderText = "사용자의 반을 입력해 주세요";
+                checkDoubtInsertNumber.PlaceholderText = "사용자의 번호를 입력해 주세요";
+                checkDoubtInsertUser.Sensitive = false;
+
+                checkDoubtInsertID.KeyReleaseEvent += checkDoubtInsertIDChangeText;
+                checkDoubtIsTeacher.Clicked += delegate {unlessStudent(title.checkDoubt);};
+                checkDoubtInsertUser.Clicked += checkDoubtInsertUserClicked;
+                checkDoubtInsertGrade.KeyReleaseEvent += checkDoubtWithoutIDKeyRelease;
+                checkDoubtInsertClass.KeyReleaseEvent += checkDoubtWithoutIDKeyRelease;
+                checkDoubtInsertNumber.KeyReleaseEvent += checkDoubtWithoutIDKeyRelease;
+
+                //사용자 체크 배치(ID)
+                checkDoubt.Attach(checkDoubtInsertID, 1, 2, 5, 1); // 텍스트박스 추가
+
+                checkDoubt.Attach(new Separator(Orientation.Horizontal), 1, 4, 5, 1);
+                
+                //사용자 체크 배치(학년, 반, 번호)
+                {
+                    checkDoubt.Attach(new Label("ID 없이 체크하기"), 1, 5, 5, 1);
+                    checkDoubt.Attach(checkDoubtIsTeacher, 1, 6, 5, 1);
+                    checkDoubt.Attach(new Label("학년"), 1, 7, 1, 1);
+                    checkDoubt.Attach(checkDoubtInsertGrade, 2, 7, 4, 1);
+                    checkDoubt.Attach(new Label("반"), 1, 8, 1, 1);
+                    checkDoubt.Attach(checkDoubtInsertClass, 2, 8, 4, 1);
+                    checkDoubt.Attach(new Label("번호"), 1, 9, 1, 1);
+                    checkDoubt.Attach(checkDoubtInsertNumber, 2, 9, 4, 1);
+                    checkDoubt.Attach(checkDoubtInsertUser, 1, 10, 5, 1);
+                }
+
+                checkDoubtFrame.Margin = 15;
+                checkDoubtFrame.MarginTop = 0;
+                checkDoubtFrame.Add(checkDoubt);
             }
 
-            Frame checkDoubtFrame = new Frame("발열");
-            checkDoubtFrame.Margin = 15;
-            checkDoubtFrame.MarginTop = 0;
-            checkDoubtFrame.Add(checkDoubt);
-
-
-            Grid checkAll = new Grid();
-            checkAll.ColumnHomogeneous = true;
-            checkAll.RowSpacing = 10;
-            checkAll.Attach(checkFrame, 1, 2, 5, 1);
-            checkAll.Attach(checkDoubtFrame, 1, 3, 5, 1);            
-
-
-            //사용자 확인 취소 Grid
-            Grid uncheck = new Grid();
-
-            //사용자 확인 취소 속성 설정
-            uncheck.ColumnHomogeneous = true; //창의 크기가 달라지면 알아서 위젯 크기 조절해줌
-            uncheck.RowSpacing = 10; //Row는 위아래
-            uncheck.ColumnSpacing = 10; //Column은 양 옆
-            uncheck.Margin = 15;
-            uncheckInsertID.PlaceholderText = "사용자의 ID를 스캔 혹은 입력해 주세요";
-            uncheckInsertGrade.PlaceholderText = "사용자의 학년을 입력해 주세요";
-            uncheckInsertClass.PlaceholderText = "사용자의 반을 입력해 주세요";
-            uncheckInsertNumber.PlaceholderText = "사용자의 번호를 입력해 주세요";
-            uncheckInsertUser.Sensitive = false;
-
-            //사용자 확인 취소 이벤트 설정
-            uncheckInsertID.KeyReleaseEvent += uncheckInsertIDChangeText;
-            uncheckInsertGrade.KeyReleaseEvent += uncheckWithoutIDKeyRelease;
-            uncheckInsertClass.KeyReleaseEvent += uncheckWithoutIDKeyRelease;
-            uncheckInsertNumber.KeyReleaseEvent += uncheckWithoutIDKeyRelease;
-            uncheckIsTeacher.Clicked += delegate {unlessStudent(title.uncheck);};
-            uncheckInsertUser.Clicked += uncheckInsertUserClicked;
-
-
-            //사용자 확인 취소 배치(ID)
-            uncheck.Attach(uncheckInsertID, 1, 2, 5, 1); // 텍스트박스 추가
-            
-            uncheck.Attach(new Separator(Orientation.Horizontal), 1, 4, 5, 1);
-
-            //사용자 확인 취소 배치(학년, 반, 번호)
+            Grid checkAll = new Grid(); //check하는 Frame들 배치
             {
-                uncheck.Attach(new Label("ID 없이 확인 취소하기"), 1, 5, 5, 1);
-                uncheck.Attach(uncheckIsTeacher, 1, 6, 5, 1);
-                uncheck.Attach(new Label("학년"), 1, 7, 1, 1);
-                uncheck.Attach(uncheckInsertGrade, 2, 7, 4, 1);
-                uncheck.Attach(new Label("반"), 1, 8, 1, 1);
-                uncheck.Attach(uncheckInsertClass, 2, 8, 4, 1);
-                uncheck.Attach(new Label("번호"), 1, 9, 1, 1);
-                uncheck.Attach(uncheckInsertNumber, 2, 9, 4, 1);
-                uncheck.Attach(uncheckInsertUser, 1, 10, 5, 1);
+                checkAll.ColumnHomogeneous = true;
+                checkAll.RowSpacing = 10;
+                checkAll.Attach(checkFrame, 1, 2, 5, 1);
+                checkAll.Attach(checkDoubtFrame, 1, 3, 5, 1);            
+            }
+
+
+            //사용자 체크 해제 Grid
+            Grid uncheck = new Grid();
+            {
+                //사용자 체크 해제 속성 설정
+                uncheck.ColumnHomogeneous = true; //창의 크기가 달라지면 알아서 위젯 크기 조절해줌
+                uncheck.RowSpacing = 10; //Row는 위아래
+                uncheck.ColumnSpacing = 10; //Column은 양 옆
+                uncheck.Margin = 15;
+                uncheckInsertID.PlaceholderText = "사용자의 ID를 스캔 혹은 입력해 주세요";
+                uncheckInsertGrade.PlaceholderText = "사용자의 학년을 입력해 주세요";
+                uncheckInsertClass.PlaceholderText = "사용자의 반을 입력해 주세요";
+                uncheckInsertNumber.PlaceholderText = "사용자의 번호를 입력해 주세요";
+                uncheckInsertUser.Sensitive = false;
+
+                //사용자 체크 해제 이벤트 설정
+                uncheckInsertID.KeyReleaseEvent += uncheckInsertIDChangeText;
+                uncheckInsertGrade.KeyReleaseEvent += uncheckWithoutIDKeyRelease;
+                uncheckInsertClass.KeyReleaseEvent += uncheckWithoutIDKeyRelease;
+                uncheckInsertNumber.KeyReleaseEvent += uncheckWithoutIDKeyRelease;
+                uncheckIsTeacher.Clicked += delegate {unlessStudent(title.uncheck);};
+                uncheckInsertUser.Clicked += uncheckInsertUserClicked;
+
+
+                //사용자 체크 해제 배치(ID)
+                uncheck.Attach(uncheckInsertID, 1, 2, 5, 1); // 텍스트박스 추가
+                
+                uncheck.Attach(new Separator(Orientation.Horizontal), 1, 4, 5, 1);
+
+                //사용자 체크 해제 배치(학년, 반, 번호)
+                {
+                    uncheck.Attach(new Label("ID 없이 체크 해제하기"), 1, 5, 5, 1);
+                    uncheck.Attach(uncheckIsTeacher, 1, 6, 5, 1);
+                    uncheck.Attach(new Label("학년"), 1, 7, 1, 1);
+                    uncheck.Attach(uncheckInsertGrade, 2, 7, 4, 1);
+                    uncheck.Attach(new Label("반"), 1, 8, 1, 1);
+                    uncheck.Attach(uncheckInsertClass, 2, 8, 4, 1);
+                    uncheck.Attach(new Label("번호"), 1, 9, 1, 1);
+                    uncheck.Attach(uncheckInsertNumber, 2, 9, 4, 1);
+                    uncheck.Attach(uncheckInsertUser, 1, 10, 5, 1);
+                }
             }
 
 
 
             //사용자 추가 Grid
-            Grid addUser = new Grid();
-            //사용자 추가 속성 설정
-            addUser.ColumnHomogeneous = true;
-            addUser.Margin = 15;
-            addUser.MarginTop = 5;
-            addUser.RowSpacing = 10;
-            addInsertID.PlaceholderText = "사용자의 ID를 스캔 혹은 입력해 주세요";
-            addInsertGrade.PlaceholderText = "사용자의 학년을 입력해 주세요";
-            addInsertClass.PlaceholderText = "사용자의 반을 입력해 주세요";
-            addInsertNumber.PlaceholderText = "사용자의 번호를 입력해 주세요";
-            addInsertName.PlaceholderText = "사용자의 이름을 입력해 주세요";  
-            insertUser.Sensitive = false;          
-            
-            //사용자 추가 이벤트 설정
-            insertUser.Clicked += insertUserClicked;
-            addIsTeacher.Clicked += delegate { unlessStudent(title.add); };
-            addInsertClass.KeyReleaseEvent += addUserKeyRelease;
-            addInsertGrade.KeyReleaseEvent += addUserKeyRelease;
-            addInsertNumber.KeyReleaseEvent += addUserKeyRelease;
-            addInsertName.KeyReleaseEvent += addUserKeyRelease;
-            addInsertID.KeyReleaseEvent += addUserKeyRelease;
-            
-            //사용자 추가 배치
-            {
-                addUser.Attach(addIsTeacher, 1, 1, 4, 1);
-
-                addUser.Attach(new Label("학년"), 1, 2, 1, 1);
-                addUser.Attach(addInsertGrade, 2, 2, 3, 1);
-
-                addUser.Attach(new Label("반"), 1, 3, 1, 1);
-                addUser.Attach(addInsertClass, 2, 3, 3, 1);
-
-                addUser.Attach(new Label("번호"), 1, 4, 1, 1);
-                addUser.Attach(addInsertNumber, 2, 4, 3, 1);
-
-                addUser.Attach(new Label("이름"), 1, 5, 1, 1);
-                addUser.Attach(addInsertName, 2, 5, 3, 1);
-
-                addUser.Attach(new Label("ID"), 1, 6, 1, 1);
-                addUser.Attach(addInsertID, 2, 6, 3, 1);
-
-                addUser.Attach(insertUser, 1, 7, 4, 1);
-            }
-
-
-            
             Frame addUserFrame = new Frame("사용자 추가");
-            addUserFrame.Margin = 15;
-            addUserFrame.MarginBottom = 0;
-            addUserFrame.Add(addUser);
-
-
-            Grid delUser = new Grid();
-            delInsertID.PlaceholderText = "사용자의 ID를 스캔 또는 입력해 주세요";
-            delInsertGrade.PlaceholderText = "사용자의 학년을 입력해 주세요";
-            delInsertClass.PlaceholderText = "사용자의 반을 입력해 주세요";
-            delInsertNumber.PlaceholderText = "사용자의 번호를 입력해 주세요";
-            delInsertUserWithoutID.Sensitive = false;
-            delInsertUser.Sensitive = false;
-
-
-            delUser.Margin = 15;
-            delUser.ColumnHomogeneous = true;
-            delUser.ColumnSpacing = 10;
-            delUser.RowSpacing = 10;
-
-            delInsertClass.KeyReleaseEvent += delUserWithoutIDKeyRelease;
-            delInsertGrade.KeyReleaseEvent += delUserWithoutIDKeyRelease;
-            delInsertNumber.KeyReleaseEvent += delUserWithoutIDKeyRelease;
-            delIsTeacher.Clicked += delegate {
-                unlessStudent(title.delete);
-            };
-            delInsertID.KeyReleaseEvent += delegate {
-                if (string.IsNullOrEmpty(delInsertID.Text)) delInsertUser.Sensitive = false;
-                else delInsertUser.Sensitive = true;
-            };
-            delInsertUser.Clicked += delInsertUserClicked;
-            delInsertUserWithoutID.Clicked += delInsertUserWithoutIDClicked;
-
+            Grid addUser = new Grid();
             {
-                delUser.Attach(delInsertID, 1, 1, 4, 1);
-                delUser.Attach(delInsertUser, 5, 1, 1, 1);
-                delUser.Attach(new Separator(Orientation.Horizontal), 1, 2, 5, 1);
-                delUser.Attach(new Label("ID없이 사용자 삭제하기"), 1, 3, 5, 1);
-                delUser.Attach(delIsTeacher, 1, 4, 5, 1);
-                delUser.Attach(new Label("학년"), 1, 5, 1, 1);
-                delUser.Attach(delInsertGrade, 2, 5, 3, 1);
-                delUser.Attach(new Label("반"), 1, 6, 1, 1);
-                delUser.Attach(delInsertClass, 2, 6, 3, 1);
-                delUser.Attach(new Label("번호"), 1, 7, 1, 1);
-                delUser.Attach(delInsertNumber, 2, 7, 3, 1);
-                delUser.Attach(delInsertUserWithoutID, 5, 5, 1, 3);
-            }
-            
+                //사용자 추가 속성 설정
+                addUser.ColumnHomogeneous = true;
+                addUser.Margin = 15;
+                addUser.MarginTop = 5;
+                addUser.RowSpacing = 10;
+                addInsertID.PlaceholderText = "사용자의 ID를 스캔 혹은 입력해 주세요";
+                addInsertGrade.PlaceholderText = "사용자의 학년을 입력해 주세요";
+                addInsertClass.PlaceholderText = "사용자의 반을 입력해 주세요";
+                addInsertNumber.PlaceholderText = "사용자의 번호를 입력해 주세요";
+                addInsertName.PlaceholderText = "사용자의 이름을 입력해 주세요";  
+                insertUser.Sensitive = false;          
+                
+                //사용자 추가 이벤트 설정
+                insertUser.Clicked += insertUserClicked;
+                addIsTeacher.Clicked += delegate { unlessStudent(title.add); };
+                addInsertClass.KeyReleaseEvent += addUserKeyRelease;
+                addInsertGrade.KeyReleaseEvent += addUserKeyRelease;
+                addInsertNumber.KeyReleaseEvent += addUserKeyRelease;
+                addInsertName.KeyReleaseEvent += addUserKeyRelease;
+                addInsertID.KeyReleaseEvent += addUserKeyRelease;
+                
+                //사용자 추가 배치
+                {
+                    addUser.Attach(addIsTeacher, 1, 1, 4, 1);
 
+                    addUser.Attach(new Label("학년"), 1, 2, 1, 1);
+                    addUser.Attach(addInsertGrade, 2, 2, 3, 1);
+
+                    addUser.Attach(new Label("반"), 1, 3, 1, 1);
+                    addUser.Attach(addInsertClass, 2, 3, 3, 1);
+
+                    addUser.Attach(new Label("번호"), 1, 4, 1, 1);
+                    addUser.Attach(addInsertNumber, 2, 4, 3, 1);
+
+                    addUser.Attach(new Label("이름"), 1, 5, 1, 1);
+                    addUser.Attach(addInsertName, 2, 5, 3, 1);
+
+                    addUser.Attach(new Label("ID"), 1, 6, 1, 1);
+                    addUser.Attach(addInsertID, 2, 6, 3, 1);
+
+                    addUser.Attach(insertUser, 1, 7, 4, 1);
+                }
+
+
+                
+                addUserFrame.Margin = 15;
+                addUserFrame.MarginBottom = 0;
+                addUserFrame.Add(addUser);
+            }
+
+            //사용자 삭제 Grid
             Frame delUserFrame = new Frame("사용자 삭제");
-            delUserFrame.Margin = 15;
-            delUserFrame.MarginTop = 0;
-            delUserFrame.MarginBottom = 0;
-            
-            delUserFrame.Add(delUser);
-
-            Grid statusList = new Grid();
-            statusList.RowSpacing = 10;
-            statusList.Margin = 15;
-            statusList.ColumnHomogeneous = true;
-
+            Grid delUser = new Grid();
             {
-                statusList.Attach(userCount[0], 1, 1, 1, 1);
-                statusList.Attach(userCount[1], 2, 1, 1, 1);
-                statusList.Attach(userCount[2], 1, 2, 1, 1);
-                statusList.Attach(userCount[3], 2, 2, 1, 1);
-                statusList.Attach(allUserCount, 3, 1, 1, 2);
-            }
-            
-            Grid statusListMore = new Grid();
-            statusListMore.RowSpacing = 10;
-            statusListMore.Margin = 15;
-            statusListMore.ColumnHomogeneous = true;
+                //위젯 속성 설정
+                delInsertID.PlaceholderText = "사용자의 ID를 스캔 또는 입력해 주세요";
+                delInsertGrade.PlaceholderText = "사용자의 학년을 입력해 주세요";
+                delInsertClass.PlaceholderText = "사용자의 반을 입력해 주세요";
+                delInsertNumber.PlaceholderText = "사용자의 번호를 입력해 주세요";
+                delInsertUserWithoutID.Sensitive = false;
+                delInsertUser.Sensitive = false;
 
-            foreach (var a in statusProgressBar)
-            {
-                a.ShowText = true;
-                a.Text = "로딩...";
-            }
-            for (int i = 0; i < 4; i++)
-            {
-                statusProgressBar[i, 0].Name = "gray";
-                statusProgressBar[i, 1].Name = "green";
-                statusProgressBar[i, 2].Name = "red";
-            }
-            {
-                statusListMore.Attach(new Label("학년"), 1, 1, 1, 1);
-                statusListMore.Attach(new Label("미검사"), 2, 1, 2, 1);
-                statusListMore.Attach(new Label("정상"), 4, 1, 2, 1);
-                statusListMore.Attach(new Label("발열"), 6, 1, 2, 1);
 
-                statusListMore.Attach(new Label("1"), 1, 2, 1, 1);
-                statusListMore.Attach(statusProgressBar[0, 0], 2, 2, 2, 1);
-                statusListMore.Attach(statusProgressBar[0, 1], 4, 2, 2, 1);
-                statusListMore.Attach(statusProgressBar[0, 2], 6, 2, 2, 1);
+                delUser.Margin = 15;
+                delUser.ColumnHomogeneous = true;
+                delUser.ColumnSpacing = 10;
+                delUser.RowSpacing = 10;
 
-                statusListMore.Attach(new Label("2"), 1, 3, 1, 1);
-                statusListMore.Attach(statusProgressBar[1, 0], 2, 3, 2, 1);
-                statusListMore.Attach(statusProgressBar[1, 1], 4, 3, 2, 1);
-                statusListMore.Attach(statusProgressBar[1, 2], 6, 3, 2, 1);
+                //위젯 이벤트 설정
+                delInsertClass.KeyReleaseEvent += delUserWithoutIDKeyRelease;
+                delInsertGrade.KeyReleaseEvent += delUserWithoutIDKeyRelease;
+                delInsertNumber.KeyReleaseEvent += delUserWithoutIDKeyRelease;
+                delIsTeacher.Clicked += delegate {
+                    unlessStudent(title.delete);
+                };
+                delInsertID.KeyReleaseEvent += delegate {
+                    if (string.IsNullOrEmpty(delInsertID.Text)) delInsertUser.Sensitive = false;
+                    else delInsertUser.Sensitive = true;
+                };
+                delInsertUser.Clicked += delInsertUserClicked;
+                delInsertUserWithoutID.Clicked += delInsertUserWithoutIDClicked;
 
-                statusListMore.Attach(new Label("3"), 1, 4, 1, 1);
-                statusListMore.Attach(statusProgressBar[2, 0], 2, 4, 2, 1);
-                statusListMore.Attach(statusProgressBar[2, 1], 4, 4, 2, 1);
-                statusListMore.Attach(statusProgressBar[2, 2], 6, 4, 2, 1);
-
-                statusListMore.Attach(new Label("기타"), 1, 5, 1, 1);
-                statusListMore.Attach(statusProgressBar[3, 0], 2, 5, 2, 1);
-                statusListMore.Attach(statusProgressBar[3, 1], 4, 5, 2, 1);
-                statusListMore.Attach(statusProgressBar[3, 2], 6, 5, 2, 1);
-            }
-
-            statusListFrame[0].Add(statusList);
-            statusListFrame[0].Margin = 15;
-            statusListFrame[0].MarginTop = 0;
-
-            Grid manageMode = new Grid();
-            manageMode.RowSpacing = 10;
-            manageMode.ColumnSpacing = 10;
-            manageMode.ColumnHomogeneous = true;
-            statusListFrame[0].MarginBottom = 0;
-            statusListFrame[1].MarginBottom = 0;
-            seeMoreInfo.MarginStart = 10;
-
-            seeMoreInfo.Clicked += (sender, e) => {
-                if (seeMoreInfo.Active)
+                //위젯들 배치
                 {
-                    statusListFrame[0].Hide();
-                    statusListFrame[1].ShowAll();
+                    delUser.Attach(delInsertID, 1, 1, 5, 1);
+                    delUser.Attach(delInsertUser, 5, 1, 1, 1);
+                    delUser.Attach(new Separator(Orientation.Horizontal), 1, 2, 5, 1);
+                    delUser.Attach(new Label("ID없이 사용자 삭제하기"), 1, 3, 5, 1);
+                    delUser.Attach(delIsTeacher, 1, 4, 5, 1);
+                    delUser.Attach(new Label("학년"), 1, 5, 1, 1);
+                    delUser.Attach(delInsertGrade, 2, 5, 3, 1);
+                    delUser.Attach(new Label("반"), 1, 6, 1, 1);
+                    delUser.Attach(delInsertClass, 2, 6, 3, 1);
+                    delUser.Attach(new Label("번호"), 1, 7, 1, 1);
+                    delUser.Attach(delInsertNumber, 2, 7, 3, 1);
+                    delUser.Attach(delInsertUserWithoutID, 5, 5, 1, 3);
                 }
-                else
-                {
-                    statusListFrame[1].Hide();
-                    statusListFrame[0].ShowAll();
-                }
-            };
-
-            manageMode.Attach(addUserFrame, 1, 1, 1, 2);
-            manageMode.Attach(delUserFrame, 1, 3, 1, 2);
-            manageMode.Attach(statusListFrame[0], 1, 5, 1, 1);
-            manageMode.Attach(seeMoreInfo, 1, 6, 1, 1);
+                delUserFrame.Margin = 15;
+                delUserFrame.MarginTop = 0;
+                delUserFrame.MarginBottom = 0;
+                
+                delUserFrame.Add(delUser);
+            }    
             
+
+            Grid statusList = new Grid(); //사용자 수만 알려주는거
+            {
+                statusList.RowSpacing = 10;
+                statusList.Margin = 15;
+                statusList.ColumnHomogeneous = true;
+
+                {
+                    statusList.Attach(userCount[0], 1, 1, 1, 1);
+                    statusList.Attach(userCount[1], 2, 1, 1, 1);
+                    statusList.Attach(userCount[2], 1, 2, 1, 1);
+                    statusList.Attach(userCount[3], 2, 2, 1, 1);
+                    statusList.Attach(allUserCount, 3, 1, 1, 2);
+                }
+            }
+            
+            Grid statusListMore = new Grid(); //검사 현황까지 알려주는거
+            {
+                statusListMore.RowSpacing = 10;
+                statusListMore.Margin = 15;
+                statusListMore.ColumnHomogeneous = true;
+                foreach (var a in statusProgressBar) //값을 받아오기 전엔 로딩
+                {
+                    a.ShowText = true;
+                    a.Text = "로딩...";
+                }
+                for (int i = 0; i < 4; i++) //ProgressBar에 색깔 입히기
+                {
+                    statusProgressBar[i, 0].Name = "gray";
+                    statusProgressBar[i, 1].Name = "green";
+                    statusProgressBar[i, 2].Name = "red";
+                }
+                
+                //배치
+                {
+                    statusListMore.Attach(new Label("학년"), 1, 1, 1, 1);
+                    statusListMore.Attach(new Label("미검사"), 2, 1, 2, 1);
+                    statusListMore.Attach(new Label("정상"), 4, 1, 2, 1);
+                    statusListMore.Attach(new Label("발열"), 6, 1, 2, 1);
+
+                    statusListMore.Attach(new Label("1"), 1, 2, 1, 1);
+                    statusListMore.Attach(statusProgressBar[0, 0], 2, 2, 2, 1);
+                    statusListMore.Attach(statusProgressBar[0, 1], 4, 2, 2, 1);
+                    statusListMore.Attach(statusProgressBar[0, 2], 6, 2, 2, 1);
+
+                    statusListMore.Attach(new Label("2"), 1, 3, 1, 1);
+                    statusListMore.Attach(statusProgressBar[1, 0], 2, 3, 2, 1);
+                    statusListMore.Attach(statusProgressBar[1, 1], 4, 3, 2, 1);
+                    statusListMore.Attach(statusProgressBar[1, 2], 6, 3, 2, 1);
+
+                    statusListMore.Attach(new Label("3"), 1, 4, 1, 1);
+                    statusListMore.Attach(statusProgressBar[2, 0], 2, 4, 2, 1);
+                    statusListMore.Attach(statusProgressBar[2, 1], 4, 4, 2, 1);
+                    statusListMore.Attach(statusProgressBar[2, 2], 6, 4, 2, 1);
+
+                    statusListMore.Attach(new Label("기타"), 1, 5, 1, 1);
+                    statusListMore.Attach(statusProgressBar[3, 0], 2, 5, 2, 1);
+                    statusListMore.Attach(statusProgressBar[3, 1], 4, 5, 2, 1);
+                    statusListMore.Attach(statusProgressBar[3, 2], 6, 5, 2, 1);
+                }
+
+                statusListFrame[0].Add(statusList);
+                statusListFrame[0].Margin = 15;
+                statusListFrame[0].MarginTop = 0;
+            }
+
+            
+            
+
             ScrolledWindow scroll2 = new ScrolledWindow();
-            scroll2.Add(manageMode);
+            Grid manageMode = new Grid(); //사용자 설정 Grid
+            {
+                //속성 설정
+                manageMode.RowSpacing = 10;
+                manageMode.ColumnSpacing = 10;
+                manageMode.ColumnHomogeneous = true;
+                statusListFrame[0].MarginBottom = 0;
+                statusListFrame[1].MarginBottom = 0;
+                seeMoreInfo.MarginStart = 10;
 
-            //Grid들 Notebook에 추가
-            selectMode.AppendPage(checkAll, new Label("확인"));
-            selectMode.AppendPage(uncheck, new Label("확인 취소"));
-            selectMode.AppendPage(scroll2, new Label("사용자 관리"));
+                //CheckButton 이벤트
+                seeMoreInfo.Clicked += (sender, e) => {
+                    if (seeMoreInfo.Active)
+                    {
+                        statusListFrame[0].Hide();
+                        statusListFrame[1].ShowAll();
+                    }
+                    else
+                    {
+                        statusListFrame[1].Hide();
+                        statusListFrame[0].ShowAll();
+                    }
+                };
+
+                //배치
+                manageMode.Attach(addUserFrame, 1, 1, 1, 2);
+                manageMode.Attach(delUserFrame, 1, 3, 1, 2);
+                manageMode.Attach(statusListFrame[0], 1, 5, 1, 1);
+                manageMode.Attach(seeMoreInfo, 1, 6, 1, 1);
             
+                scroll2.Add(manageMode);
+            }
+            
+            Grid setting = new Grid(); //설정 Grid
+            {
+                Dictionary<string, Grid> grids = new Dictionary<string, Grid>(); //Grid가 꽤나 필요해서 Dict로 묶음
+
+                //Frame들은 설정할 거 없으니 그냥 바로
+                Frame setUrlFrame = new Frame("URL 설정");
+                Frame setTimeoutRetryFrame = new Frame("타임아웃 재시도 횟수 설정");
+                Frame setUpdateCheckFrame = new Frame("업데이트 설정");
+                Frame setPasswordFrame = new Frame("비밀번호 설정");
+                Frame getSettingFrame = new Frame("설정 파일 불러오기");
+
+                //setting Grid 설정
+                {
+                    setting.ColumnHomogeneous = true;
+                    setting.RowSpacing = 10;
+                    setting.Margin = 10;
+                }
+                //setting Grid 배치
+                {
+                    setting.Attach(setUrlFrame, 1, 1, 1, 1);
+                    setting.Attach(setTimeoutRetryFrame, 1, 2, 1, 1);
+                    setting.Attach(setUpdateCheckFrame, 1, 3, 1, 1);
+                    setting.Attach(getSettingFrame, 1, 4, 1, 1);
+                    setting.Attach(setPasswordFrame, 1, 5, 1, 1);
+                }                
+
+                grids.Add("setUrl", new Grid()); //URL 설정하는 곳
+                {
+                    Label label = new Label("http://, https://"); //http://, https://같은거 입력하지 말라는 거
+                    Entry url = new Entry(); //url 입력하는 곳
+                    {
+                        //속성 설정
+                        url.PlaceholderText = "웹 사이트의 URL을 입력하세요.";
+                        label.Halign = Align.End;
+                        url.Text = settingJson["url"].ToString();
+                        grids["setUrl"].ColumnSpacing = 10;
+                    }
+                    {
+                        url.KeyReleaseEvent += async delegate {
+                            string now = url.Text;
+                            await Task.Delay(500); //계속 저장하진 않고 입력이 완료되었을 것 같을 때만
+                            if (now == url.Text)
+                            {
+                                settingJson["url"] = url.Text;
+                                user.url = url.Text;
+                                user.saveSetting(settingJson.ToString(), settingPath);
+                            }
+                        };
+                    }
+                    {
+                        grids["setUrl"].Attach(label, 1, 1, 1, 1);
+                        grids["setUrl"].Attach(url, 2, 1, 5, 1);
+                    }
+                    setUrlFrame.Add(grids["setUrl"]);                    
+                }
+
+                grids.Add("setTimeoutRetry", new Grid()); //타임아웃시 재시도 횟수 설정하는 곳
+                {
+                    Scale time = new Scale(Orientation.Horizontal, new Adjustment((double)settingJson["timeoutRetry"], 0, 500, 0, 1, 0)); //0 ~ 500 사이
+
+                    {
+                        //속성 설정
+                        time.RoundDigits = 0;
+                        time.Digits = 0;
+                        time.DrawValue = false;
+
+                        grids["setTimeoutRetry"].Attach(new Label("타임아웃시 재시도 횟수를 설정해 주세요."), 1, 1, 5, 1);
+                        grids["setTimeoutRetry"].Attach(time, 1, 2, 4, 1);
+                        grids["setTimeoutRetry"].Attach(helpSet, 5, 2, 1, 1);
+                    }
+                    {
+                        time.ValueChanged += delegate {
+                            helpSet.Value = time.Value;
+                        };
+                        helpSet.ValueChanged += async delegate {
+                            time.Value = helpSet.Value;
+                            double now = helpSet.Value;
+                            await Task.Delay(100); //얘는 값이 빨리빨리 바뀔 것 같으니 0.1초
+                            if (now == helpSet.Value)
+                            {
+                                settingJson["timeoutRetry"] = time.Value;
+                                user.saveSetting(settingJson.ToString(), settingPath);
+                            }
+                        };
+
+                    }
+                    setTimeoutRetryFrame.Add(grids["setTimeoutRetry"]);
+                }
+
+                grids.Add("setUpdateCheck", new Grid()); //업데이트 설정
+                {
+                    Gtk.Switch checkUpdate = new Gtk.Switch(); //업데이트 체크 여부 (Switch가 이미 있으니...)
+                    Gtk.Switch autoUpdate = new Gtk.Switch(); //자동 업데이트 여부
+                    {
+                        checkUpdate.StateChanged += delegate {
+                            autoUpdate.Sensitive = checkUpdate.State;
+                            settingJson["checkUpdate"] = checkUpdate.State; //여긴 뭐 딜레이 넣을 필요 없겠지
+                            user.saveSetting(settingJson.ToString(), settingPath);
+                        };
+
+                        autoUpdate.StateChanged += delegate {
+                            settingJson["autoUpdate"] = autoUpdate.State;
+                            user.saveSetting(settingJson.ToString(), settingPath);
+                        };
+                    }
+
+                    {
+                        checkUpdate.State = (bool)settingJson["checkUpdate"];
+                        autoUpdate.State = (bool)settingJson["autoUpdate"];
+                        autoUpdate.Sensitive = (bool)settingJson["checkUpdate"];
+                    }
+
+                    {
+                        grids["setUpdateCheck"].Attach(new Label("프로그램을 킬 때마다 업데이트를 확인하기"), 1, 1, 5, 1);
+                        Grid checkgrid = new Grid();
+                        checkgrid.Add(checkUpdate);
+                        grids["setUpdateCheck"].Attach(checkgrid, 6, 1, 1, 1);
+
+                        Grid autogrid = new Grid();
+                        autogrid.Add(autoUpdate);
+                        grids["setUpdateCheck"].Attach(new Label("업데이트 확인시 자동으로 업데이트하기"), 1, 2, 5, 1);
+                        grids["setUpdateCheck"].Attach(autogrid, 6, 2, 1, 1);
+                    }
+                    setUpdateCheckFrame.Add(grids["setUpdateCheck"]);
+
+                }
+
+                grids.Add("getSetting", new Grid()); //설정 파일 가져오기
+                {
+                    Entry filePath = new Entry("파일을 선택하세요.");
+                    Button getFile = new Button("파일 불러오기");
+                    FileChooserDialog fileChooser = new FileChooserDialog("설정 파일 불러오기", null, FileChooserAction.Open, "불러오기", ResponseType.Accept);
+                    FileFilter filter = new FileFilter();
+                    filter.AddPattern("*.json"); //json파일만
+                    fileChooser.Filter = filter;
+                    {
+                        getFile.Clicked += delegate {
+                            if (fileChooser.Run() == -3)
+                            {
+                                filePath.Text = fileChooser.Filename;
+                                try
+                                {
+                                    user.loadSetting(fileChooser.Filename); //파일 가져오기
+                                }
+                                catch
+                                {
+                                    MessageDialog dialog = new MessageDialog(null, DialogFlags.DestroyWithParent, MessageType.Info, ButtonsType.Ok, false, "잘못된 설정 파일입니다. 설정 값이 변하지 않습니다."); //설정 파일 잘못된거면 빠꾸
+                                    dialog.Run();
+                                    dialog.Dispose();
+                                    return;
+                                }
+                                
+                                JObject newSetting = user.loadSetting(fileChooser.Filename); //제대로 된 놈이면 로드
+                                if (newSetting.ContainsKey("url") && newSetting.ContainsKey("barcodeLength") && newSetting.ContainsKey("timeoutRetry") && newSetting.ContainsKey("checkUpdate") && newSetting.ContainsKey("autoUpdate") && newSetting.ContainsKey("usePassword") && newSetting.ContainsKey("password")) //원하는 값이 다 있으면 적용
+                                {
+                                    File.Copy(fileChooser.Filename, "./config.json", true);
+                                    MessageDialog dialog = new MessageDialog(null, DialogFlags.DestroyWithParent, MessageType.Info, ButtonsType.Ok, false, "설정 파일을 불러왔습니다. 프로그램을 다시 시작합니다.");
+                                    dialog.Run();
+                                    dialog.Dispose();
+                                    programProcessing = false;
+                                    base.Close();
+                                    Program.Main(new string[0]);
+                                }
+                                else
+                                {
+                                    MessageDialog dialog = new MessageDialog(null, DialogFlags.DestroyWithParent, MessageType.Info, ButtonsType.Ok, false, "잘못된 설정 파일입니다. 설정 값이 변하지 않습니다.");
+                                    dialog.Run();
+                                    dialog.Dispose();
+                                }
+                            }
+                            fileChooser.Dispose();
+                            fileChooser = new FileChooserDialog("설정 파일 불러오기", null, FileChooserAction.Open, "불러오기", ResponseType.Accept);
+                            fileChooser.Filter = filter;
+                        };
+                    }
+
+                    {
+                        filePath.IsEditable = false;
+                        fileChooser.SelectMultiple = false;
+                    }
+                    {
+                        grids["getSetting"].Attach(filePath, 1, 1, 4, 1);
+                        grids["getSetting"].Attach(getFile, 5, 1, 1, 1);
+                    }
+                    getSettingFrame.Add(grids["getSetting"]);
+
+                }
+                
+                grids.Add("setPassword", new Grid()); //비밀번호 설정
+                {
+                    Entry setEnterPassword = new Entry();
+                    Button usePassword = new Button("비밀번호 설정하기");
+                    Button showPassword = new Button("보기");
+                    {
+                        grids["setPassword"].RowSpacing = 5;
+                        grids["setPassword"].ColumnSpacing = 5;
+                        grids["setPassword"].Margin = 5;
+                        setEnterPassword.PlaceholderText = "비밀번호를 입력하세요.";
+                        setEnterPassword.Valign = Align.Center;
+                        setEnterPassword.Visibility = false;
+                    }
+                    {
+                        grids["setPassword"].Attach(setEnterPassword, 1, 1, 4, 2);
+                        grids["setPassword"].Attach(usePassword, 5, 1, 1, 1);
+                        grids["setPassword"].Attach(new Label(), 2, 1, 4, 1);
+                        grids["setPassword"].Attach(showPassword, 5, 2, 1, 1);
+                    }
+                    {
+                        showPassword.Entered += delegate { //마우스 커서 올려뒀을 때
+                            setEnterPassword.Visibility = true;
+                            setEnterPassword.IsEditable = false;
+                        };
+                        showPassword.LeaveNotifyEvent += delegate { //마우스 커서 땔 때
+                            setEnterPassword.Visibility = false; //텍스트를 못 보도록 함
+                            setEnterPassword.IsEditable = true;
+                        };
+                        usePassword.Clicked += delegate {
+                            MessageDialog done = null;
+                            if (setEnterPassword.Text == "") //텍스트가 없으면 비밀번호 사용 안함
+                            {
+                                settingJson["usePassword"] = false;
+                                user.saveSetting(settingJson.ToString(), settingPath);
+                                done = new MessageDialog(null, DialogFlags.DestroyWithParent, MessageType.Info, ButtonsType.Ok, false, "비밀번호 설정 (비밀번호 사용 안함)이 완료되었습니다.");
+                            }
+                            else
+                            {
+                                settingJson["usePassword"] = true;
+                                settingJson["password"] = user.getSha512(setEnterPassword.Text);
+                                user.saveSetting(settingJson.ToString(), settingPath);
+                                done = new MessageDialog(null, DialogFlags.DestroyWithParent, MessageType.Info, ButtonsType.Ok, false, $"비밀번호 설정 (비밀번호: {setEnterPassword.Text})이 완료되었습니다.");
+                            }
+                            done.Run();
+                            done.Dispose();                            
+                        };
+                    }
+                    setPasswordFrame.Add(grids["setPassword"]);
+                }
+                
+                foreach (var a in grids) //설정 Grid에 공통으로 적용되는 것
+                {
+                    a.Value.ColumnHomogeneous = true;
+                    a.Value.Margin = 10;
+                    a.Value.MarginTop = 0;
+                }
+            }
+
+            Grid toDev = new Grid(); //개발자들에게 건의하거나 할 때 쓰는거
+            {
+                toDev.ColumnHomogeneous = true;
+                toDev.RowSpacing = 10;
+                toDev.Margin = 10;
+
+                Grid toClientDev = new Grid();
+                //GitHub Repo: https://github.com/SoftWareAndGuider/Covid-Check-Client
+                //GitHub Issue: https://github.com/SoftWareAndGuider/Covid-Check-Client/issues/new
+                Grid toServerDev = new Grid();
+                //(Server) GitHub Repo: https://github.com/SoftWareAndGuider/Covid-Check
+                //(Server) GitHub Issue: https://github.com/SoftWareAndGuider/Covid-Check/issues/new
+                Frame toClient = new Frame("클라이언트 개발자 (csnewcs)");
+                Frame toServer = new Frame("서버 개발자 (pmh-only, Noeul-Night)");
+
+                Button clientRepo = new Button("클라이언트 프로그램의 소스코드 보러 가기");
+                Button serverRepo = new Button("서버 프로그램의 소스코드 보러 가기");
+
+                Button clientIssue = new Button("클라이언트 개발자에게 건의하기");
+                Button serverIssue = new Button("서버 개발자에게 건의하기");
+
+                Button downloadOld = new Button("클라이언트 프로그램의 릴리즈 보기");
+
+                toClientDev.ColumnSpacing = 10;
+                toClientDev.Margin = 10;
+                toServerDev.ColumnSpacing = 10;
+                toServerDev.Margin = 10;
+
+                toClientDev.Attach(clientRepo, 1, 1, 1, 1);
+                toClientDev.Attach(clientIssue, 2, 1, 1, 1);
+                toClientDev.Attach(downloadOld, 3, 1, 1, 1);
+                toClient.Add(toClientDev);
+
+                toServerDev.Attach(serverRepo, 1, 1, 1, 1);
+                toServerDev.Attach(serverIssue, 2, 1, 1, 1);
+                toServer.Add(toServerDev);
+
+                toDev.Attach(toClient, 1, 1, 1, 1);
+                toDev.Attach(toServer, 1, 2, 1, 1);
+
+                {
+                    clientRepo.Clicked += delegate {
+                        try 
+                        {
+                            Process.Start("https://github.com/SoftWareAndGuider/Covid-Check-Client");
+                        }
+                        catch 
+                        {
+                            ProcessStartInfo pr = new ProcessStartInfo("https://github.com/SoftWareAndGuider/Covid-Check-Client"); //리눅스
+                            pr.UseShellExecute = true;
+                            Process.Start(pr);
+                        }
+                    };
+                    serverRepo.Clicked += delegate {
+                        try 
+                        {
+                            Process.Start("https://github.com/SoftWareAndGuider/Covid-Check");
+                        }
+                        catch 
+                        {
+                            ProcessStartInfo pr = new ProcessStartInfo("https://github.com/SoftWareAndGuider/Covid-Check");
+                            pr.UseShellExecute = true;
+                            Process.Start(pr);
+                        }
+                    };
+                    clientIssue.Clicked += delegate {
+                        try 
+                        {
+                            Process.Start("https://github.com/SoftWareAndGuider/Covid-Check-Client/issues/new");
+                        }
+                        catch 
+                        {
+                            ProcessStartInfo pr = new ProcessStartInfo("https://github.com/SoftWareAndGuider/Covid-Check-Client/issues/new");
+                            pr.UseShellExecute = true;
+                            Process.Start(pr);
+                        }
+                    };
+                    clientRepo.Clicked += delegate {
+                        try 
+                        {
+                            Process.Start("https://github.com/SoftWareAndGuider/Covid-Check/issues/new");
+                        }
+                        catch 
+                        {
+                            ProcessStartInfo pr = new ProcessStartInfo("https://github.com/SoftWareAndGuider/Covid-Check/issues/new");
+                            pr.UseShellExecute = true;
+                            Process.Start(pr);
+                        }
+                    };
+                    downloadOld.Clicked += delegate {
+                        try 
+                        {
+                            Process.Start("https://github.com/SoftWareAndGuider/Covid-Check-Client/releases");
+                        }
+                        catch 
+                        {
+                            ProcessStartInfo pr = new ProcessStartInfo("https://github.com/SoftWareAndGuider/Covid-Check-Client/releases");
+                            pr.UseShellExecute = true;
+                            Process.Start(pr);
+                        }
+                    };
+                }
+            }
+            
+            //Grid들 Notebook에 추가
+            selectMode.AppendPage(checkAll, new Label("체크"));
+            selectMode.AppendPage(uncheck, new Label("체크 해제"));
+            selectMode.AppendPage(scroll2, new Label("사용자 관리"));
+            selectMode.AppendPage(setting, new Label("설정"));
+            selectMode.AppendPage(toDev, new Label("개발자들에게"));
             
             //로그 나타내는 ScrolledWindow에 추가
             scroll.Add(log);
@@ -519,7 +931,7 @@ namespace CovidCheckClientGui
             Grid setTimer = new Grid();
             setTimer.Attach(time, 1, 1, 1, 1);
 
-            Label licence = new Label("MIT + ɑ License Copyright (c) 2020 SoftWareAndGuider, csnewcs, pmh-only, Noeul-Night / 자세한 저작권 관련 사항과 이 프로그램의 소스코드는 https://github.com/softwareandguider/covid-check-client에서 확인해 주세요.");
+            Label licence = new Label("Custom License Copyright (c) 2020 SoftWareAndGuider, csnewcs, pmh-only, Noeul-Night / 자세한 저작권 관련 사항과 이 프로그램의 소스코드는 https://github.com/softwareandguider/covid-check-client에서 확인해 주세요.");
             licence.Margin = 10;
             licence.Valign = Align.End;
             EventBox b = new EventBox();
@@ -535,96 +947,181 @@ namespace CovidCheckClientGui
 
             checkInsertID.SetSizeRequest(1, 3);
 
-            //창에 추가
-            Add(grid);
-
+            
             //이제 보여주기
-            ShowAll();
+            if ((bool)settingJson["usePassword"]) //비밀번호를 사용한다면
+            {
+                Grid usePassword = new Grid(); //모양 잡기
+                usePassword.Margin = 15;
+                usePassword.ColumnSpacing = 10;
+                usePassword.RowSpacing = 10;
+                usePassword.RowHomogeneous = true;
+                usePassword.Halign = Align.Center;
+                
+                Label notice = new Label("비밀번호를 입력하고 확인 버튼을 눌러주세요.");
+                notice.Valign = Align.End;
+                
+                Entry enterPassword = new Entry();
+                enterPassword.PlaceholderText = "비밀번호를 입력하세요.";
+                enterPassword.Visibility = false;
+                enterPassword.Valign = Align.Start;
 
-            statusListFrame[1].Add(statusListMore);
-            statusListFrame[1].Margin = 15;
-            statusListFrame[1].MarginTop = 0;
-            manageMode.Attach(statusListFrame[1], 1, 5, 1, 1);
+                Button enter = new Button("입력");
+                enter.Valign = Align.Start;
+
+                usePassword.Attach(notice, 1, 1, 5, 1);
+                usePassword.Attach(enterPassword, 1, 2, 3, 1);
+                usePassword.Attach(enter, 4, 2, 2, 1);
+
+                Add(usePassword);
+                ShowAll();
+
+                enter.Clicked += delegate {
+                    if (user.getSha512(enterPassword.Text) == settingJson["password"].ToString()) //비밀번호가 맞다면
+                    {
+                        Remove(usePassword); //이거 지우고
+
+                        //창에 추가
+                        Add(grid);
+                        ShowAll();
+                        statusListFrame[1].Add(statusListMore);
+                        statusListFrame[1].Margin = 15;
+                        statusListFrame[1].MarginTop = 0;
+                        manageMode.Attach(statusListFrame[1], 1, 5, 1, 1);
 
 
-            Thread status = new Thread(new ThreadStart(getStatus));
-            Thread showTime = new Thread(new ThreadStart(timer));
-            status.Start();
-            showTime.Start();
+                        Thread status = new Thread(new ThreadStart(getStatus));
+                        Thread showTime = new Thread(new ThreadStart(timer));
+                        status.Start();
+                        showTime.Start();
 
-            selectMode.Page = 2;
-            selectMode.Page = 0; //이런식으로 하지 않으면 종종 발열확인를 선택할 수 없을 때가 있음
+                        selectMode.Page = 2;
+                        selectMode.Page = 0; //이런식으로 하지 않으면 종종 발열체크를 선택할 수 없을 때가 있음
+                    }
+                    else //비밀번호가 틀렸다면
+                    {
+                        MessageDialog dialog = new MessageDialog(null, DialogFlags.Modal, MessageType.Error, ButtonsType.Ok, false, "틀렸습니다. 다시 시도해주세요.");
+                        dialog.Run();
+                        dialog.Dispose();
+                    }
+                };
+            }
+            else //비밁번호를 사용하지 않는다면
+            {
+                //창에 추가
+                Add(grid);
+                ShowAll();
+                statusListFrame[1].Add(statusListMore);
+                statusListFrame[1].Margin = 15;
+                statusListFrame[1].MarginTop = 0;
+                manageMode.Attach(statusListFrame[1], 1, 5, 1, 1);
+
+
+                Thread status = new Thread(new ThreadStart(getStatus));
+                Thread showTime = new Thread(new ThreadStart(timer));
+                status.Start();
+                showTime.Start();
+
+                selectMode.Page = 2;
+                selectMode.Page = 0; //이런식으로 하지 않으면 종종 발열체크를 선택할 수 없을 때가 있음
+            }
+
 
             addLog("프로그램 로딩이 완료됨");
 
-            if (user.hasNewVersion(1, out newVersion))
+            //=========== 업데이트 확인 ===============
+            if ((bool)settingJson["checkUpdate"] && !doneUpdate) //업데이트를 체크하고 방금 업데이트를 하지 않았다면
             {
-                MessageDialog dialog = new MessageDialog(null, DialogFlags.Modal, MessageType.Info, ButtonsType.Close, true, $"프로그램의 새 버전({newVersion})을 찾았습니다. <a href=\"https://github.com/SoftWareAndGuider/Covid-Check-Client/releases\">여기를 눌러</a> 확인해 주세요.");
-                dialog.Run();
-                dialog.Dispose();
+                JArray update = new JArray();
+                if (user.hasNewVersion(2, out update)) //신버전 확인
+                {
+                    if ((bool)settingJson["autoUpdate"]) //자동 업데이트가 켜져있다면
+                    {
+                        WebClient client = new WebClient();
+                        client.Encoding = System.Text.Encoding.UTF8;
+                        client.Headers.Add("user-agent", "CovidCheckClientCheckUpdate");
+                        JArray files = update.First()["assets"] as JArray;
+
+                        foreach (var file in files)
+                        {
+                            if (file["name"].ToString() == "My-School-Version.zip")
+                            {
+                                client.DownloadFile(file["browser_download_url"].ToString(), "update.zip"); //god Github api
+                                break;
+                            }
+                        }
+                        ZipFile.ExtractToDirectory("./update.zip", "./", true); //압축을 풀고
+                        Directory.CreateDirectory("update"); //업데이트 파일들 집어넣을 폴더
+
+
+                        if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux)) //리눅스 (프로그램이 켜져 있어도 파일 복사 가능, ProcessStartInfo.UseShellExecute = false면 실행 불가)
+                        {
+                            ZipFile.ExtractToDirectory("./linux-x64.zip", "./update", true);
+                            ProcessStartInfo info = new ProcessStartInfo("update/CovidCheckClientGui", "update linux");
+                            info.UseShellExecute = true;
+                            Process.Start("chmod", "777 update");
+                            Process.Start("chmod", "777 update/CovidCheckClientGui"); //실행 가능하도록 해주고
+                            Thread.Sleep(1000);
+                            Process process = new Process();
+                            process.StartInfo = info;
+                            process.Start();
+
+                            Environment.Exit(0);
+                        }
+                        else if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) //윈도우 (프로그램이 켜져 있으면 파일 복사 불가능)
+                        {
+                            ZipFile.ExtractToDirectory("./win-x64.zip", "./update", true);
+                            Directory.CreateDirectory("files");
+
+                            DirectoryInfo updateDictInfo = new DirectoryInfo("update");
+                            foreach (var file in updateDictInfo.GetFiles()) //파일 복사
+                            {
+                                file.CopyTo("files/" + file.Name, true);
+                            }
+
+                            ProcessStartInfo info = new ProcessStartInfo("files/CovidCheckClientGui.exe", "update windows");
+                            info.WorkingDirectory = "./update";
+                            Process.Start(info);
+                            Environment.Exit(0);
+                        }
+                    }
+                    else //자동 업데이트 기능이 꺼져있다면
+                    {
+                        string name = update.First()["name"].ToString();
+                        MessageDialog dialog = new MessageDialog(null, DialogFlags.Modal, MessageType.Info, ButtonsType.Close, true, $"프로그램의 새 버전({name})을 찾았습니다. <a href=\"https://github.com/SoftWareAndGuider/Covid-Check-Client/releases\">여기를 눌러</a> 확인해 주세요.");
+                        dialog.Run();
+                        dialog.Dispose();
+                    }
+                }                
             }
         }
-        
-        
 
 
-        private void getStatus()
+        private void getStatus() //학생들 상황 가져오는 메서드
         {
-            string url = "http://" + File.ReadAllLines("config.txt")[0] + "/api";
-            WebClient client = new WebClient();
-            string uploadString = "{\"process\":\"info\", \"multi\": true}";
-            try
+            while (programProcessing) //프로그램 꺼질 때 까지 루프
             {
-                client.Headers.Add("Content-Type", "application/json");
-                client.UploadString(url, "PUT", uploadString);
-            }
-            catch
-            {
-                url = "https://" + File.ReadAllLines("config.txt")[0] + "/api";
-                client.Headers.Add("Content-Type", "application/json");
-                bool doing = true;
-                client.UploadStringCompleted += (sender, e) => {
-                    try
+                long ping = user.getPing(); //핑
+                Application.Invoke(delegate {
+                    if (ping == -1)
                     {
-                        var a = e.Result;
-                        doing = false;
+                        base.Title = $"코로나19 예방용 발열체크 프로그램 (통신 속도: 알 수 없음)";
                     }
-                    catch
+                    else
                     {
-                        Application.Invoke(delegate {
-                            MessageDialog dialog = new MessageDialog(null, DialogFlags.Modal, MessageType.Error, ButtonsType.Close, false, "사용자 정보를 불러오는데 실패했습니다. URL이나 인터넷을 확인해 주세요.");
-                            dialog.Run();
-                            dialog.Dispose();
-                            Environment.Exit(0);
-                        });
+                        base.Title = $"코로나19 예방용 발열체크 프로그램 (통신 속도: {ping}ms)";
                     }
-                };
-                client.UploadStringAsync(new Uri(url), "PUT", uploadString);
-                while (doing)
-                {
+                });
 
-                }
-                client = new WebClient();
-            }
 
-            while (programProcessing)
-            {
-                client.Headers.Add("Content-Type", "application/json");
-                JObject result = new JObject();
                 try
                 {
-                    string down = "";
-                    client.UploadStringCompleted += (sender, e) => {
-                        down = e.Result;
-                    };
-                    client.UploadStringAsync(new Uri(url), "PUT", uploadString);
-                    while (down == "")
-                    {
-                        System.Threading.Thread.Sleep(10);
-                    }
-                    result = JObject.Parse(down);
+                    int err = 0;
+                    JObject uploadString = JObject.Parse(@"{""process"":""info"", ""multi"":true}"); //PUT할 string
+                    JObject result = user.upload(uploadString, out err);
+
                     StatusParsing sp = new StatusParsing();
-                    if (seeMoreInfo.Active)
+                    if (seeMoreInfo.Active) //검사 현황을 볼 때
                     {
                         double[,] parse = sp.moreInfo(result);
                         double[] allUsers = new double[4] {
@@ -633,8 +1130,8 @@ namespace CovidCheckClientGui
                             parse[2, 0] + parse[2, 1] + parse[2, 2],
                             parse[3, 0] + parse[3, 1] + parse[3, 2]
                         };
-
                         Application.Invoke(delegate {
+                            //text 설정
                             {
                                 statusProgressBar[0, 0].Text = $"{parse[0, 0]}/{allUsers[0]}";
                                 statusProgressBar[0, 1].Text = $"{parse[0, 1]}/{allUsers[0]}";
@@ -654,8 +1151,9 @@ namespace CovidCheckClientGui
                             }
                             for (int i = 0; i < 4; i++)
                             {
-                                if (allUsers[i] == 0) allUsers[i] = 1;
+                                if (allUsers[i] == 0) allUsers[i] = 1; //0으로 나눌 수 없음
                             }
+                            //실제 값 설정
                             {
                                 statusProgressBar[0, 0].Fraction = parse[0, 0] / allUsers[0];
                                 statusProgressBar[0, 1].Fraction = parse[0, 1] / allUsers[0];
@@ -675,7 +1173,7 @@ namespace CovidCheckClientGui
                             }
                         });
                     }
-                    else
+                    else //사람 수만 볼 때
                     {
                         int[] parse = sp.lessInfo(result);
                         Application.Invoke(delegate {
@@ -686,20 +1184,16 @@ namespace CovidCheckClientGui
                             allUserCount.Text = "합계: " + (parse[0] + parse[1] + parse[2] + parse[3]).ToString() + "명";
                         });
                     }
-                    long ping = user.getPing();
-                    Application.Invoke(delegate {
-                        base.Title = $"코로나19 예방용 발열확인 프로그램 (통신 속도: {ping}ms)";
-                    });
+                    
                 }
                 catch
                 {
-                    
                 }
-                GC.Collect();
-                Thread.Sleep(3000);
+                Thread.Sleep(3000); //3초마다 새로고침
             }
         }
-        private void timer()
+        
+        private void timer() //시계
         {
             while (programProcessing)
             {
@@ -714,7 +1208,7 @@ namespace CovidCheckClientGui
         
         string last = "";
         Label logLabel = new Label();
-        public void addLog(string text)
+        public void addLog(string text) //로그 추가
         {
             if (last == text) return;
             last = text;
@@ -725,11 +1219,11 @@ namespace CovidCheckClientGui
                 storeTime = $"{dt.Month}월 {dt.Day}일 {dt.Hour}:{dt.Minute}:{dt.Second}";
             }
             
-            logLabel.StyleContext.RemoveClass("nowlog");            
+            logLabel.StyleContext.RemoveClass("nowlog"); //일단 기존 로그에서 nowlog 클래스 지우고 (=배경색 지우고)
 
             logLabel = new Label($"{text} ({storeTime})");
 
-            logLabel.StyleContext.AddClass("nowlog");
+            logLabel.StyleContext.AddClass("nowlog"); //새 로그에 nowlog 클래스 추가 (=배경색 추가)
             
             logLabel.Name = "add";
             log.Insert(logLabel, 0);
@@ -737,7 +1231,7 @@ namespace CovidCheckClientGui
         }
 
         Label timeoutLogLabel = new Label();
-        private void addTimeoutLog(string text)
+        private void addTimeoutLog(string text) //재시도 로그 추가
         {
             if (!hasTimeout)
             {
@@ -778,6 +1272,6 @@ namespace CovidCheckClientGui
 
             timeoutLog.Insert(timeoutLogLabel, 0);
             timeoutLog.ShowAll();
-        }
+        }   
     }
 }

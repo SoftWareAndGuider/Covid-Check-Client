@@ -1,6 +1,8 @@
 ﻿using System;
+using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Diagnostics;
 using CheckCovid19;
 using Newtonsoft.Json.Linq;
 using Gtk;
@@ -9,15 +11,67 @@ namespace CovidCheckClientGui
 {
     partial class Program : Window
     {
-        User user = new User(System.IO.File.ReadAllLines("config.txt")[0]);
+        static User user;
+        static bool doneUpdate = false;
         static void Main(string[] args)
         {
-            Application.Init();
-            new Program();
-            Application.Run();
+            if (args.Length == 0)
+            {
+                Application.Init();
+                new Program();
+                Application.Run();
+            }
+            else if (args[0] == "update")
+            {
+                Thread.Sleep(1000);
+                string[] fileInfos = Directory.GetFiles("./", "*.zip");
+                foreach (string f in fileInfos)
+                {
+                    File.Delete(f);
+                }
+
+                if (args[1] == "linux")
+                {
+                    DirectoryInfo dictInfo = new DirectoryInfo("./update");
+                    foreach (var file in dictInfo.GetFiles())
+                    {
+                        if (file.Name == "config.json") continue;
+                        file.CopyTo("./" + file.Name, true);
+                    }
+
+                    ProcessStartInfo info = new ProcessStartInfo("./CovidCheckClientGui", "done linux");
+                    Process.Start(info);
+                    Environment.Exit(0);
+                }
+                else if (args[1] == "windows") // 시작 위치: ./files
+                {
+                    DirectoryInfo dictInfo = new DirectoryInfo("../update");
+                    foreach (var file in dictInfo.GetFiles())
+                    {
+                        if (file.Name == "config.json") continue;
+                        file.CopyTo("../" + file.Name, true);
+                    }
+                    ProcessStartInfo info = new ProcessStartInfo("../CovidCheckClientGui.exe", "done windows");
+                    info.WorkingDirectory = "../";
+                    Process.Start(info);
+                    Environment.Exit(0);
+                }
+            }
+            else if (args[0] == "done")
+            {
+                if (args[1] == "windows")
+                {
+                    Directory.Delete("update", true);
+                    Directory.Delete("files", true);
+                }
+                doneUpdate = true;
+                Application.Init();
+                new Program();
+                Application.Run();
+            }
         }
         
-        //학생이 아님이 확인됐을 때 실행하는 것
+        //학생이 아님이 체크됐을 때 실행하는 것
         void unlessStudent(title t)
         {
             if (t == title.check)
@@ -52,7 +106,7 @@ namespace CovidCheckClientGui
             }
         }
         
-        //확인인지 확인 취소인지 사용자 만들기인지 확인하는 것
+        //체크인지 체크 해제인지 사용자 만들기인지 확인하는 것
         enum title
         {
             check,
@@ -61,12 +115,11 @@ namespace CovidCheckClientGui
             add,
             delete
         }
+
                 
         //ID가 입력되는 Entry(사용자 추가 제외)의 텍스트가 바뀌었을 때 실행되는 이벤트
         async void checkInsertIDChangeText(object sender, EventArgs e)
         {
-            if (checkInsertID.Text.Length == 0) checkOK.Sensitive = false;
-            else checkOK.Sensitive = true;
             if (checkInsertID.Text.Length != 8) return;
             await Task.Delay(10);
             if (checkInsertID.Text.Length != 8) return;
@@ -74,7 +127,6 @@ namespace CovidCheckClientGui
             Thread thread = new Thread(new ThreadStart(() => {check(id);}));
             thread.Start();
             checkInsertID.Text = "";
-            checkOK.Sensitive = false;
         }
         async void uncheckInsertIDChangeText(object sender, EventArgs e)
         {
@@ -101,7 +153,6 @@ namespace CovidCheckClientGui
         void checkOKClicked(object sender, EventArgs e)
         {
             string id = checkInsertID.Text;
-            checkOK.Sensitive = false;
             checkInsertID.Text = "";
             Thread thread = new Thread(new ThreadStart(() => {check(id);}));
             thread.Start();
@@ -204,18 +255,12 @@ namespace CovidCheckClientGui
         
         
         //실제로 작업을 하는 곳 (별도의 스레드 사용)
-        void check(string id, int loop = 1)
+        void check(string id, int loop = 0)
         {
-            if (loop > 100)
-            {
-                internetErrorNotice();
-                return;
-            }
-
             JObject result = new JObject();
             int error = 0;
             result = user.check(id, out error);
-
+            
             if (error == 2)
             {
                 urlErrorNotice();
@@ -223,10 +268,15 @@ namespace CovidCheckClientGui
             }
             else if (error == 1)
             {
-                Application.Invoke(delegate {
-                    addTimeoutLog($"타임아웃 재시도.... (인식된 ID: {id}) ({loop}번째 재시도)");
-                });
+                if (loop > (int)helpSet.Value)
+                {
+                    internetErrorNotice();
+                    return;
+                }
                 Thread.Sleep(1000);
+                Application.Invoke(delegate {
+                    addTimeoutLog($"타임아웃 재시도.... (인식된 ID: {id}) ({loop + 1}번째 재시도)");
+                });
                 check(id, loop + 1);
                 return;
             }
@@ -235,25 +285,19 @@ namespace CovidCheckClientGui
             string toLog = "";
             if ((bool)result["success"])
             {
-                toLog = $"{result["data"]["grade"]}학년 {result["data"]["class"]}반 {result["data"]["number"]}번 {result["data"]["name"]}(ID: {result["data"]["id"]}) 정상 확인됨";
+                toLog = $"{result["data"]["grade"]}학년 {result["data"]["class"]}반 {result["data"]["number"]}번 {result["data"]["name"]}(ID: {result["data"]["id"]}) 정상 체크됨";
             }
             else
             {
-                toLog = $"정상 확인 실패 (인식된 ID: {id})";
+                toLog = $"정상 체크 실패 (인식된 ID: {id})";
             }
 
             Application.Invoke (delegate {
                 addLog(toLog);
             });
         }
-        void check(string grade, string @class, string number, int loop = 1)
+        void check(string grade, string @class, string number, int loop = 0)
         {
-            if (loop > 100)
-            {
-                internetErrorNotice();
-                return;
-            }
-
             JObject result = new JObject();
             if (checkIsTeacher.Active)
             {
@@ -272,10 +316,16 @@ namespace CovidCheckClientGui
             }
             else if (err == 1)
             {
-                Application.Invoke(delegate {
-                    addTimeoutLog($"타임아웃 재시도.... (인식된 정보: {grade}학년 {@class}반 {number}번) ({loop}번째 재시도)");
-                });
+                
+                if (loop > (int)helpSet.Value)
+                {
+                    internetErrorNotice();
+                    return;
+                }
                 Thread.Sleep(1000);
+                Application.Invoke(delegate {
+                    addTimeoutLog($"타임아웃 재시도.... (인식된 정보: {grade}학년 {@class}반 {number}번) ({loop + 1}번째 재시도)");
+                });
                 check(grade, @class, number, loop + 1);
                 return;
             }
@@ -283,23 +333,18 @@ namespace CovidCheckClientGui
             string toLog = "";
             if ((bool)result["success"])
             {
-                toLog = $"{result["data"]["grade"]}학년 {result["data"]["class"]}반 {result["data"]["number"]}번 {result["data"]["name"]}(ID: {result["data"]["id"]}) 확인됨";
+                toLog = $"{result["data"]["grade"]}학년 {result["data"]["class"]}반 {result["data"]["number"]}번 {result["data"]["name"]}(ID: {result["data"]["id"]}) 체크됨";
             }
             else
             {
-                toLog = $"확인 실패 (인식된 정보: {grade}학년 {@class}반 {number}번)";
+                toLog = $"체크 실패 (인식된 정보: {grade}학년 {@class}반 {number}번)";
             }
             Application.Invoke (delegate {
                 addLog(toLog);
             });
         }
-        void checkDoubt(string id, int loop = 1)
+        void checkDoubt(string id, int loop = 0)
         {
-            if (loop > 100)
-            {
-                internetErrorNotice();
-                return;
-            }
             JObject result = new JObject();
             int error = 0;
             result = user.check(id, out error, true);
@@ -310,10 +355,15 @@ namespace CovidCheckClientGui
             }
             else if (error == 1)
             {
-                Application.Invoke(delegate {
-                    addTimeoutLog($"타임아웃 재시도.... (인식된 ID: {id}) ({loop}번째 재시도)");
-                });
+                if (loop > (int)helpSet.Value)
+                {
+                    internetErrorNotice();
+                    return;
+                }
                 Thread.Sleep(1000);
+                Application.Invoke(delegate {
+                    addTimeoutLog($"타임아웃 재시도.... (인식된 ID: {id}) ({loop + 1}번째 재시도)");
+                });
                 checkDoubt(id, loop + 1);
                 return;
             }
@@ -321,23 +371,18 @@ namespace CovidCheckClientGui
             string toLog = "";
             if ((bool)result["success"])
             {
-                toLog = $"{result["data"]["grade"]}학년 {result["data"]["class"]}반 {result["data"]["number"]}번 {result["data"]["name"]}(ID: {result["data"]["id"]}) 발열 확인됨";
+                toLog = $"{result["data"]["grade"]}학년 {result["data"]["class"]}반 {result["data"]["number"]}번 {result["data"]["name"]}(ID: {result["data"]["id"]}) 발열 체크됨";
             }
             else
             {
-                toLog = $"발열 확인 실패 (인식된 ID: {id})";
+                toLog = $"발열 체크 실패 (인식된 ID: {id})";
             }
             Application.Invoke (delegate {
                 addLog(toLog);
             });
         }       
-        void checkDoubt(string grade, string @class, string number, int loop = 1)
+        void checkDoubt(string grade, string @class, string number, int loop = 0)
         {
-            if (loop > 100)
-            {
-                internetErrorNotice();
-                return;
-            }
 
             JObject result = new JObject();
             if (checkDoubtIsTeacher.Active)
@@ -356,33 +401,33 @@ namespace CovidCheckClientGui
             }
             else if (err == 1)
             {
+                if (loop > (int)helpSet.Value)
+                {
+                    internetErrorNotice();
+                    return;
+                }
+                Thread.Sleep(1000);
                 Application.Invoke(delegate {
                     addTimeoutLog($"타임아웃 재시도.... (인식된 정보: {grade}학년 {@class}반 {number}번) ({loop}번째 재시도)");
                 });
-                Thread.Sleep(1000);
                 checkDoubt(grade, @class, number, loop + 1);
                 return;
             }
             string toLog = "";
             if ((bool)result["success"])
             {
-                toLog = $"{result["data"]["grade"]}학년 {result["data"]["class"]}반 {result["data"]["number"]}번 {result["data"]["name"]}(ID: {result["data"]["id"]}) 발열 확인됨";
+                toLog = $"{result["data"]["grade"]}학년 {result["data"]["class"]}반 {result["data"]["number"]}번 {result["data"]["name"]}(ID: {result["data"]["id"]}) 발열 체크됨";
             }
             else
             {
-                toLog = $"발열 확인 실패 (인식된 정보: {grade}학년 {@class}반 {number}번)";
+                toLog = $"발열 체크 실패 (인식된 정보: {grade}학년 {@class}반 {number}번)";
             }
             Application.Invoke (delegate {
                 addLog(toLog);
             });
         }
-        void uncheck(string id, int loop = 1)
+        void uncheck(string id, int loop = 0)
         {
-            if (loop > 100)
-            {
-                internetErrorNotice();
-                return;
-            }
             
             JObject result = new JObject();
 
@@ -397,10 +442,15 @@ namespace CovidCheckClientGui
             }
             else if (err == 1)
             {
-                Application.Invoke(delegate {
-                    addTimeoutLog($"타임아웃 재시도.... (인식된 ID: {id}) ({loop}번째 재시도)");
-                });
+                if (loop > (int)helpSet.Value)
+                {
+                    internetErrorNotice();
+                    return;
+                }
                 Thread.Sleep(1000);
+                Application.Invoke(delegate {
+                    addTimeoutLog($"타임아웃 재시도.... (인식된 ID: {id}) ({loop + 1}번째 재시도)");
+                });
                 uncheck(id, loop + 1);
                 return;
             }
@@ -408,23 +458,18 @@ namespace CovidCheckClientGui
             string toLog = "";
             if ((bool)result["success"])
             {
-                toLog = $"{result["data"]["grade"]}학년 {result["data"]["class"]}반 {result["data"]["number"]}번 {result["data"]["name"]}(ID: {id}) 확인 취소됨";
+                toLog = $"{result["data"]["grade"]}학년 {result["data"]["class"]}반 {result["data"]["number"]}번 {result["data"]["name"]}(ID: {id}) 체크 해제됨";
             }
             else
             {
-                toLog = $"확인 취소 실패 (인식된 ID: {id})";
+                toLog = $"체크 해제 실패 (인식된 ID: {id})";
             }
             Application.Invoke (delegate {
                 addLog(toLog);
             });
         }
-        void uncheck(string grade, string @class, string number, int loop = 1)
+        void uncheck(string grade, string @class, string number, int loop = 0)
         {
-            if (loop > 100)
-            {
-                internetErrorNotice();
-                return;
-            }
             JObject result = new JObject();
             if (uncheckIsTeacher.Active)
             {
@@ -442,10 +487,15 @@ namespace CovidCheckClientGui
             }
             else if (err == 1)
             {
-                Application.Invoke(delegate {
-                    addTimeoutLog($"타임아웃 재시도.... (인식된 정보: {grade}학년 {@class}반 {number}번) ({loop}번째 재시도)");
-                });
+                if (loop > (int)helpSet.Value)
+                {
+                    internetErrorNotice();
+                    return;
+                }
                 Thread.Sleep(1000);
+                Application.Invoke(delegate {
+                    addTimeoutLog($"타임아웃 재시도.... (인식된 정보: {grade}학년 {@class}반 {number}번) ({loop + 1}번째 재시도)");
+                });
                 uncheck(grade, @class, number, loop + 1);
                 return;
             }
@@ -453,23 +503,18 @@ namespace CovidCheckClientGui
             string toLog = "";
             if ((bool)result["success"])
             {
-                toLog = $"{result["data"]["grade"]}학년 {result["data"]["class"]}반 {result["data"]["number"]}번 {result["data"]["name"]}(ID: {result["data"]["id"]}) 확인 취소됨";
+                toLog = $"{result["data"]["grade"]}학년 {result["data"]["class"]}반 {result["data"]["number"]}번 {result["data"]["name"]}(ID: {result["data"]["id"]}) 체크 해제됨";
             }
             else
             {
-                toLog = $"확인 취소 실패 (인식된 정보: {grade}학년 {@class}반 {number}번)";
+                toLog = $"체크 해제 실패 (인식된 정보: {grade}학년 {@class}반 {number}번)";
             }
             Application.Invoke (delegate {
                 addLog(toLog);
             });
         }
-        void addUser(bool isNotStudent, string id, string number, string name, string grade, string @class, int loop = 1)
+        void addUser(bool isNotStudent, string id, string number, string name, string grade, string @class, int loop = 0)
         {
-            if (loop > 100)
-            {
-                internetErrorNotice();
-                return;
-            }
 
             JObject result = new JObject();
             
@@ -489,10 +534,15 @@ namespace CovidCheckClientGui
             }
             else if (err == 1)
             {
-                Application.Invoke(delegate {
-                    addTimeoutLog($"타임아웃 재시도.... (인식된 정보: {id}학년 {@class}반 {number}번 {name}({id})) ({loop}번째 재시도)");
-                });
+                if (loop > (int)helpSet.Value)
+                {
+                    internetErrorNotice();
+                    return;
+                }
                 Thread.Sleep(1000);
+                Application.Invoke(delegate {
+                    addTimeoutLog($"타임아웃 재시도.... (인식된 정보: {id}학년 {@class}반 {number}번 {name}({id})) ({loop + 1}번째 재시도)");
+                });
                 addUser(isNotStudent, id, number, name, grade, @class, loop + 1);
                 return;
             }
@@ -509,13 +559,8 @@ namespace CovidCheckClientGui
                 addLog(toLog);
             });
         }
-        void delUser(string id, int loop = 1)
+        void delUser(string id, int loop = 0)
         {
-            if (loop > 100)
-            {
-                internetErrorNotice();
-            }
-
             JObject result = new JObject();
 
             int err = 0;
@@ -528,11 +573,16 @@ namespace CovidCheckClientGui
             }
             else if (err == 1)
             {
-                Application.Invoke(delegate {
-                    addTimeoutLog($"타임아웃 재시도.... (인식된 ID: {id}) ({loop}번째 재시도)");
-                });
+                if (loop > (int)helpSet.Value)
+                {
+                    internetErrorNotice();
+                    return;
+                }
 
                 Thread.Sleep(1000);
+                Application.Invoke(delegate {
+                    addTimeoutLog($"타임아웃 재시도.... (인식된 ID: {id}) ({loop + 1}번째 재시도)");
+                });
                 delUser(id, loop + 1);
                 return;
             }
@@ -556,12 +606,8 @@ namespace CovidCheckClientGui
                 addLog(toLog);
             });
         }
-        void delUser(string grade, string @class, string number, int loop = 1)
+        void delUser(string grade, string @class, string number, int loop = 0)
         {
-            if (loop > 100)
-            {
-                internetErrorNotice();
-            }
             JObject result = new JObject();
             if (delIsTeacher.Active)
             {
@@ -579,10 +625,15 @@ namespace CovidCheckClientGui
             }
             else if (err == 1)
             {
-                Application.Invoke(delegate {
-                    addTimeoutLog($"타임아웃 재시도.... (인식된 정보: {grade}학년 {@class}반 {number}번) ({loop}번째 재시도)");
-                });
+                if (loop > (int)helpSet.Value)
+                {
+                    internetErrorNotice();
+                    return;
+                }
                 Thread.Sleep(1000);
+                Application.Invoke(delegate {
+                    addTimeoutLog($"타임아웃 재시도.... (인식된 정보: {grade}학년 {@class}반 {number}번) ({loop + 1}번째 재시도)");
+                });
                 delUser(grade, @class, number, loop + 1);
                 return;
             }
@@ -694,19 +745,18 @@ namespace CovidCheckClientGui
         void urlErrorNotice() //url이 잘못되었다는 에러를 보여주는 함수
         {
             Application.Invoke(delegate {
-                    MessageDialog dialog = new MessageDialog(null, DialogFlags.Modal, MessageType.Error, ButtonsType.Close, false, "./config.txt에 올바른 홈페이지 주소를 입력해 주세요");
+                    MessageDialog dialog = new MessageDialog(null, DialogFlags.Modal, MessageType.Error, ButtonsType.Close, false, "설정에 올바른 홈페이지 주소를 입력해 주세요");
                     dialog.Run();
                     dialog.Dispose();
-                    Environment.Exit(0);
+                    selectMode.Page = 3;
                 });
         }    
-        void internetErrorNotice()
+        void internetErrorNotice() //인터넷이 잘못되었을 때 에러를 보여주는거 (타임아웃)
         {
             Application.Invoke(delegate {
                     MessageDialog dialog = new MessageDialog(null, DialogFlags.Modal, MessageType.Error, ButtonsType.Close, false, "인터넷이 원활한 환경에서 사용해 주세요.");
                     dialog.Run();
                     dialog.Dispose();
-                    Environment.Exit(0);
                 });
         }
     }
