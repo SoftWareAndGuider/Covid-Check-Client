@@ -2,6 +2,7 @@
 using System.IO;
 using System.Net;
 using System.Text;
+using System.Collections.Generic;
 using System.Linq;
 using CheckCovid19;
 using Newtonsoft.Json.Linq;
@@ -117,7 +118,7 @@ namespace Covid_Check_Client
             while (true)
             {
                 Console.WriteLine("현재는 체크 해제모드 입니다. 모드를 변경하려면 change를, 프로그램 종료는 exit를 입력해 주세요\n체크를 해제하려면 사용자의 바코드를 스캔하거나 숫자를 입력하세요.");
-                string scan = Console.ReadLine();
+                string scan = ReadLine();
                 if (scan == "change") //모드 바꾸기
                 {
                     change = changeMode();
@@ -146,13 +147,13 @@ namespace Covid_Check_Client
             {
                 if (first("추가", out change, "추가할 사용자의 ID를 입력하세요.")) return change;
                 Console.WriteLine("사용자의 학년을 입력해 주세요.");
-                int grade = int.Parse(Console.ReadLine());
+                int grade = int.Parse(ReadLine());
                 Console.WriteLine("사용자의 반을 입력해 주세요.");
-                int @class = int.Parse(Console.ReadLine());
+                int @class = int.Parse(ReadLine());
                 Console.WriteLine("사용자의 번호를 입력해 주세요.");
-                int number = int.Parse(Console.ReadLine());
+                int number = int.Parse(ReadLine());
                 Console.WriteLine("사용자의 이름을 입력해 주세요.");
-                string name = Console.ReadLine();
+                string name = ReadLine();
 
                 int err = 0;
                 JObject result = user.addUser(change, grade, @class, number, name, out err);
@@ -206,7 +207,7 @@ namespace Covid_Check_Client
             while (true)
             {
                 Console.WriteLine("1: 사용자 체크\n2: 사용자 발열 체크\n3: 사용자 체크 해제\n4: 사용자 추가\n5: 사용자 삭제\n6: ID없이 사용자 체크\n7: ID없이 사용자 발열 체크\n8: ID없이 사용자 체크 해제\n9: ID없이 사용자 삭제\nsetting: 설정");
-                change = Console.ReadLine();
+                change = ReadLine();
                 string[] lists = new string[] {
                     "1", "2", "3", "4", "5", "6", "7", "8", "9", "setting"
                 };
@@ -320,7 +321,7 @@ namespace Covid_Check_Client
             {
                 while (true)
                 {
-                    what = Console.ReadLine();
+                    what = ReadLine();
                     if (string.IsNullOrEmpty(what))
                     {
                         Console.WriteLine("정보를 입력하지 않았습니다. 다시 입력해주세요.");
@@ -480,7 +481,7 @@ namespace Covid_Check_Client
             bool turn = false;
             while (true)
             {
-                what = Console.ReadLine();
+                what = ReadLine();
                 if (string.IsNullOrEmpty(what))
                 {
                     Console.WriteLine("정보를 입력하지 않았습니다. 다시 입력해주세요.");
@@ -503,7 +504,7 @@ namespace Covid_Check_Client
             Console.WriteLine("사용자의 반을 입력하세요.");
             while (true)
             {
-                info[0] = Console.ReadLine();
+                info[0] = ReadLine();
                 if (string.IsNullOrEmpty(info[0]))
                 {
                     Console.WriteLine("정보를 입력하지 않았습니다. 다시 사용자의 반을 입력하세요.");
@@ -514,7 +515,7 @@ namespace Covid_Check_Client
             Console.WriteLine("사용자의 번호을 입력하세요.");
             while (true)
             {
-                info[1] = Console.ReadLine();
+                info[1] = ReadLine();
                 if (string.IsNullOrEmpty(info[1]))
                 {
                     Console.WriteLine("정보를 입력하지 않았습니다. 다시 사용자의 번호을 입력하세요.");
@@ -523,6 +524,95 @@ namespace Covid_Check_Client
                 break;
             }
             return info;
+        }
+    
+        string ReadLine()
+        {
+            List<char> read = new List<char>();
+            int insert = 0;
+            Console.WriteLine();
+            string clear = "";
+
+            for (int i = 0; i < Console.BufferWidth - 1; i++)
+            {
+                clear += " ";
+            }
+
+            while (true)
+            {
+                ConsoleKeyInfo info = Console.ReadKey();
+                if (info.Key == ConsoleKey.Enter)
+                {
+                    break;
+                }
+                else
+                {
+                    // //Console.Write(insert);
+                    // int left = Console.CursorLeft;
+                    // Console.CursorTop = Console.CursorTop + 1;
+                    // Console.CursorLeft = 0;
+                    // Console.Write($"삽입 위치: {insert}, 리스트 수: {read.Count}");
+                    // Console.CursorLeft = left;
+                    // Console.CursorTop = Console.CursorTop - 1;
+                    Console.CursorLeft = insert;
+                    switch (info.Key)
+                    {
+                        case ConsoleKey.Home:
+                            insert = 0;
+                            break;
+                        case ConsoleKey.End:
+                            insert = read.Count;
+                            break;
+                        case ConsoleKey.LeftArrow:
+                            if (insert != 0)
+                            {
+                                insert--;
+                            }
+                            break;
+                        case ConsoleKey.RightArrow:
+                            if (insert < read.Count)
+                            {
+                                insert++;
+                            }
+                            break;
+                        case ConsoleKey.Backspace:
+                            if (insert != 0)
+                            {
+                                read.RemoveAt(insert - 1);
+                                insert--;
+                            }
+                            break;
+                        case ConsoleKey.Delete:
+                            if (insert < read.Count)
+                            {
+                                read.RemoveAt(insert);
+                                //insert--;
+                            }
+                            break;
+                        default:
+                            read.Insert(insert, info.KeyChar);
+                            insert++;
+                            break;
+                    }
+                    
+                    Console.CursorLeft = 0;
+
+                    Console.Write(clear);
+                    Console.CursorLeft = 0;
+                    foreach (char a in read)
+                    {
+                        Console.Write(a);
+                    }
+                    Console.CursorLeft = insert;
+                }
+            }
+            string turn = "";
+            foreach (char a in read)
+            {
+                turn += a;
+            }
+            Console.Write('\n');
+            return turn;
         }
     }
 }
