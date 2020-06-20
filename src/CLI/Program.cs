@@ -58,7 +58,7 @@ namespace Covid_Check_Client
             
 
             
-            Console.WriteLine("CovidCheckClient, MIT + ɑ License\nCopyright (c) 2020 SoftWareAndGuider, cnsewcs, pmh-only, Noeul-Night / 자세한 저작권 관련 사항과 이 프로그램의 소스코드는 https://github.com/softwareandguider/covid-check-client 에서 확인해주세요.\n");
+            Console.WriteLine("CovidCheckClient, Custom License\nCopyright (c) 2020 SoftWareAndGuider, cnsewcs, pmh-only, Noeul-Night / 자세한 저작권 관련 사항과 이 프로그램의 소스코드는 https://github.com/softwareandguider/covid-check-client 에서 확인해주세요.\n");
 
             JArray verName = new JArray();
             if ((bool)settingJson["checkUpdate"])
