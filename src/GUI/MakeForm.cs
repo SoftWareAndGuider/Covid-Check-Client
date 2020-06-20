@@ -302,8 +302,7 @@ namespace CovidCheckClientGui
                 //사용자 체크 배치(ID)
                 checkDoubt.Attach(new Label("실제 바코드의 길이가 지정한 바코드의 길이와 다를 경우 체크하기 버튼을 눌러 체크해주세요."), 1, 1, 5, 1); // 공지 추가
                 checkDoubt.Attach(checkDoubtInsertID, 1, 2, 4, 1); // 텍스트박스 추가
-                checkDoubt.Attach(checkDoubtOK, 5, 2, 1, 1); //OK 버튼 추가
-                checkDoubt.Attach(new Label("바코드 길이 조절"), 1, 3, 1, 1);
+                checkDoubt.Attach(checkDoubtOK, 5, 2, 1, 1); //OK 버튼 추가g
 
                 checkDoubt.Attach(new Separator(Orientation.Horizontal), 1, 4, 5, 1);
                 
