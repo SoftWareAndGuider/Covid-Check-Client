@@ -17,14 +17,6 @@ namespace Covid_Check_Client
 
         static void Main(string[] args)
         {
-            Program program = new Program();
-            Console.WriteLine("CovidCheckClient, MIT + ɑ License\nCopyright (c) 2020 SoftWareAndGuider, cnsewcs, pmh-only, Noeul-Night / 자세한 저작권 관련 사항과 이 프로그램의 소스코드는 https://github.com/softwareandguider/covid-check-client 에서 확인해주세요.\n");
-
-            JArray verName = new JArray();
-            if (user.hasNewVersion(1, out verName))
-            {
-                Console.WriteLine("새로운 버전 {0}이(가) 출시되었습니다. https://github.com/SoftWareAndGuider/Covid-Check-Client/releases/ 에서 확인해 주세요.\n", verName.First()["name"]);
-            }
 
             try
             {
@@ -43,7 +35,36 @@ namespace Covid_Check_Client
                 user.saveSetting(settingJson.ToString(), settingPath);
             }
             user.url = settingJson["url"].ToString();
+
+            Program program = new Program();
+            if ((bool)settingJson["usePassword"])
+            {
+                Console.WriteLine("비밀번호를 사용하도록 설정되어 있습니다. 비밀번호를 입력해 주세요");
+                while (true)
+                {
+                    string read = program.ReadLine("*");
+                    Console.CursorLeft = 0;
+                    Console.CursorTop = Console.CursorTop - 1;
+                    if (user.getSha512(read) == settingJson["password"].ToString())
+                    {
+                        break;
+                    }
+                    else
+                    {
+                        Console.WriteLine("비밀번호가 틀렸습니다. 다시 시도해 주세요");
+                    }
+                }
+            }
             
+
+            
+            Console.WriteLine("CovidCheckClient, MIT + ɑ License\nCopyright (c) 2020 SoftWareAndGuider, cnsewcs, pmh-only, Noeul-Night / 자세한 저작권 관련 사항과 이 프로그램의 소스코드는 https://github.com/softwareandguider/covid-check-client 에서 확인해주세요.\n");
+
+            JArray verName = new JArray();
+            if (user.hasNewVersion(2, out verName))
+            {
+                Console.WriteLine("새로운 버전 {0}이(가) 출시되었습니다. https://github.com/SoftWareAndGuider/Covid-Check-Client/releases/ 에서 확인해 주세요.\n", verName.First()["name"]);
+            }
             var getPing = user.getPing();
             string ping = "알 수 없음";
             if (getPing != -1) ping = getPing.ToString() + "ms";
@@ -364,26 +385,35 @@ namespace Covid_Check_Client
                     case "password":
                         try
                         {
-                            string password = "";
+                            string password = "";                            
+
+
                             for (int i = 2; i < command.Length; i++)
                             {
-                                password += command[i];
-                                if (i + 1 < command.Length)
+                                try
                                 {
-                                    password += " ";
+                                    password += command[i];
+                                    if (i + 1 < command.Length)
+                                    {
+                                        password += " ";
+                                    }
+                                }
+                                catch
+                                {
+
                                 }
                             }
-                            settingJson["password"] = command[2];
-
 
                             if ((password.Length == 0 && command[1] == "y") || (command[1] != "y" && command[1] != "n"))
                             {
                                 throw new Exception();
                             }
-
                             if (command[1] == "y") settingJson["usePassword"] = true;
-                            else settingJson["usePassword"] = false;
 
+                            else if (command[1] == "n") 
+                            {
+                                settingJson["usePassword"] = false;
+                            }
                             settingJson["password"] = user.getSha512(password);
 
                             user.saveSetting(settingJson.ToString(), settingPath);
@@ -461,9 +491,8 @@ namespace Covid_Check_Client
                             File.Copy(path, settingPath, true);
                             Console.WriteLine("설정이 변경되었습니다. 프로그램이 다시 시작되면 이 설정이 적용됩니다.");
                         }
-                        catch (Exception e)
+                        catch
                         {
-                            Console.WriteLine(e);
                             Console.WriteLine("명령어 혹은 파일이 잘못되었습니다. 설정이 변하지 않습니다.");
                         }
                         break;
@@ -472,7 +501,7 @@ namespace Covid_Check_Client
                         Console.WriteLine($"설정 모드 입니다. 모드를 변경하려면 change를, 프로그램 종료는 exit를 입력해 주세요. 해당하는 명령어를 입력해 주세요.\nurl [홈페이지 주소]: 홈페이지의 url을 [홈페이지 주소]로 저장\npassword [y/n] [password]: 비밀번호를 [password]로 지정하고 [y/n]에서 y라면 비밀번호를 사용, n이라면 비밀번호 사용 안함\nupdate [y/n]: 프로그램을 시작할 때 업데이트를 [y/n]이 y라면 확인, n이라면 확인하지 않음\nsettingfile [파일 경로]: [파일 경로]에 있는 설정 파일을 가져와서 설정을 복사합니다.");
                         break;
                 }
-                Console.WriteLine();
+                // Console.WriteLine();
             }
         }
         bool first(string title, out string what, string and = "")
@@ -526,7 +555,7 @@ namespace Covid_Check_Client
             return info;
         }
     
-        string ReadLine()
+        public string ReadLine(string password = null)
         {
             List<char> read = new List<char>();
             int insert = 0;
@@ -599,9 +628,19 @@ namespace Covid_Check_Client
 
                     Console.Write(clear);
                     Console.CursorLeft = 0;
-                    foreach (char a in read)
+                    if (password == null)
                     {
-                        Console.Write(a);
+                        foreach (char a in read)
+                        {
+                            Console.Write(a);
+                        }
+                    }
+                    else
+                    {
+                        foreach (char a in read)
+                        {
+                            Console.Write(password);
+                        }
                     }
                     Console.CursorLeft = insert;
                 }

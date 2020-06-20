@@ -90,7 +90,6 @@ namespace CheckCovid19
             while (doing) {
             } //작업이 완료될 때 까지 기다리기
             err = errTemp;
-            Console.WriteLine(result);
             return JObject.Parse(result);
         }
         public JObject addUser(string userID, int grade, int @class, int number, string name, out int err)
