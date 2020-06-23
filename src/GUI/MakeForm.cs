@@ -178,24 +178,40 @@ namespace CovidCheckClientGui
             }
 
             user = new CheckCovid19.User("localhost"); //User 선언
+
+            string defaultSetting = @"{
+                ""url"": ""localhost"",
+                ""barcodeLength"": 8,
+                ""timeoutRetry"": 100,
+                ""checkUpdate"": true,
+                ""autoUpdate"": false,
+                ""usePassword"": false,
+                ""password"": ""password"",
+                ""csvSave"": false,
+                ""saves"": [
+                    [
+                        false, false
+                    ],
+                    [
+                        false, false
+                    ],
+                    [
+                        false, false
+                    ]
+                ]
+            }"; //기본 JSON 세팅
+            JObject correctSetting = JObject.Parse(defaultSetting);
+
             try
             {
                 settingJson = user.loadSetting(settingPath); //설정 JSON파일을 가져와봄
             }
             catch
             {
-                string defaultSetting = @"{
-                    ""url"": ""localhost"",
-                    ""barcodeLength"": 8,
-                    ""timeoutRetry"": 100,
-                    ""checkUpdate"": true,
-                    ""autoUpdate"": false,
-                    ""usePassword"": false,
-                    ""password"": ""password""
-                }"; //기본 JSON 세팅
-                user.saveSetting(defaultSetting, settingPath); //기본 JSON 저장
-                settingJson = JObject.Parse(defaultSetting);
+                settingJson = new JObject();
             }
+
+            settingJson = user.trimSetting(correctSetting, settingJson);
 
             user.url = settingJson["url"].ToString(); //설정 속 url 입력
 
@@ -259,7 +275,7 @@ namespace CovidCheckClientGui
                     
                     //사용자 체크 배치(학년, 반, 번호)
                     {
-                        check.Attach(new Label("ID 없이 체크하기"), 1, 5, 5, 1);
+                        check.Attach(new Label("ID 없이 정상 체크하기"), 1, 5, 5, 1);
                         check.Attach(checkIsTeacher, 1, 6, 5, 1);
                         check.Attach(new Label("학년"), 1, 7, 1, 1);
                         check.Attach(checkInsertGrade, 2, 7, 4, 1);
@@ -308,7 +324,7 @@ namespace CovidCheckClientGui
                 
                 //사용자 체크 배치(학년, 반, 번호)
                 {
-                    checkDoubt.Attach(new Label("ID 없이 체크하기"), 1, 5, 5, 1);
+                    checkDoubt.Attach(new Label("ID 없이 발열 체크하기"), 1, 5, 5, 1);
                     checkDoubt.Attach(checkDoubtIsTeacher, 1, 6, 5, 1);
                     checkDoubt.Attach(new Label("학년"), 1, 7, 1, 1);
                     checkDoubt.Attach(checkDoubtInsertGrade, 2, 7, 4, 1);
@@ -616,6 +632,7 @@ namespace CovidCheckClientGui
                 Frame setUpdateCheckFrame = new Frame("업데이트 설정");
                 Frame setPasswordFrame = new Frame("비밀번호 설정");
                 Frame getSettingFrame = new Frame("설정 파일 불러오기");
+                Frame csvSave = new Frame("데이터 저장");
 
                 //setting Grid 설정
                 {
@@ -630,6 +647,7 @@ namespace CovidCheckClientGui
                     setting.Attach(setUpdateCheckFrame, 1, 3, 1, 1);
                     setting.Attach(getSettingFrame, 1, 4, 1, 1);
                     setting.Attach(setPasswordFrame, 1, 5, 1, 1);
+                    setting.Attach(csvSave, 1, 6, 1, 1);
                 }                
 
                 grids.Add("setUrl", new Grid()); //URL 설정하는 곳
@@ -844,6 +862,98 @@ namespace CovidCheckClientGui
                     setPasswordFrame.Add(grids["setPassword"]);
                 }
                 
+                grids.Add("csvSave", new Grid()); //csv 저장 관련 설정
+                {
+                    Gtk.Switch use = new Gtk.Switch();
+                    CheckButton[,] checkButtons = new CheckButton[3,2]
+                    {
+                        {
+                            new CheckButton("ID로 체크하기"), new CheckButton("ID없이 체크하기")
+                        },
+                        {
+                            new CheckButton("ID로 발열 체크하기"), new CheckButton("ID없이 발열 체크하기")
+                        },
+                        {
+                            new CheckButton("ID로 체크 해제하기"), new CheckButton("ID없이 체크 해제하기")
+                        }
+                    };
+                    Label text = new Label("데이터 저장하기");
+                    use.Halign = Align.Start;
+                    text.Halign = Align.End;
+
+
+                    Frame uses = new Frame("사용할 것들");
+                    Grid checkButton = new Grid();
+                    checkButton.ColumnHomogeneous = true;
+                    checkButton.MarginBottom = 5;
+                    uses.Add(checkButton);
+                    grids["csvSave"].ColumnSpacing = 15;
+                    use.State = (bool)settingJson["csvSave"];
+                    foreach (var a in checkButtons)
+                    {
+                        a.Sensitive = use.State;
+                    }
+
+                    JArray array = settingJson["saves"] as JArray;
+                    
+                    for (int i = 0; i < 6; i++)
+                    {
+                        checkButtons[i / 2, i % 2].Active = (bool)array[i / 2][i % 2];
+                    }
+
+                    {
+                        grids["csvSave"].Attach(text, 1, 1, 1, 1);
+                        grids["csvSave"].Attach(use, 2, 1, 1, 1);
+                        grids["csvSave"].Attach(uses, 1, 2, 2, 1);
+
+                        checkButton.Attach(checkButtons[0, 0], 1, 2, 1, 1);
+                        checkButton.Attach(checkButtons[0, 1], 1, 3, 1, 1);
+
+                        checkButton.Attach(checkButtons[1, 0], 2, 2, 1, 1);
+                        checkButton.Attach(checkButtons[1, 1], 2, 3, 1, 1);
+
+                        checkButton.Attach(checkButtons[2, 0], 3, 2, 1, 1);
+                        checkButton.Attach(checkButtons[2, 1], 3, 3, 1, 1);
+                    }
+                    {
+                        use.StateChanged += delegate {
+                            settingJson["csvSave"] = use.State;
+                            user.saveSetting(settingJson.ToString(), settingPath);
+                            foreach (var a in checkButtons)
+                            {
+                                a.Sensitive = use.State;
+                            }
+                        };
+
+                        checkButtons[0, 0].Clicked += delegate {
+                            settingJson["saves"][0][0] = checkButtons[0, 0].Active;
+                            user.saveSetting(settingJson.ToString(), settingPath);
+                        };
+                        checkButtons[0, 1].Clicked += delegate {
+                            settingJson["saves"][0][1] = checkButtons[0, 1].Active;
+                            user.saveSetting(settingJson.ToString(), settingPath);
+                        };
+                        checkButtons[1, 0].Clicked += delegate {
+                            settingJson["saves"][1][0] = checkButtons[1, 0].Active;
+                            user.saveSetting(settingJson.ToString(), settingPath);
+                        };
+                        checkButtons[1, 1].Clicked += delegate {
+                            settingJson["saves"][1][1] = checkButtons[1, 1].Active;
+                            user.saveSetting(settingJson.ToString(), settingPath);
+                        };
+                        checkButtons[2, 0].Clicked += delegate {
+                            settingJson["saves"][2][0] = checkButtons[2, 0].Active;
+                            user.saveSetting(settingJson.ToString(), settingPath);
+                        };
+                        checkButtons[2, 1].Clicked += delegate {
+                            settingJson["saves"][2][1] = checkButtons[2, 1].Active;
+                            user.saveSetting(settingJson.ToString(), settingPath);
+                        };
+                    }
+                    
+                    csvSave.Add(grids["csvSave"]);
+                }
+
                 foreach (var a in grids) //설정 Grid에 공통으로 적용되는 것
                 {
                     a.Value.ColumnHomogeneous = true;

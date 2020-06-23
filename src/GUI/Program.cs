@@ -13,8 +13,15 @@ namespace CovidCheckClientGui
     {
         static User user;
         static bool doneUpdate = false;
+        static string[,] csv = new string[3,2];
+
+
         static void Main(string[] args)
         {
+            for (int i = 0; i < 6; i++)
+            {
+                csv[i / 2, i % 2] = "학년,반,번호,ID";
+            }
             if (args.Length == 0)
             {
                 Application.Init();
@@ -358,7 +365,7 @@ namespace CovidCheckClientGui
             string toLog = "";
             if ((bool)result["success"])
             {
-                toLog = $"{result["data"]["grade"]}학년 {result["data"]["class"]}반 {result["data"]["number"]}번 {result["data"]["name"]}(ID: {result["data"]["id"]}) 체크됨";
+                toLog = $"{result["data"]["grade"]}학년 {result["data"]["class"]}반 {result["data"]["number"]}번 {result["data"]["name"]}(ID: {result["data"]["id"]}) 정상 체크됨";
             }
             else
             {
