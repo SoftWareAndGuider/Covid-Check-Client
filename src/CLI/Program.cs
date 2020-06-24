@@ -1,7 +1,7 @@
 ﻿using System;
 using System.IO;
 using System.Net;
-using System.Text;
+using System.Text.RegularExpressions;
 using System.Collections.Generic;
 using System.Linq;
 using CheckCovid19;
@@ -11,29 +11,44 @@ namespace Covid_Check_Client
 {
     class Program
     {
+        static string[,] csv = new string[3,2];
         static User user = new User("localhost");
         const string settingPath = "config.json";
         static JObject settingJson = new JObject();
 
         static void Main(string[] args)
         {
-
+            string defaultSetting = @"{
+                ""url"": ""localhost"",
+                ""barcodeLength"": 8,
+                ""timeoutRetry"": 100,
+                ""checkUpdate"": true,
+                ""autoUpdate"": false,
+                ""usePassword"": false,
+                ""password"": ""password"",
+                ""csvSave"": false,
+                ""saves"": [
+                    [
+                        false, false
+                    ],
+                    [
+                        false, false
+                    ],
+                    [
+                        false, false
+                    ]
+                ]
+            }"; //기본 JSON 세팅
             try
             {
                 settingJson = user.loadSetting(settingPath);
+                settingJson = user.trimSetting(JObject.Parse(defaultSetting), settingJson);
             }
             catch
             {
-                settingJson = JObject.Parse(@"{
-                    ""url"": ""localhost"",
-                    ""timeoutRetry"": 100,
-                    ""checkUpdate"": true,
-                    ""autoUpdate"": false,
-                    ""usePassword"": false,
-                    ""password"": ""password""
-                }");
-                user.saveSetting(settingJson.ToString(), settingPath);
+                settingJson = JObject.Parse(defaultSetting);
             }
+            
             user.url = settingJson["url"].ToString();
 
             Program program = new Program();
@@ -56,7 +71,10 @@ namespace Covid_Check_Client
                 }
             }
             
-
+            for (int i = 0; i < 6; i++)
+            {
+                csv[i / 2, i % 2] = "학년,반,번호,이름,ID";
+            }
             
             Console.WriteLine("CovidCheckClient, Custom License\nCopyright (c) 2020 SoftWareAndGuider, cnsewcs, pmh-only, Noeul-Night / 자세한 저작권 관련 사항과 이 프로그램의 소스코드는 https://github.com/softwareandguider/covid-check-client 에서 확인해주세요.\n");
 
@@ -108,7 +126,12 @@ namespace Covid_Check_Client
                         change = program.removeWithoutID();
                         break;
                     case "setting":
+                    case "s":
                         change = program.setting();
+                        break;
+                    case "export":
+                    case "e":
+                        change = program.export();
                         break;
                     default:
                         Console.WriteLine("오류 기본 체크모드로 전환");
@@ -129,6 +152,10 @@ namespace Covid_Check_Client
                 if ((bool)result["success"])
                 {
                     Console.WriteLine($"{result["data"]["name"]}(ID: {result["data"]["id"]})의 체크가 완료되었습니다.\n");
+                    if ((bool)settingJson["saves"][0][0])
+                    {
+                        csv[0, 0] += $"\n{result["data"]["grade"]},{result["data"]["class"]},{result["data"]["number"]},{result["data"]["name"]},{result["data"]["id"]}";
+                    }
                 }
                 else
                 {
@@ -155,6 +182,10 @@ namespace Covid_Check_Client
                 if ((bool)result["success"])
                 {
                     Console.WriteLine($"{result["data"]["name"]}(ID: {result["data"]["id"]})의 체크 해제가 완료되었습니다.\n");
+                    if ((bool)settingJson["saves"][2][0])
+                    {
+                        csv[2, 0] += $"\n{result["data"]["grade"]},{result["data"]["class"]},{result["data"]["number"]},{result["data"]["name"]},{result["data"]["id"]}";
+                    }
                 }
                 else
                 {
@@ -172,11 +203,11 @@ namespace Covid_Check_Client
                 if (first("추가", out change, "추가할 사용자의 ID를 입력하세요.")) return change;
                 Console.WriteLine("사용자의 학년을 입력해 주세요.");
                 int grade = int.Parse(ReadLine());
-                Console.WriteLine("사용자의 반을 입력해 주세요.");
+                Console.WriteLine("\n사용자의 반을 입력해 주세요.");
                 int @class = int.Parse(ReadLine());
-                Console.WriteLine("사용자의 번호를 입력해 주세요.");
+                Console.WriteLine("\n사용자의 번호를 입력해 주세요.");
                 int number = int.Parse(ReadLine());
-                Console.WriteLine("사용자의 이름을 입력해 주세요.");
+                Console.WriteLine("\n사용자의 이름을 입력해 주세요.");
                 string name = ReadLine();
 
                 int err = 0;
@@ -217,6 +248,10 @@ namespace Covid_Check_Client
                 if ((bool)result["success"])
                 {
                     Console.WriteLine($"{result["data"]["name"]}(ID: {result["data"]["id"]})의 발열 체크가 완료되었습니다.\n");
+                    if ((bool)settingJson["saves"][1][0])
+                    {
+                        csv[1, 0] += $"\n{result["data"]["grade"]},{result["data"]["class"]},{result["data"]["number"]},{result["data"]["name"]},{result["data"]["id"]}";
+                    }
                 }
                 else
                 {
@@ -230,10 +265,10 @@ namespace Covid_Check_Client
             string change = "";
             while (true)
             {
-                Console.WriteLine("1: 사용자 체크\n2: 사용자 발열 체크\n3: 사용자 체크 해제\n4: 사용자 추가\n5: 사용자 삭제\n6: ID없이 사용자 체크\n7: ID없이 사용자 발열 체크\n8: ID없이 사용자 체크 해제\n9: ID없이 사용자 삭제\nsetting: 설정");
+                Console.WriteLine("1: 사용자 체크\n2: 사용자 발열 체크\n3: 사용자 체크 해제\n4: 사용자 추가\n5: 사용자 삭제\n6: ID없이 사용자 체크\n7: ID없이 사용자 발열 체크\n8: ID없이 사용자 체크 해제\n9: ID없이 사용자 삭제\nsetting 혹은 s: 설정\nexport 혹은 e: 데이터를 저장하기로 설정한 것들을 csv로 저장합니다.");
                 change = ReadLine();
                 string[] lists = new string[] {
-                    "1", "2", "3", "4", "5", "6", "7", "8", "9", "setting"
+                    "1", "2", "3", "4", "5", "6", "7", "8", "9", "setting", "s", "export", "e"
                 };
                 if (lists.Contains(change)) break;
                 Console.WriteLine("올바른 문자를 선택해 주세요.");
@@ -260,6 +295,10 @@ namespace Covid_Check_Client
                 if ((bool)result["success"])
                 {
                     Console.WriteLine($"{result["data"]["name"]}(ID: {result["data"]["id"]})의 체크가 완료되었습니다.\n");
+                    if ((bool)settingJson["saves"][0][1])
+                    {
+                        csv[0, 1] += $"\n{result["data"]["grade"]},{result["data"]["class"]},{result["data"]["number"]},{result["data"]["name"]},{result["data"]["id"]}";
+                    }
                 }
                 else
                 {
@@ -283,6 +322,10 @@ namespace Covid_Check_Client
                 if ((bool)result["success"])
                 {
                     Console.WriteLine($"{result["data"]["name"]}(ID: {result["data"]["id"]})의 체크 해제가 완료되었습니다.\n");
+                    if ((bool)settingJson["saves"][2][1])
+                    {
+                        csv[2, 1] += $"\n{result["data"]["grade"]},{result["data"]["class"]},{result["data"]["number"]},{result["data"]["name"]},{result["data"]["id"]}";
+                    }
                 }
                 else
                 {
@@ -329,6 +372,10 @@ namespace Covid_Check_Client
                 if ((bool)result["success"])
                 {
                     Console.WriteLine($"{result["data"]["name"]}(ID: {result["data"]["id"]})의 발열 체크가 완료되었습니다.\n");
+                    if ((bool)settingJson["saves"][1][1])
+                    {
+                        csv[1, 1] += $"\n{result["data"]["grade"]},{result["data"]["class"]},{result["data"]["number"]},{result["data"]["name"]},{result["data"]["id"]}";
+                    }
                 }
                 else
                 {
@@ -340,7 +387,7 @@ namespace Covid_Check_Client
         {
             string what = "";
             bool turn = false;
-            Console.WriteLine($"설정 모드 입니다. 모드를 변경하려면 change를, 프로그램 종료는 exit를 입력해 주세요. 해당하는 명령어를 입력해 주세요.\nurl [홈페이지 주소]: 홈페이지의 url을 [홈페이지 주소]로 저장\npassword [y/n] [password]: 비밀번호를 [password]로 지정하고 [y/n]에서 y라면 비밀번호를 사용, n이라면 비밀번호 사용 안함\nupdate [y/n]: 프로그램을 시작할 때 업데이트를 [y/n]이 y라면 확인, n이라면 확인하지 않음\nsettingfile [파일 경로]: [파일 경로]에 있는 설정 파일을 가져와서 설정을 복사합니다.");
+            Console.WriteLine($"설정 모드 입니다. 모드를 변경하려면 change를, 프로그램 종료는 exit를 입력해 주세요. 해당하는 명령어를 입력해 주세요.\nurl [홈페이지 주소]: 홈페이지의 url을 [홈페이지 주소]로 저장\npassword [y/n] [password]: 비밀번호를 [password]로 지정하고 [y/n]에서 y라면 비밀번호를 사용, n이라면 비밀번호 사용 안함\nupdate [y/n]: 프로그램을 시작할 때 업데이트를 [y/n]이 y라면 확인, n이라면 확인하지 않음\nsettingfile [파일 경로]: [파일 경로]에 있는 설정 파일을 가져와서 설정을 복사합니다.\nexport: csv로 저장할지 여부를 결정합니다. 자세한건 export help를 사용해 주세요.");
             while (true)
             {
                 while (true)
@@ -499,14 +546,214 @@ namespace Covid_Check_Client
                             Console.WriteLine("명령어 혹은 파일이 잘못되었습니다. 설정이 변하지 않습니다.");
                         }
                         break;
+                    case "export":
+                        try
+                        {
+                            //0~: 모두, 1~: 체크, 2~: 발열 체크, 3~: 체크 해제
+                            //~0: 사용 안함, ~1: id로 하는거, ~2: 학년, 반, 번호로 하는거, ~3: id와 학년, 반, 번호로 하는 것
+                            switch (command[1])
+                            {
+                                case "help":
+                                    Console.WriteLine("export [수]: [수]에 맞게 csv파일을 저장할지 여부를 결정합니다.\n[수]양식: 0~: 모두, 1~: 체크, 2~: 발열 체크, 3~: 체크 해제 / ~0: 사용 안함, ~1: id로 하는거, ~2: 학년, 반, 번호로 하는거, ~3: id와 학년, 반, 번호로 하는 것\n예시) export 12: 학년 반 번호로 체크하는 것을 기록하고, ID로 체크하는걸 기록하지 않도록 설정합니다.");
+                                    break;
+                                case "00":
+                                    settingJson["saves"][0][0] = false;
+                                    settingJson["saves"][0][1] = false;
+                                    settingJson["saves"][1][0] = false;
+                                    settingJson["saves"][1][1] = false;
+                                    settingJson["saves"][2][0] = false;
+                                    settingJson["saves"][2][1] = false;
+                                    break;
+                                case "01":
+                                    settingJson["saves"][0][0] = true;
+                                    settingJson["saves"][0][1] = false;
+                                    settingJson["saves"][1][0] = true;
+                                    settingJson["saves"][1][1] = false;
+                                    settingJson["saves"][2][0] = true;
+                                    settingJson["saves"][2][1] = false;
+                                    break;
+                                case "02":
+                                    settingJson["saves"][0][0] = false;
+                                    settingJson["saves"][0][1] = true;
+                                    settingJson["saves"][0][0] = false;
+                                    settingJson["saves"][1][1] = true;
+                                    settingJson["saves"][0][0] = false;
+                                    settingJson["saves"][2][1] = true;
+                                    break;
+                                case "03":
+                                    settingJson["saves"][0][0] = true;
+                                    settingJson["saves"][0][1] = true;
+                                    settingJson["saves"][1][0] = true;
+                                    settingJson["saves"][1][1] = true;
+                                    settingJson["saves"][2][0] = true;
+                                    settingJson["saves"][2][1] = true;
+                                    break;
+
+                                case "10":
+                                    settingJson["saves"][0][0] = false;
+                                    settingJson["saves"][0][1] = false;
+                                    break;
+                                case "11":
+                                    settingJson["saves"][0][0] = true;
+                                    settingJson["saves"][0][1] = false;
+                                break;
+                                case "12":
+                                    settingJson["saves"][0][0] = false;
+                                    settingJson["saves"][0][1] = true;
+                                break;
+                                case "13":
+                                    settingJson["saves"][0][0] = true;
+                                    settingJson["saves"][0][1] = true;
+                                break;
+
+                                case "20":
+                                    settingJson["saves"][1][0] = false;
+                                    settingJson["saves"][1][1] = false;
+                                    break;
+                                case "21":
+                                    settingJson["saves"][1][0] = true;
+                                    settingJson["saves"][1][1] = false;
+                                break;
+                                case "22":
+                                    settingJson["saves"][1][0] = false;
+                                    settingJson["saves"][1][1] = true;
+                                break;
+                                case "23":
+                                    settingJson["saves"][1][0] = true;
+                                    settingJson["saves"][1][1] = true;
+                                break;
+
+                                case "30":
+                                    settingJson["saves"][2][0] = false;
+                                    settingJson["saves"][2][1] = false;
+                                    break;
+                                case "31":
+                                    settingJson["saves"][2][0] = true;
+                                    settingJson["saves"][2][1] = false;
+                                break;
+                                case "32":
+                                    settingJson["saves"][2][0] = false;
+                                    settingJson["saves"][2][1] = true;
+                                break;
+                                case "33":
+                                    settingJson["saves"][2][0] = true;
+                                    settingJson["saves"][2][1] = true;
+                                break;
+
+                                default:
+                                    throw new Exception();
+                            }
+                            user.saveSetting(settingJson.ToString(), settingPath);
+                            Console.WriteLine("설정 완료");
+                        }
+                        catch
+                        {
+                            Console.WriteLine("명령어 혹은 파일이 잘못되었습니다. 설정이 변하지 않습니다.");
+                        }
+                        break;
 
                     default:
-                        Console.WriteLine($"설정 모드 입니다. 모드를 변경하려면 change를, 프로그램 종료는 exit를 입력해 주세요. 해당하는 명령어를 입력해 주세요.\nurl [홈페이지 주소]: 홈페이지의 url을 [홈페이지 주소]로 저장\npassword [y/n] [password]: 비밀번호를 [password]로 지정하고 [y/n]에서 y라면 비밀번호를 사용, n이라면 비밀번호 사용 안함\nupdate [y/n]: 프로그램을 시작할 때 업데이트를 [y/n]이 y라면 확인, n이라면 확인하지 않음\nsettingfile [파일 경로]: [파일 경로]에 있는 설정 파일을 가져와서 설정을 복사합니다.");
+                        Console.WriteLine($"설정 모드 입니다. 모드를 변경하려면 change를, 프로그램 종료는 exit를 입력해 주세요. 해당하는 명령어를 입력해 주세요.\nurl [홈페이지 주소]: 홈페이지의 url을 [홈페이지 주소]로 저장\npassword [y/n] [password]: 비밀번호를 [password]로 지정하고 [y/n]에서 y라면 비밀번호를 사용, n이라면 비밀번호 사용 안함\nupdate [y/n]: 프로그램을 시작할 때 업데이트를 [y/n]이 y라면 확인, n이라면 확인하지 않음\nsettingfile [파일 경로]: [파일 경로]에 있는 설정 파일을 가져와서 설정을 복사합니다.\nexport: csv로 저장할지 여부를 결정합니다. 자세한건 export help를 사용해 주세요.");
                         break;
                 }
                 // Console.WriteLine();
             }
         }
+        string export()
+        {
+            while (true)
+            {
+                string scan = "";
+                if (first("삭제", out scan, "어떤 csv를 출력할까요?\n11: ID로 체크, 12: 학년, 반, 번호로 체크, 21: ID로 발열 체크, 22: 학년, 반, 번호로 발열 체크, 31: ID로 체크 해제, 32: 학년, 반, 번호로 체크 해제")) return scan; //모드 바꾸기
+                string save = "";
+                string path = "";
+                bool on = false;
+                switch (scan)
+                {
+                    case "11":
+                        if ((bool)settingJson["saves"][0][0])
+                        {
+                            on = true;
+                            save = csv[0, 0];
+                            Console.WriteLine("csv 파일을 저장할 경로를 입력하세요.");
+                            path = ReadLine();
+                        }
+                    break;
+                    case "12":
+                        if ((bool)settingJson["saves"][0][1])
+                        {
+                            on = true;
+                            save = csv[0, 1];
+                            Console.WriteLine("csv 파일을 저장할 경로를 입력하세요.");
+                            path = ReadLine();
+                        }
+                    break;
+
+                    case "21":
+                        if ((bool)settingJson["saves"][1][0])
+                        {
+                            on = true;
+                            save = csv[1, 0];
+                            Console.WriteLine("csv 파일을 저장할 경로를 입력하세요.");
+                            path = ReadLine();
+                        }
+                    break;
+                    case "22":
+                        if ((bool)settingJson["saves"][1][1])
+                        {
+                            on = true;
+                            save = csv[1, 1];
+                            Console.WriteLine("csv 파일을 저장할 경로를 입력하세요.");
+                            path = ReadLine();
+                        }
+                    break;
+
+                    case "31":
+                        if ((bool)settingJson["saves"][2][0])
+                        {
+                            on = true;
+                            save = csv[2, 0];
+                            Console.WriteLine("csv 파일을 저장할 경로를 입력하세요.");
+                            path = ReadLine();
+                        }
+                    break;
+                    case "32":
+                        if ((bool)settingJson["saves"][2][1])
+                        {
+                            on = true;
+                            save = csv[2, 1];
+                            Console.WriteLine("csv 파일을 저장할 경로를 입력하세요.");
+                            path = ReadLine();
+                        }
+                    break;
+                    default:
+                        Console.WriteLine("올바른 수를 입력해 주세요.");
+                        continue;
+                }
+                if (on)
+                {
+                    try
+                    {
+                        Regex r = new Regex("^*.csv$");
+                        if (!r.IsMatch(path))
+                        {
+                            path += ".csv";
+                        }
+                        File.WriteAllText(path, save);
+                        Console.WriteLine(path + "에 저장 완료");
+                    }
+                    catch
+                    {
+                        Console.WriteLine("저장 실패");
+                    }
+                }
+                else
+                {
+                    Console.WriteLine("해당 데이터를 저장하도록 설정되어있지 않습니다.");
+                }
+            }
+        }
+        
         bool first(string title, out string what, string and = "")
         {
             Console.WriteLine($"현재는 사용자 {title}모드 입니다. 모드를 변경하려면 change를, 프로그램 종료는 exit를 입력해 주세요.\n{and}");
@@ -533,7 +780,7 @@ namespace Covid_Check_Client
         string[] getManyInfo()
         {
             string[] info = new string[3];
-            Console.WriteLine("사용자의 반을 입력하세요.");
+            Console.WriteLine("\n사용자의 반을 입력하세요.");
             while (true)
             {
                 info[0] = ReadLine();
@@ -544,7 +791,7 @@ namespace Covid_Check_Client
                 }
                 break;
             }
-            Console.WriteLine("사용자의 번호을 입력하세요.");
+            Console.WriteLine("\n사용자의 번호을 입력하세요.");
             while (true)
             {
                 info[1] = ReadLine();
@@ -562,7 +809,6 @@ namespace Covid_Check_Client
         {
             List<char> read = new List<char>();
             int insert = 0;
-            Console.WriteLine();
             string clear = "";
 
             for (int i = 0; i < Console.BufferWidth - 1; i++)
@@ -653,8 +899,9 @@ namespace Covid_Check_Client
             {
                 turn += a;
             }
-            Console.Write('\n');
+            Console.WriteLine();
             return turn;
         }
+        
     }
 }
