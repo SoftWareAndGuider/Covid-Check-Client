@@ -1246,7 +1246,6 @@ namespace CovidCheckClientGui
                             }
                         }
                         ZipFile.ExtractToDirectory("./update.zip", "./", true); //압축을 풀고
-                        ZipFile.ExtractToDirectory("./GUI.zip", "./", true);
                         Directory.CreateDirectory("update"); //업데이트 파일들 집어넣을 폴더
 
 
