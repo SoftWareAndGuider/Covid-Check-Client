@@ -11,10 +11,18 @@ namespace CovidCheckClientGui
 {
     partial class Program : Window
     {
+        bool saveData;
         static User user;
         static bool doneUpdate = false;
+        static string[,] csv = new string[3,2];
+
+
         static void Main(string[] args)
         {
+            for (int i = 0; i < 6; i++)
+            {
+                csv[i / 2, i % 2] = "학년,반,번호,이름,ID";
+            }
             if (args.Length == 0)
             {
                 Application.Init();
@@ -286,12 +294,16 @@ namespace CovidCheckClientGui
             if ((bool)result["success"])
             {
                 toLog = $"{result["data"]["grade"]}학년 {result["data"]["class"]}반 {result["data"]["number"]}번 {result["data"]["name"]}(ID: {result["data"]["id"]}) 정상 체크됨";
+                if (saveData && (bool)settingJson["saves"][0][0])
+                {
+                    csv[0, 0] += $"\n{result["data"]["grade"]},{result["data"]["class"]},{result["data"]["number"]},{result["data"]["name"]},{result["data"]["id"]}";
+                }
             }
             else
             {
                 toLog = $"정상 체크 실패 (인식된 ID: {id})";
             }
-
+            
             Application.Invoke (delegate {
                 addLog(toLog);
             });
@@ -333,11 +345,15 @@ namespace CovidCheckClientGui
             string toLog = "";
             if ((bool)result["success"])
             {
-                toLog = $"{result["data"]["grade"]}학년 {result["data"]["class"]}반 {result["data"]["number"]}번 {result["data"]["name"]}(ID: {result["data"]["id"]}) 체크됨";
+                toLog = $"{result["data"]["grade"]}학년 {result["data"]["class"]}반 {result["data"]["number"]}번 {result["data"]["name"]}(ID: {result["data"]["id"]}) 정상 체크됨";
             }
             else
             {
                 toLog = $"체크 실패 (인식된 정보: {grade}학년 {@class}반 {number}번)";
+            }
+            if (saveData && (bool)settingJson["saves"][0][1])
+            {
+                csv[0, 1] += $"\n{result["data"]["grade"]},{result["data"]["class"]},{result["data"]["number"]},{result["data"]["name"]},{result["data"]["id"]}";
             }
             Application.Invoke (delegate {
                 addLog(toLog);
@@ -372,6 +388,10 @@ namespace CovidCheckClientGui
             if ((bool)result["success"])
             {
                 toLog = $"{result["data"]["grade"]}학년 {result["data"]["class"]}반 {result["data"]["number"]}번 {result["data"]["name"]}(ID: {result["data"]["id"]}) 발열 체크됨";
+                if (saveData && (bool)settingJson["saves"][1][0])
+                {
+                    csv[1, 0] += $"\n{result["data"]["grade"]},{result["data"]["class"]},{result["data"]["number"]},{result["data"]["name"]},{result["data"]["id"]}";
+                }
             }
             else
             {
@@ -383,7 +403,6 @@ namespace CovidCheckClientGui
         }       
         void checkDoubt(string grade, string @class, string number, int loop = 0)
         {
-
             JObject result = new JObject();
             if (checkDoubtIsTeacher.Active)
             {
@@ -417,6 +436,10 @@ namespace CovidCheckClientGui
             if ((bool)result["success"])
             {
                 toLog = $"{result["data"]["grade"]}학년 {result["data"]["class"]}반 {result["data"]["number"]}번 {result["data"]["name"]}(ID: {result["data"]["id"]}) 발열 체크됨";
+                if (saveData && (bool)settingJson["saves"][1][1])
+                {
+                    csv[1, 1] += $"\n{result["data"]["grade"]},{result["data"]["class"]},{result["data"]["number"]},{result["data"]["name"]},{result["data"]["id"]}";
+                }
             }
             else
             {
@@ -427,8 +450,7 @@ namespace CovidCheckClientGui
             });
         }
         void uncheck(string id, int loop = 0)
-        {
-            
+        {            
             JObject result = new JObject();
 
             int err = 0;
@@ -459,6 +481,10 @@ namespace CovidCheckClientGui
             if ((bool)result["success"])
             {
                 toLog = $"{result["data"]["grade"]}학년 {result["data"]["class"]}반 {result["data"]["number"]}번 {result["data"]["name"]}(ID: {id}) 체크 해제됨";
+                if (saveData && (bool)settingJson["saves"][2][0])
+                {
+                    csv[2, 0] += $"\n{result["data"]["grade"]},{result["data"]["class"]},{result["data"]["number"]},{result["data"]["name"]},{result["data"]["id"]}";
+                }
             }
             else
             {
@@ -504,6 +530,10 @@ namespace CovidCheckClientGui
             if ((bool)result["success"])
             {
                 toLog = $"{result["data"]["grade"]}학년 {result["data"]["class"]}반 {result["data"]["number"]}번 {result["data"]["name"]}(ID: {result["data"]["id"]}) 체크 해제됨";
+                if (saveData && (bool)settingJson["saves"][2][1])
+                {
+                    csv[2, 1] += $"\n{result["data"]["grade"]},{result["data"]["class"]},{result["data"]["number"]},{result["data"]["name"]},{result["data"]["id"]}";
+                }
             }
             else
             {

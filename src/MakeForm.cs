@@ -8,6 +8,7 @@ using System.Runtime.InteropServices;
 using System.Linq;
 using System.IO.Compression;
 using System.Threading.Tasks;
+using System.Text.RegularExpressions;
 
 using Gtk;
 using Newtonsoft.Json.Linq;
@@ -42,7 +43,6 @@ namespace CovidCheckClientGui
         Entry checkInsertClass = new Entry(); //(체크) 사용자의 반을 입력하는 Entry
         Entry checkInsertNumber = new Entry(); //(체크) 사용자의 번호를 입력하는 Entry
         CheckButton checkIsTeacher = new CheckButton("학생이 아님"); //(체크) 대상이 학생이 아닐 때 체크하는 체크버튼 (0학년 0반 판정)
-
         Button checkInsertUser = new Button("정상 체크하기"); //(체크) 학년, 반, 번호를 사용시 누르는 버튼
 
 
@@ -132,10 +132,21 @@ namespace CovidCheckClientGui
             }
         };        
 
-        //======================= 설정 =========================
+        //======================= 설정 =======================
         SpinButton helpSet; //타임아웃시 재시도 횟수를 설정할 때 오른쪽에 있는 것 (세세하게 조절할 때 도와주는 역할)
 
-
+        //======================= 내보내기 =======================
+        Button[,] export = new Button[3,2] {
+            {
+                new Button("내보내기"), new Button("내보내기")
+            },
+            {
+                new Button("내보내기"), new Button("내보내기")
+            },
+            {
+                new Button("내보내기"), new Button("내보내기")
+            }
+        };
         
         
         public Program() : base("코로나19 예방용 발열체크 프로그램")
@@ -173,24 +184,40 @@ namespace CovidCheckClientGui
             }
 
             user = new CheckCovid19.User("localhost"); //User 선언
+
+            string defaultSetting = @"{
+                ""url"": ""localhost"",
+                ""barcodeLength"": 8,
+                ""timeoutRetry"": 100,
+                ""checkUpdate"": true,
+                ""autoUpdate"": false,
+                ""usePassword"": false,
+                ""password"": ""password"",
+                ""csvSave"": false,
+                ""saves"": [
+                    [
+                        false, false
+                    ],
+                    [
+                        false, false
+                    ],
+                    [
+                        false, false
+                    ]
+                ]
+            }"; //기본 JSON 세팅
+            JObject correctSetting = JObject.Parse(defaultSetting);
+
             try
             {
                 settingJson = user.loadSetting(settingPath); //설정 JSON파일을 가져와봄
             }
             catch
             {
-                string defaultSetting = @"{
-                    ""url"": ""localhost"",
-                    ""barcodeLength"": 8,
-                    ""timeoutRetry"": 100,
-                    ""checkUpdate"": true,
-                    ""autoUpdate"": false,
-                    ""usePassword"": false,
-                    ""password"": ""password""
-                }"; //기본 JSON 세팅
-                user.saveSetting(defaultSetting, settingPath); //기본 JSON 저장
-                settingJson = JObject.Parse(defaultSetting);
+                settingJson = new JObject();
             }
+
+            settingJson = user.trimSetting(correctSetting, settingJson);
 
             user.url = settingJson["url"].ToString(); //설정 속 url 입력
 
@@ -236,31 +263,34 @@ namespace CovidCheckClientGui
 
                 //사용자 체크 배치(ID)
                 check.Attach(checkInsertID, 1, 2, 5, 1); // 텍스트박스 추가
+                check.Attach(export[0, 0], 1, 3, 5, 1);
 
                 check.Attach(new Separator(Orientation.Horizontal), 1, 4, 5, 1);
                     
                     //사용자 체크 배치(학년, 반, 번호)
                     {
-                        check.Attach(new Label("ID 없이 체크하기"), 1, 5, 5, 1);
-                        check.Attach(checkIsTeacher, 1, 6, 5, 1);
-                        check.Attach(new Label("학년"), 1, 7, 1, 1);
-                        check.Attach(checkInsertGrade, 2, 7, 4, 1);
-                        check.Attach(new Label("반"), 1, 8, 1, 1);
-                        check.Attach(checkInsertClass, 2, 8, 4, 1);
-                        check.Attach(new Label("번호"), 1, 9, 1, 1);
-                        check.Attach(checkInsertNumber, 2, 9, 4, 1);
-                        check.Attach(checkInsertUser, 1, 10, 5, 1);
+                        check.Attach(new Label("ID 없이 정상 체크하기"), 1, 5, 5, 1);
+                        check.Attach(export[0, 1], 4, 5, 2, 1);
+                        check.Attach(checkIsTeacher, 1, 7, 5, 1);
+                        check.Attach(new Label("학년"), 1, 8, 1, 1);
+                        check.Attach(checkInsertGrade, 2, 8, 4, 1);
+                        check.Attach(new Label("반"), 1, 9, 1, 1);
+                        check.Attach(checkInsertClass, 2, 9, 4, 1);
+                        check.Attach(new Label("번호"), 1, 10, 1, 1);
+                        check.Attach(checkInsertNumber, 2, 10, 4, 1);
+                        check.Attach(checkInsertUser, 1, 11, 5, 1);
                     }
 
                     checkFrame.Margin = 15;
                     checkFrame.MarginBottom = 0;
-                    checkFrame.MarginTop = 10;
+                    checkFrame.MarginTop = 0;
                     checkFrame.Add(check);
             }
             
             Grid checkDoubt = new Grid();
             Frame checkDoubtFrame = new Frame("발열");
             {
+
                 checkDoubt.ColumnHomogeneous = true;
                 checkDoubt.RowSpacing = 10; 
                 checkDoubt.ColumnSpacing = 10;
@@ -281,20 +311,22 @@ namespace CovidCheckClientGui
 
                 //사용자 체크 배치(ID)
                 checkDoubt.Attach(checkDoubtInsertID, 1, 2, 5, 1); // 텍스트박스 추가
+                checkDoubt.Attach(export[1, 0], 1, 3, 5, 1);
 
                 checkDoubt.Attach(new Separator(Orientation.Horizontal), 1, 4, 5, 1);
                 
                 //사용자 체크 배치(학년, 반, 번호)
                 {
-                    checkDoubt.Attach(new Label("ID 없이 체크하기"), 1, 5, 5, 1);
-                    checkDoubt.Attach(checkDoubtIsTeacher, 1, 6, 5, 1);
-                    checkDoubt.Attach(new Label("학년"), 1, 7, 1, 1);
-                    checkDoubt.Attach(checkDoubtInsertGrade, 2, 7, 4, 1);
-                    checkDoubt.Attach(new Label("반"), 1, 8, 1, 1);
-                    checkDoubt.Attach(checkDoubtInsertClass, 2, 8, 4, 1);
-                    checkDoubt.Attach(new Label("번호"), 1, 9, 1, 1);
-                    checkDoubt.Attach(checkDoubtInsertNumber, 2, 9, 4, 1);
-                    checkDoubt.Attach(checkDoubtInsertUser, 1, 10, 5, 1);
+                    checkDoubt.Attach(new Label("ID 없이 발열 체크하기"), 1, 5, 5, 1);
+                    checkDoubt.Attach(export[1, 1], 4, 5, 2, 1);
+                    checkDoubt.Attach(checkDoubtIsTeacher, 1, 7, 5, 1);
+                    checkDoubt.Attach(new Label("학년"), 1, 8, 1, 1);
+                    checkDoubt.Attach(checkDoubtInsertGrade, 2, 8, 4, 1);
+                    checkDoubt.Attach(new Label("반"), 1, 9, 1, 1);
+                    checkDoubt.Attach(checkDoubtInsertClass, 2, 9, 4, 1);
+                    checkDoubt.Attach(new Label("번호"), 1, 10, 1, 1);
+                    checkDoubt.Attach(checkDoubtInsertNumber, 2, 10, 4, 1);
+                    checkDoubt.Attach(checkDoubtInsertUser, 1, 11, 5, 1);
                 }
 
                 checkDoubtFrame.Margin = 15;
@@ -304,6 +336,7 @@ namespace CovidCheckClientGui
 
             Grid checkAll = new Grid(); //check하는 Frame들 배치
             {
+                checkAll.MarginTop = 10;
                 checkAll.ColumnHomogeneous = true;
                 checkAll.RowSpacing = 10;
                 checkAll.Attach(checkFrame, 1, 2, 5, 1);
@@ -314,6 +347,7 @@ namespace CovidCheckClientGui
             //사용자 체크 해제 Grid
             Grid uncheck = new Grid();
             {
+                
                 //사용자 체크 해제 속성 설정
                 uncheck.ColumnHomogeneous = true; //창의 크기가 달라지면 알아서 위젯 크기 조절해줌
                 uncheck.RowSpacing = 10; //Row는 위아래
@@ -336,20 +370,22 @@ namespace CovidCheckClientGui
 
                 //사용자 체크 해제 배치(ID)
                 uncheck.Attach(uncheckInsertID, 1, 2, 5, 1); // 텍스트박스 추가
+                uncheck.Attach(export[2, 0], 1, 4, 5, 1);
                 
-                uncheck.Attach(new Separator(Orientation.Horizontal), 1, 4, 5, 1);
+                uncheck.Attach(new Separator(Orientation.Horizontal), 1, 5, 5, 1);
 
                 //사용자 체크 해제 배치(학년, 반, 번호)
                 {
-                    uncheck.Attach(new Label("ID 없이 체크 해제하기"), 1, 5, 5, 1);
-                    uncheck.Attach(uncheckIsTeacher, 1, 6, 5, 1);
-                    uncheck.Attach(new Label("학년"), 1, 7, 1, 1);
-                    uncheck.Attach(uncheckInsertGrade, 2, 7, 4, 1);
-                    uncheck.Attach(new Label("반"), 1, 8, 1, 1);
-                    uncheck.Attach(uncheckInsertClass, 2, 8, 4, 1);
-                    uncheck.Attach(new Label("번호"), 1, 9, 1, 1);
-                    uncheck.Attach(uncheckInsertNumber, 2, 9, 4, 1);
-                    uncheck.Attach(uncheckInsertUser, 1, 10, 5, 1);
+                    uncheck.Attach(new Label("ID 없이 체크 해제하기"), 1, 6, 5, 1);
+                    uncheck.Attach(export[2, 1], 4, 6, 2, 1);
+                    uncheck.Attach(uncheckIsTeacher, 1, 8, 5, 1);
+                    uncheck.Attach(new Label("학년"), 1, 9, 1, 1);
+                    uncheck.Attach(uncheckInsertGrade, 2, 9, 4, 1);
+                    uncheck.Attach(new Label("반"), 1, 10, 1, 1);
+                    uncheck.Attach(uncheckInsertClass, 2, 10, 4, 1);
+                    uncheck.Attach(new Label("번호"), 1, 11, 1, 1);
+                    uncheck.Attach(uncheckInsertNumber, 2, 11, 4, 1);
+                    uncheck.Attach(uncheckInsertUser, 1, 12, 5, 1);
                 }
             }
 
@@ -443,7 +479,7 @@ namespace CovidCheckClientGui
 
                 //위젯들 배치
                 {
-                    delUser.Attach(delInsertID, 1, 1, 5, 1);
+                    delUser.Attach(delInsertID, 1, 1, 4, 1);
                     delUser.Attach(delInsertUser, 5, 1, 1, 1);
                     delUser.Attach(new Separator(Orientation.Horizontal), 1, 2, 5, 1);
                     delUser.Attach(new Label("ID없이 사용자 삭제하기"), 1, 3, 5, 1);
@@ -576,6 +612,7 @@ namespace CovidCheckClientGui
                 Frame setUpdateCheckFrame = new Frame("업데이트 설정");
                 Frame setPasswordFrame = new Frame("비밀번호 설정");
                 Frame getSettingFrame = new Frame("설정 파일 불러오기");
+                Frame csvSave = new Frame("데이터 저장");
 
                 //setting Grid 설정
                 {
@@ -590,6 +627,7 @@ namespace CovidCheckClientGui
                     setting.Attach(setUpdateCheckFrame, 1, 3, 1, 1);
                     setting.Attach(getSettingFrame, 1, 4, 1, 1);
                     setting.Attach(setPasswordFrame, 1, 5, 1, 1);
+                    setting.Attach(csvSave, 1, 6, 1, 1);
                 }                
 
                 grids.Add("setUrl", new Grid()); //URL 설정하는 곳
@@ -804,6 +842,156 @@ namespace CovidCheckClientGui
                     setPasswordFrame.Add(grids["setPassword"]);
                 }
                 
+                grids.Add("csvSave", new Grid()); //csv 저장 관련 설정
+                {
+                    Gtk.Switch use = new Gtk.Switch();
+                    CheckButton[,] checkButtons = new CheckButton[3,2]
+                    {
+                        {
+                            new CheckButton("ID로 체크하기"), new CheckButton("ID없이 체크하기")
+                        },
+                        {
+                            new CheckButton("ID로 발열 체크하기"), new CheckButton("ID없이 발열 체크하기")
+                        },
+                        {
+                            new CheckButton("ID로 체크 해제하기"), new CheckButton("ID없이 체크 해제하기")
+                        }
+                    };
+                    Label text = new Label("데이터 저장하기");
+                    use.Halign = Align.Start;
+                    text.Halign = Align.End;
+
+
+                    Frame uses = new Frame("사용할 것들");
+                    Grid checkButton = new Grid();
+                    checkButton.ColumnHomogeneous = true;
+                    checkButton.MarginBottom = 5;
+                    uses.Add(checkButton);
+                    grids["csvSave"].ColumnSpacing = 15;
+                    use.State = (bool)settingJson["csvSave"];
+                    saveData = use.State;
+                    foreach (var a in checkButtons)
+                    {
+                        a.Sensitive = saveData;
+                    }
+
+                    JArray array = settingJson["saves"] as JArray;
+                    
+                    for (int i = 0; i < 6; i++)
+                    {
+                        checkButtons[i / 2, i % 2].Active = (bool)array[i / 2][i % 2];
+                    }
+
+                    {
+                        grids["csvSave"].Attach(text, 1, 1, 1, 1);
+                        grids["csvSave"].Attach(use, 2, 1, 1, 1);
+                        grids["csvSave"].Attach(uses, 1, 2, 2, 1);
+
+                        checkButton.Attach(checkButtons[0, 0], 1, 2, 1, 1);
+                        checkButton.Attach(checkButtons[0, 1], 1, 3, 1, 1);
+
+                        checkButton.Attach(checkButtons[1, 0], 2, 2, 1, 1);
+                        checkButton.Attach(checkButtons[1, 1], 2, 3, 1, 1);
+
+                        checkButton.Attach(checkButtons[2, 0], 3, 2, 1, 1);
+                        checkButton.Attach(checkButtons[2, 1], 3, 3, 1, 1);
+                    }
+                    {
+                        use.StateChanged += delegate {
+                            settingJson["csvSave"] = use.State;
+                            saveData = use.State;
+                            user.saveSetting(settingJson.ToString(), settingPath);
+                            foreach (var a in checkButtons)
+                            {
+                                a.Sensitive = use.State;
+                            }
+                            if (use.State)
+                            {
+                                if (checkButtons[0, 0].Active) export[0, 0].Show();
+                                else export[0, 0].Hide();
+                                if (checkButtons[0, 1].Active) export[0, 1].Show();
+                                else export[0, 1].Hide();
+
+                                if (checkButtons[1, 0].Active) export[1, 0].Show();
+                                else export[1, 0].Hide();
+                                if (checkButtons[1, 1].Active) export[1, 1].Show();
+                                else export[1, 1].Hide();
+
+                                if (checkButtons[2, 0].Active) export[2, 0].Show();
+                                else export[2, 0].Hide();
+                                if (checkButtons[2, 1].Active) export[2, 1].Show();
+                                else export[2, 1].Hide();
+                            }
+                            else
+                            {
+                                foreach (var a in export)
+                                {
+                                    a.Hide();
+                                }
+                            }
+                        };
+                        checkButtons[0, 0].Clicked += delegate {
+                            settingJson["saves"][0][0] = checkButtons[0, 0].Active;
+                            if (checkButtons[0, 0].Active) export[0, 0].Show();
+                            else export[0, 0].Hide();
+                            user.saveSetting(settingJson.ToString(), settingPath);
+                        };
+                        checkButtons[0, 1].Clicked += delegate {
+                            settingJson["saves"][0][1] = checkButtons[0, 1].Active;
+                            if (checkButtons[0, 1].Active) export[0, 1].Show();
+                            else export[0, 1].Hide();
+                            user.saveSetting(settingJson.ToString(), settingPath);
+                        };
+                        checkButtons[1, 0].Clicked += delegate {
+                            settingJson["saves"][1][0] = checkButtons[1, 0].Active;
+                            if (checkButtons[1, 0].Active) export[1, 0].Show();
+                            else export[1, 0].Hide();
+                            user.saveSetting(settingJson.ToString(), settingPath);
+                        };
+                        checkButtons[1, 1].Clicked += delegate {
+                            settingJson["saves"][1][1] = checkButtons[1, 1].Active;
+                            if (checkButtons[1, 1].Active) export[1, 1].Show();
+                            else export[1, 1].Hide();
+                            user.saveSetting(settingJson.ToString(), settingPath);
+                        };
+                        checkButtons[2, 0].Clicked += delegate {
+                            settingJson["saves"][2][0] = checkButtons[2, 0].Active;
+                            if (checkButtons[2, 0].Active) export[2, 0].Show();
+                            else export[2, 0].Hide();
+                            user.saveSetting(settingJson.ToString(), settingPath);
+                        };
+                        checkButtons[2, 1].Clicked += delegate {
+                            settingJson["saves"][2][1] = checkButtons[2, 1].Active;
+                            if (checkButtons[2, 1].Active) export[2, 1].Show();
+                            else export[2, 1].Hide();
+                            user.saveSetting(settingJson.ToString(), settingPath);
+                        };
+                    
+                        export[0, 0].Clicked += delegate {
+                            exportCsv(csv[0, 0]);
+                        };
+                        export[0, 1].Clicked += delegate {
+                            exportCsv(csv[0, 1]);
+                        };
+
+                        export[1, 0].Clicked += delegate {
+                            exportCsv(csv[1, 0]);
+                        };
+                        export[1, 1].Clicked += delegate {
+                            exportCsv(csv[1, 1]);
+                        };
+
+                        export[2, 0].Clicked += delegate {
+                            exportCsv(csv[2, 0]);
+                        };
+                        export[2, 1].Clicked += delegate {
+                            exportCsv(csv[2, 1]);
+                        };
+                    }
+                    
+                    csvSave.Add(grids["csvSave"]);
+                }
+
                 foreach (var a in grids) //설정 Grid에 공통으로 적용되는 것
                 {
                     a.Value.ColumnHomogeneous = true;
@@ -1027,6 +1215,13 @@ namespace CovidCheckClientGui
             }
 
 
+            if (!((bool)settingJson["csvSave"] && (bool)settingJson["saves"][0][0])) export[0, 0].Hide();
+            if (!((bool)settingJson["csvSave"] && (bool)settingJson["saves"][0][1])) export[0, 1].Hide();
+            if (!((bool)settingJson["csvSave"] && (bool)settingJson["saves"][1][0])) export[1, 0].Hide();
+            if (!((bool)settingJson["csvSave"] && (bool)settingJson["saves"][1][1])) export[1, 1].Hide();
+            if (!((bool)settingJson["csvSave"] && (bool)settingJson["saves"][2][0])) export[2, 0].Hide();
+            if (!((bool)settingJson["csvSave"] && (bool)settingJson["saves"][2][1])) export[2, 1].Hide();
+
             addLog("프로그램 로딩이 완료됨");
 
             //=========== 업데이트 확인 ===============
@@ -1044,13 +1239,14 @@ namespace CovidCheckClientGui
 
                         foreach (var file in files)
                         {
-                            if (file["name"].ToString() == "My-School-Version.zip")
+                            if (file["name"].ToString() == "Default-Version.zip")
                             {
                                 client.DownloadFile(file["browser_download_url"].ToString(), "update.zip"); //god Github api
                                 break;
                             }
                         }
                         ZipFile.ExtractToDirectory("./update.zip", "./", true); //압축을 풀고
+                        ZipFile.ExtractToDirectory("./GUI.zip", "./", true);
                         Directory.CreateDirectory("update"); //업데이트 파일들 집어넣을 폴더
 
 
@@ -1273,5 +1469,27 @@ namespace CovidCheckClientGui
             timeoutLog.Insert(timeoutLogLabel, 0);
             timeoutLog.ShowAll();
         }   
+        void exportCsv(string text)
+        {
+            FileChooserDialog dialog = new FileChooserDialog("csv 파일 저장", null, FileChooserAction.Save, "저장하기", ResponseType.Accept);
+            FileFilter filter = new FileFilter();
+            filter.AddPattern("*.csv");
+            dialog.Filter = filter;
+
+
+            int result = dialog.Run();
+            Regex regex = new Regex(@"^*.csv$");
+            string path = dialog.Filename;
+
+            if (!regex.IsMatch(path))
+            {
+                path += ".csv";
+            }
+            if (result == -3)
+            {
+                File.WriteAllText(path, text);
+            }
+            dialog.Dispose();
+        }
     }
 }

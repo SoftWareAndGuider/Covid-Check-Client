@@ -237,6 +237,23 @@ namespace CheckCovid19
             string getString = Encoding.UTF8.GetString(bytes);
             return JObject.Parse(getString);
         }
+        public JObject trimSetting(JObject correct, JObject setting)
+        {
+            bool save = false;
+            foreach (var a in correct)
+            {
+                if (!setting.ContainsKey(a.Key))
+                {
+                    setting.Add(a.Key, a.Value);
+                    save = true;
+                }
+            }
+            if (save)
+            {
+                saveSetting(setting.ToString(), "config.json");
+            }
+            return setting;
+        }
     }
     class MyWebCient : WebClient
     {
