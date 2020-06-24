@@ -1239,7 +1239,7 @@ namespace CovidCheckClientGui
 
                         foreach (var file in files)
                         {
-                            if (file["name"].ToString() == "Default-Version.zip")
+                            if (file["name"].ToString() == "My-School-Version.zip")
                             {
                                 client.DownloadFile(file["browser_download_url"].ToString(), "update.zip"); //god Github api
                                 break;
