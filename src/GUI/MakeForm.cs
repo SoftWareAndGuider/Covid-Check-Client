@@ -939,6 +939,7 @@ namespace CovidCheckClientGui
                     {
                         use.StateChanged += delegate {
                             settingJson["csvSave"] = use.State;
+                            saveData = use.State;
                             user.saveSetting(settingJson.ToString(), settingPath);
                             foreach (var a in checkButtons)
                             {

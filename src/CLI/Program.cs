@@ -644,7 +644,7 @@ namespace Covid_Check_Client
                                     throw new Exception();
                             }
                             user.saveSetting(settingJson.ToString(), settingPath);
-                            Console.WriteLine("설정 완료");
+                            if (command[1] != "help") Console.WriteLine("설정 완료");                            
                         }
                         catch
                         {
