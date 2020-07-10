@@ -18,6 +18,7 @@ namespace CovidCheckClientGui
 {
     partial class Program : Window
     {
+        int version = 3;
         JObject settingJson = new JObject(); //설정 JSON
         const string settingPath = "config.json"; //설정 파일 경로
 
@@ -1268,7 +1269,7 @@ namespace CovidCheckClientGui
             if ((bool)settingJson["checkUpdate"] && !doneUpdate) //업데이트를 체크하고 방금 업데이트를 하지 않았다면
             {
                 JArray update = new JArray();
-                if (user.hasNewVersion(2, out update)) //신버전 확인
+                if (user.hasNewVersion(version, out update)) //신버전 확인
                 {
                     if ((bool)settingJson["autoUpdate"]) //자동 업데이트가 켜져있다면
                     {
