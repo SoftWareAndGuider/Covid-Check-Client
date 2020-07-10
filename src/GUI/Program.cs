@@ -31,50 +31,10 @@ namespace CovidCheckClientGui
             }
             else if (args[0] == "update")
             {
-                Thread.Sleep(1000);
-                string[] fileInfos = Directory.GetFiles("./", "*.zip");
-                foreach (string f in fileInfos)
-                {
-                    File.Delete(f);
-                }
-
-                if (args[1] == "linux")
-                {
-                    DirectoryInfo dictInfo = new DirectoryInfo("./update");
-                    foreach (var file in dictInfo.GetFiles())
-                    {
-                        if (file.Name == "config.json") continue;
-                        file.CopyTo("./" + file.Name, true);
-                    }
-
-                    ProcessStartInfo info = new ProcessStartInfo("./CovidCheckClientGui", "done linux");
-                    Process.Start(info);
-                    Environment.Exit(0);
-                }
-                else if (args[1] == "windows") // 시작 위치: ./files
-                {
-                    DirectoryInfo dictInfo = new DirectoryInfo("../update");
-                    foreach (var file in dictInfo.GetFiles())
-                    {
-                        if (file.Name == "config.json") continue;
-                        file.CopyTo("../" + file.Name, true);
-                    }
-                    ProcessStartInfo info = new ProcessStartInfo("../CovidCheckClientGui.exe", "done windows");
-                    info.WorkingDirectory = "../";
-                    Process.Start(info);
-                    Environment.Exit(0);
-                }
-            }
-            else if (args[0] == "done")
-            {
-                if (args[1] == "windows")
-                {
-                    Directory.Delete("update", true);
-                    Directory.Delete("files", true);
-                }
+                UpdateWindow window = new UpdateWindow(args);
                 doneUpdate = true;
-                Application.Init();
                 new Program();
+                Application.Init();
                 Application.Run();
             }
         }
