@@ -14,7 +14,9 @@ namespace CovidCheckClientGui
         bool saveData;
         static User user;
         static bool doneUpdate = false;
+        static bool doingUpdate = false;
         static string[,] csv = new string[3,2];
+        static string[] _args = new string[0];
 
 
         static void Main(string[] args)
@@ -23,20 +25,23 @@ namespace CovidCheckClientGui
             {
                 csv[i / 2, i % 2] = "학년,반,번호,이름,ID";
             }
-            if (args.Length == 0)
-            {
-                Application.Init();
-                new Program();
-                Application.Run();
-            }
+            if (args.Length == 0) {}
             else if (args[0] == "update")
             {
-                UpdateWindow window = new UpdateWindow(args);
-                doneUpdate = true;
-                new Program();
-                Application.Init();
-                Application.Run();
+                _args = args;
             }
+            else if (args[0] == "done")
+            {
+                if (args[1] == "windows")
+                {
+                    Directory.Delete("update", true);
+                    Directory.Delete("files", true);
+                }
+                doneUpdate = true;
+            }
+            Application.Init();
+            new Program();
+            Application.Run();
         }
         
         //학생이 아님이 체크됐을 때 실행하는 것

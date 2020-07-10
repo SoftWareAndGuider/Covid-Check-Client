@@ -158,6 +158,13 @@ namespace CovidCheckClientGui
         
         public Program() : base("코로나19 예방용 발열체크 프로그램")
         {
+            if (_args.Length == 0) {}
+            else if (_args[0] == "update")
+            {
+                update2nd();
+                doingUpdate = true;
+                Environment.Exit(0);
+            }
             addLog("프로그램이 시작됨");
             programProcessing = true; //아래에 있는 루프 도는 스레드들 일하도록 true 설정
             CssProvider cssProvider = new CssProvider(); //기본 CSS설정
@@ -1266,8 +1273,9 @@ namespace CovidCheckClientGui
             addLog("프로그램 로딩이 완료됨");
 
             //=========== 업데이트 확인 ===============
-            if ((bool)settingJson["checkUpdate"] && !doneUpdate) //업데이트를 체크하고 방금 업데이트를 하지 않았다면
+            if ((bool)settingJson["checkUpdate"] && !doneUpdate && !doingUpdate) //업데이트를 체크하고 방금 업데이트를 하지 않았다면
             {
+                Console.WriteLine(doingUpdate);
                 JArray update = new JArray();
                 if (user.hasNewVersion(version, out update)) //신버전 확인
                 {
@@ -1293,7 +1301,7 @@ namespace CovidCheckClientGui
                         Add(updateGrid);
                         ShowAll();
 
-                        int persent = 0;
+                        int percent = 0;
                         bool downloading = true;
 
                         Thread updateThread = new Thread(() => {
@@ -1303,13 +1311,13 @@ namespace CovidCheckClientGui
                             JArray files = update.First()["assets"] as JArray;
 
                             client.DownloadProgressChanged += (ob, e) => {
-                                if (persent == e.ProgressPercentage) return;
+                                if (percent == e.ProgressPercentage) return;
+                                if (e.ProgressPercentage == 100) downloading = false;
                                 Application.Invoke(delegate {
-                                    persent = e.ProgressPercentage;
-                                    updatingWhat.Text = $"다운로드 중... ({persent}%)";
+                                    percent = e.ProgressPercentage;
+                                    updatingWhat.Text = $"다운로드 중... ({percent}%)";
                                 });                                
                             };
-                            client.DownloadFileCompleted += delegate {downloading = false;};
 
                             foreach (var file in files)
                             {
@@ -1573,6 +1581,59 @@ namespace CovidCheckClientGui
                 File.WriteAllText(path, text);
             }
             dialog.Dispose();
+        }
+        void update2nd()
+        {
+            SetDefaultSize(1450, 850);
+
+            Spinner spinner = new Spinner();
+            Label label = new Label("파일 복사 중...");
+            Grid grid = new Grid();
+            grid.Attach(spinner, 1, 1, 1, 1);
+            grid.Attach(label, 2, 1, 1, 1);
+            Add(grid);
+            ShowAll();
+            bool done = false;
+            Thread thread = new Thread(() => {
+                string[] fileInfos = Directory.GetFiles("./", "*.zip");
+                Application.Invoke(delegate {label.Text = "다운로드 파일 삭제 중...";});
+                foreach (string f in fileInfos)
+                {
+                    File.Delete(f);
+                }
+
+                Application.Invoke(delegate {label.Text = "파일 복사 중...";});
+                if (_args[1] == "linux")
+                {
+                    DirectoryInfo dictInfo = new DirectoryInfo("./update");
+                    foreach (var file in dictInfo.GetFiles())
+                    {
+                        if (file.Name == "config.json") continue;
+                        file.CopyTo("./" + file.Name, true);
+                    }
+
+                    ProcessStartInfo info = new ProcessStartInfo("./CovidCheckClientGui", "done linux");
+                    Process.Start(info);
+                }
+
+                else if (_args[1] == "windows") // 시작 위치: ./files
+                {
+                    DirectoryInfo dictInfo = new DirectoryInfo("../update");
+                    foreach (var file in dictInfo.GetFiles())
+                    {
+                        if (file.Name == "config.json") continue;
+                        file.CopyTo("../" + file.Name, true);
+                    }
+                    ProcessStartInfo info = new ProcessStartInfo("../CovidCheckClientGui.exe", "done windows");
+                    info.WorkingDirectory = "../";
+                    Process.Start(info);
+                }
+                done = true;
+            });
+            thread.Start();
+            while (!done)
+            {
+            }
         }
     }
 }
