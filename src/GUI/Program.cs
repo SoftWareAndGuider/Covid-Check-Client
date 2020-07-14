@@ -268,7 +268,7 @@ namespace CovidCheckClientGui
             {
                 if (loop > (int)helpSet.Value)
                 {
-                    internetErrorNotice();
+                    internetErrorNotice($"{id} 체크");
                     return;
                 }
                 Thread.Sleep(1000);
@@ -321,7 +321,7 @@ namespace CovidCheckClientGui
                 
                 if (loop > (int)helpSet.Value)
                 {
-                    internetErrorNotice();
+                    internetErrorNotice($"{grade}학년 {@class}반 {number}번 체크");
                     return;
                 }
                 Thread.Sleep(1000);
@@ -363,7 +363,7 @@ namespace CovidCheckClientGui
             {
                 if (loop > (int)helpSet.Value)
                 {
-                    internetErrorNotice();
+                    internetErrorNotice($"{id} 발열체크");
                     return;
                 }
                 Thread.Sleep(1000);
@@ -412,7 +412,7 @@ namespace CovidCheckClientGui
             {
                 if (loop > (int)helpSet.Value)
                 {
-                    internetErrorNotice();
+                    internetErrorNotice($"{grade}학년 {@class}반 {number}번 발열체크");
                     return;
                 }
                 Thread.Sleep(1000);
@@ -456,7 +456,7 @@ namespace CovidCheckClientGui
             {
                 if (loop > (int)helpSet.Value)
                 {
-                    internetErrorNotice();
+                    internetErrorNotice($"{id} 체크 해제");
                     return;
                 }
                 Thread.Sleep(1000);
@@ -505,7 +505,7 @@ namespace CovidCheckClientGui
             {
                 if (loop > (int)helpSet.Value)
                 {
-                    internetErrorNotice();
+                    internetErrorNotice($"{grade}학년 {@class}반 {number}번 체크 해제");
                     return;
                 }
                 Thread.Sleep(1000);
@@ -556,7 +556,7 @@ namespace CovidCheckClientGui
             {
                 if (loop > (int)helpSet.Value)
                 {
-                    internetErrorNotice();
+                    internetErrorNotice($"{grade}학년 {@class}반 {number}번 {name}(ID: {id}) 사용자 추가");
                     return;
                 }
                 Thread.Sleep(1000);
@@ -595,7 +595,7 @@ namespace CovidCheckClientGui
             {
                 if (loop > (int)helpSet.Value)
                 {
-                    internetErrorNotice();
+                    internetErrorNotice($"{id} 사용자 삭제");
                     return;
                 }
 
@@ -647,7 +647,7 @@ namespace CovidCheckClientGui
             {
                 if (loop > (int)helpSet.Value)
                 {
-                    internetErrorNotice();
+                    internetErrorNotice($"{grade}학년 {@class}반 {number}번 사용자 삭제");
                     return;
                 }
                 Thread.Sleep(1000);
@@ -771,12 +771,10 @@ namespace CovidCheckClientGui
                     selectMode.Page = 3;
                 });
         }    
-        void internetErrorNotice() //인터넷이 잘못되었을 때 에러를 보여주는거 (타임아웃)
+        void internetErrorNotice(string doing) //인터넷이 잘못되었을 때 에러를 보여주는거 (타임아웃)
         {
             Application.Invoke(delegate {
-                    MessageDialog dialog = new MessageDialog(null, DialogFlags.Modal, MessageType.Error, ButtonsType.Close, false, "인터넷이 원활한 환경에서 사용해 주세요.");
-                    dialog.Run();
-                    dialog.Dispose();
+                    addLog($"인터넷 문제로 {doing} 작업 실패");
                 });
         }
     }

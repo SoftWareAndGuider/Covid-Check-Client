@@ -18,7 +18,7 @@ namespace CovidCheckClientGui
 {
     partial class Program : Window
     {
-        int version = 3;
+        int version = 4;
         JObject settingJson = new JObject(); //설정 JSON
         const string settingPath = "config.json"; //설정 파일 경로
 
@@ -169,23 +169,23 @@ namespace CovidCheckClientGui
             programProcessing = true; //아래에 있는 루프 도는 스레드들 일하도록 true 설정
             CssProvider cssProvider = new CssProvider(); //기본 CSS설정
             cssProvider.LoadFromData(@"
-                #add {
+                .log {
                     font-size: 18px;
                 }
-                #gray > trough > progress {
+                .NowLog {
+                    background-color: lightpink;
+                }
+                .DefaultStatus > trough > progress {
                     background-image: none;
                     background-color: gray;
                 }
-                #green > trough > progress {
+                .CheckedStatus > trough > progress {
                     background-image: none;
                     background-color: #5DE3BD;
                 }
-                #red > trough > progress {
+                .FeverStatus > trough > progress {
                     background-image: none;
                     background-color: red;
-                }
-                .nowlog {
-                    background-color: lightpink;
                 }
             ");
             StyleContext.AddProviderForScreen(Gdk.Screen.Default, cssProvider, 800); //CSS 적용
@@ -251,6 +251,120 @@ namespace CovidCheckClientGui
             grid.Margin = 20;
             grid.ColumnHomogeneous = true; //위젯들을 가로로 잡아당길거냐?
             grid.ColumnSpacing = 8; //각 셀의 간격
+
+
+            //필드에 선언된 위젯들 이름 짓기, 클래스 붙이기
+            {
+                selectMode.Name = "selectMode";
+                scroll.Name = "defaultLogScroll";
+                timeoutLogScroll.Name = "timeoutLogScroll";
+
+                // ID로 체크하기
+                checkInsertID.Name = "checkInsertID";
+                checkInsertID.StyleContext.AddClass("InsertID");
+                checkIDLength.Name = "IDLength";
+                uncheckIDLength.Name = "IDLength"; //ID 체크 Scale은 같은 것으로 간주
+
+                // ID없이 체크하기
+                checkIsTeacher.Name = "checkNotStudent";
+                checkIsTeacher.StyleContext.AddClass("NotStudent");
+                checkInsertGrade.Name = "checkInsertGrade";
+                checkInsertGrade.StyleContext.AddClass("InsertGrade");
+                checkInsertClass.Name = "checkInsertClass";
+                checkInsertClass.StyleContext.AddClass("InsertClass");
+                checkInsertNumber.Name = "checkInsertNumber";
+                checkInsertNumber.StyleContext.AddClass("InsertNumber");
+                checkInsertUser.Name = "checkWithoutID";
+                checkInsertUser.StyleContext.AddClass("WithoutID");
+                checkOK.Name = "checkWithID";
+                checkOK.StyleContext.AddClass("WithID");
+
+                // ID로 발열 체크하기
+                checkDoubtInsertID.Name = "feverInsertID";
+                checkDoubtInsertID.StyleContext.AddClass("InsertID");
+                
+                // ID없이 발열 체크하기
+                checkIsTeacher.Name = "checkNotStudent";
+                checkIsTeacher.StyleContext.AddClass("NotStudent");
+                checkDoubtInsertGrade.Name = "feverInsertGrade";
+                checkDoubtInsertGrade.StyleContext.AddClass("InsertGrade");
+                checkDoubtInsertClass.Name = "feverInsertClass";
+                checkDoubtInsertClass.StyleContext.AddClass("InsertClass");
+                checkDoubtInsertNumber.Name = "feverInsertNumber";
+                checkDoubtInsertNumber.StyleContext.AddClass("InsertNumber");
+                checkDoubtInsertUser.Name = "feverWithoutID";
+                checkDoubtInsertUser.StyleContext.AddClass("WithoutID");
+                checkDoubtOK.Name = "feverWithID";
+                checkDoubtOK.StyleContext.AddClass("WithID");
+
+                // ID로 체크 해제하기
+                uncheckInsertID.Name = "uncheckInsertID";
+                uncheckInsertID.StyleContext.AddClass("InsertID");
+
+                // ID없이 체크 해제하기
+                uncheckIsTeacher.Name = "uncheckNotStudent";
+                uncheckIsTeacher.StyleContext.AddClass("NotStudent");
+                uncheckInsertGrade.Name = "uncheckInsertGrade";
+                uncheckInsertGrade.StyleContext.AddClass("InsertGrade");
+                uncheckInsertClass.Name = "uncheckInsertClass";
+                uncheckInsertClass.StyleContext.AddClass("InsertClass");
+                uncheckInsertNumber.Name = "uncheckInsertNumber";
+                uncheckInsertNumber.StyleContext.AddClass("InsertNumber");
+                uncheckInsertUser.Name = "uncheckWithoutID";
+                uncheckInsertUser.StyleContext.AddClass("WithoutID");
+                uncheckOK.Name = "uncheckWithID";
+                uncheckOK.StyleContext.AddClass("WithID");
+
+                // 사용자 추가
+                addIsTeacher.Name = "addNotStudent";
+                addIsTeacher.StyleContext.AddClass("NotStudent");
+                addInsertGrade.Name = "addInsertGrade";
+                addInsertGrade.StyleContext.AddClass("InsertGrade");
+                addInsertClass.Name = "addInsertClass";
+                addInsertClass.StyleContext.AddClass("InsertClass");
+                addInsertNumber.Name = "addInsertNumber";
+                addInsertNumber.StyleContext.AddClass("InsertNumber");
+                addInsertName.Name = "addInsertName";
+                insertUser.Name = "addUser";
+                insertUser.StyleContext.AddClass("addUser");
+
+                // ID로 사용자 삭제
+                delInsertID.Name = "deleteInsertID";
+                delInsertID.StyleContext.AddClass("InsertID");
+
+                // ID없이 사용자 삭제
+                delIsTeacher.Name = "deleteNotStudent";
+                delIsTeacher.StyleContext.AddClass("NotStudent");
+                delInsertGrade.Name = "deleteInsertGrade";
+                delInsertGrade.StyleContext.AddClass("InsertGrade");
+                delInsertClass.Name = "deleteInsertClass";
+                delInsertClass.StyleContext.AddClass("InsertClass");
+                delInsertNumber.Name = "deleteInsertNumber";
+                delInsertNumber.StyleContext.AddClass("InsertNumber");
+
+                delInsertUser.Name = "deleteWithID";
+                delInsertUser.StyleContext.AddClass("WithID");
+                delInsertUserWithoutID.Name = "deleteWithoutID";
+                delInsertUserWithoutID.StyleContext.AddClass("WithoutID");
+
+                // 사용자 정보 보는 부분
+                seeMoreInfo.Name = "seeMoreInfo";
+
+                for (int i = 0; i < userCount.Length; i++)
+                {
+                    userCount[i].Name = $"userCount{i}";
+                    userCount[i].StyleContext.AddClass("UserCount");
+                }
+                for (int i = 0; i < 4 ; i++)
+                {
+                    statusProgressBar[i,0].Name = $"defaultStatus{i}";
+                    statusProgressBar[i,0].StyleContext.AddClass("DefaultStatus");
+                    statusProgressBar[i,1].Name = $"checkedStatus{i}";
+                    statusProgressBar[i,1].StyleContext.AddClass("CheckedStatus");
+                    statusProgressBar[i,2].Name = $"feverStatus{i}";
+                    statusProgressBar[i,2].StyleContext.AddClass("FeverStatus");
+                }
+            }
 
 
             //사용자 체크 Grid
@@ -573,12 +687,6 @@ namespace CovidCheckClientGui
                     a.ShowText = true;
                     a.Text = "로딩...";
                 }
-                for (int i = 0; i < 4; i++) //ProgressBar에 색깔 입히기
-                {
-                    statusProgressBar[i, 0].Name = "gray";
-                    statusProgressBar[i, 1].Name = "green";
-                    statusProgressBar[i, 2].Name = "red";
-                }
                 
                 //배치
                 {
@@ -688,6 +796,7 @@ namespace CovidCheckClientGui
                         label.Halign = Align.End;
                         url.Text = settingJson["url"].ToString();
                         grids["setUrl"].ColumnSpacing = 10;
+                        url.Name = "serverUrl";
                     }
                     {
                         url.KeyReleaseEvent += async delegate {
@@ -717,6 +826,8 @@ namespace CovidCheckClientGui
                         time.RoundDigits = 0;
                         time.Digits = 0;
                         time.DrawValue = false;
+                        time.Name = "timeoutScale";
+                        helpSet.Name = "timeoutSpinButton";
 
                         grids["setTimeoutRetry"].Attach(new Label("타임아웃시 재시도 횟수를 설정해 주세요."), 1, 1, 5, 1);
                         grids["setTimeoutRetry"].Attach(time, 1, 2, 4, 1);
@@ -745,6 +856,10 @@ namespace CovidCheckClientGui
                 {
                     Gtk.Switch checkUpdate = new Gtk.Switch(); //업데이트 체크 여부 (Switch가 이미 있으니...)
                     Gtk.Switch autoUpdate = new Gtk.Switch(); //자동 업데이트 여부
+                    {
+                        checkUpdate.Name = "checkUpdate";
+                        autoUpdate.Name = "autoUpdate";
+                    }
                     {
                         checkUpdate.StateChanged += delegate {
                             autoUpdate.Sensitive = checkUpdate.State;
@@ -785,7 +900,14 @@ namespace CovidCheckClientGui
                     Button getFile = new Button("파일 불러오기");
                     FileChooserDialog fileChooser = new FileChooserDialog("설정 파일 불러오기", null, FileChooserAction.Open, "불러오기", ResponseType.Accept);
                     FileFilter filter = new FileFilter();
-                    filter.AddPattern("*.json"); //json파일만
+                    
+                    {
+                        filter.AddPattern("*.json"); //json파일만
+                        filter.Name = "settingFileChooser";
+                        getFile.Name = "settingFileButton";
+                    }
+                    
+                    
                     fileChooser.Filter = filter;
                     {
                         getFile.Clicked += delegate {
@@ -850,6 +972,9 @@ namespace CovidCheckClientGui
                         grids["setPassword"].ColumnSpacing = 5;
                         grids["setPassword"].Margin = 5;
                         setEnterPassword.PlaceholderText = "비밀번호를 입력하세요.";
+                        setEnterPassword.Name = "setInsertPassword";
+                        usePassword.Name = "usePasswordButton";
+                        showPassword.Name = "showPasswordButton";
                         setEnterPassword.Valign = Align.Center;
                         setEnterPassword.Visibility = false;
                     }
@@ -905,6 +1030,11 @@ namespace CovidCheckClientGui
                             new CheckButton("ID로 체크 해제하기"), new CheckButton("ID없이 체크 해제하기")
                         }
                     };
+                    use.Name = "useCsvSave";
+                    foreach(var a in checkButtons)
+                    {
+                        a.StyleContext.AddClass("CsvSaveItem");
+                    }
                     Label text = new Label("데이터 저장하기");
                     use.Halign = Align.Start;
                     text.Halign = Align.End;
@@ -1275,7 +1405,6 @@ namespace CovidCheckClientGui
             //=========== 업데이트 확인 ===============
             if ((bool)settingJson["checkUpdate"] && !doneUpdate && !doingUpdate) //업데이트를 체크하고 방금 업데이트를 하지 않았다면
             {
-                Console.WriteLine(doingUpdate);
                 JArray update = new JArray();
                 if (user.hasNewVersion(version, out update)) //신버전 확인
                 {
@@ -1506,13 +1635,13 @@ namespace CovidCheckClientGui
                 storeTime = $"{dt.Month}월 {dt.Day}일 {dt.Hour}:{dt.Minute}:{dt.Second}";
             }
             
-            logLabel.StyleContext.RemoveClass("nowlog"); //일단 기존 로그에서 nowlog 클래스 지우고 (=배경색 지우고)
+            logLabel.StyleContext.RemoveClass("NowLog"); //일단 기존 로그에서 nowlog 클래스 지우고 (=배경색 지우고)
 
             logLabel = new Label($"{text} ({storeTime})");
 
-            logLabel.StyleContext.AddClass("nowlog"); //새 로그에 nowlog 클래스 추가 (=배경색 추가)
+            logLabel.StyleContext.AddClass("NowLog"); //새 로그에 nowlog 클래스 추가 (=배경색 추가)
             
-            logLabel.Name = "add";
+            logLabel.StyleContext.AddClass("log");
             log.Insert(logLabel, 0);
             log.ShowAll();
         }
@@ -1551,11 +1680,11 @@ namespace CovidCheckClientGui
                 storeTime = $"{dt.Month}월 {dt.Day}일 {dt.Hour}:{dt.Minute}:{dt.Second}";
             }
 
-            timeoutLogLabel.StyleContext.RemoveClass("nowlog");
+            timeoutLogLabel.StyleContext.RemoveClass("NowLog");
 
             timeoutLogLabel = new Label($"{text} ({storeTime})");
-            timeoutLogLabel.StyleContext.AddClass("nowlog");
-            timeoutLogLabel.Name = "add";
+            timeoutLogLabel.StyleContext.AddClass("NowLog");
+            timeoutLogLabel.StyleContext.AddClass("log");
 
             timeoutLog.Insert(timeoutLogLabel, 0);
             timeoutLog.ShowAll();
@@ -1635,5 +1764,6 @@ namespace CovidCheckClientGui
             {
             }
         }
+
     }
 }
