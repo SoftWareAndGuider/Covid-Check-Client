@@ -758,35 +758,54 @@ namespace CovidCheckClientGui
                 scroll2.Add(manageMode);
             }
             
-            Grid setting = new Grid(); //설정 Grid
+            // Grid setting = new Grid(); //설정 Grid
+            Grid setting = new Grid();
+            Stack settingStack = new Stack();
+            StackSidebar settingSidebar = new StackSidebar();
             {
+                settingSidebar.Name = "settingSidebar";
+                settingSidebar.Visible = true;
+                settingSidebar.Stack = settingStack;
+
+                settingSidebar.Stack = settingStack;
+                settingStack.Name = "settingStack";
+                settingStack.Visible = true;
+
+                setting.Attach(settingSidebar, 1, 1, 1, 1);
+                setting.Attach(settingStack, 2, 1, 5, 1);
+                
+                setting.ColumnHomogeneous = true;
+                setting.RowHomogeneous = true;
+                setting.ColumnSpacing = 5;
+                // setting.Margin = 10;
+                // setting.MarginStart = 0;
+
+                
+
+
                 Dictionary<string, Grid> grids = new Dictionary<string, Grid>(); //Grid가 꽤나 필요해서 Dict로 묶음
 
-                //Frame들은 설정할 거 없으니 그냥 바로
-                Frame setUrlFrame = new Frame("URL 설정");
-                Frame setTimeoutRetryFrame = new Frame("타임아웃 재시도 횟수 설정");
-                Frame setUpdateCheckFrame = new Frame("업데이트 설정");
-                Frame setPasswordFrame = new Frame("비밀번호 설정");
-                Frame getSettingFrame = new Frame("설정 파일 불러오기");
-                Frame csvSave = new Frame("데이터 저장");
 
                 //setting Grid 설정
-                {
-                    setting.ColumnHomogeneous = true;
-                    setting.RowSpacing = 10;
-                    setting.Margin = 10;
-                }
+                // {
+                //     setting.ColumnHomogeneous = true;
+                //     setting.RowHomogeneous = true;
+                //     setting.RowSpacing = 10;
+                //     setting.Margin = 10;
+                // }
                 //setting Grid 배치
                 {
-                    setting.Attach(setUrlFrame, 1, 1, 1, 1);
-                    setting.Attach(setTimeoutRetryFrame, 1, 2, 1, 1);
-                    setting.Attach(setUpdateCheckFrame, 1, 3, 1, 1);
-                    setting.Attach(getSettingFrame, 1, 4, 1, 1);
-                    setting.Attach(setPasswordFrame, 1, 5, 1, 1);
-                    setting.Attach(csvSave, 1, 6, 1, 1);
+                    // setting.Attach(settingSidebar, 1, 1, 1, 1);
+                    // setting.Attach(setUrlFrame, 1, 1, 1, 1);
+                    // setting.Attach(setTimeoutRetryFrame, 1, 2, 1, 1);
+                    // setting.Attach(setUpdateCheckFrame, 1, 3, 1, 1);
+                    // setting.Attach(getSettingFrame, 1, 4, 1, 1);
+                    // setting.Attach(setPasswordFrame, 1, 5, 1, 1);
+                    // setting.Attach(csvSave, 1, 6, 1, 1);
                 }                
 
-                grids.Add("setUrl", new Grid()); //URL 설정하는 곳
+                //grids.Add("setUrl", new Grid()); //URL 설정하는 곳
+                grids.Add("server", new Grid());
                 {
                     Label label = new Label("http://, https://"); //http://, https://같은거 입력하지 말라는 거
                     Entry url = new Entry(); //url 입력하는 곳
@@ -795,7 +814,7 @@ namespace CovidCheckClientGui
                         url.PlaceholderText = "웹 사이트의 URL을 입력하세요.";
                         label.Halign = Align.End;
                         url.Text = settingJson["url"].ToString();
-                        grids["setUrl"].ColumnSpacing = 10;
+                        grids["server"].ColumnSpacing = 10;
                         url.Name = "serverUrl";
                     }
                     {
@@ -811,11 +830,15 @@ namespace CovidCheckClientGui
                         };
                     }
                     {
-                        grids["setUrl"].Attach(label, 1, 1, 1, 1);
-                        grids["setUrl"].Attach(url, 2, 1, 5, 1);
+                        grids["server"].Attach(label, 1, 1, 1, 1);
+                        grids["server"].Attach(url, 2, 1, 5, 1);
                     }
-                    setUrlFrame.Add(grids["setUrl"]);                    
+                    //setUrlFrame.Add(grids["server"]);
+                    settingStack.AddTitled(grids["server"], "서버 관련 설정", "서버 관련 설정");
                 }
+                
+                
+
 
                 grids.Add("setTimeoutRetry", new Grid()); //타임아웃시 재시도 횟수 설정하는 곳
                 {
@@ -849,7 +872,7 @@ namespace CovidCheckClientGui
                         };
 
                     }
-                    setTimeoutRetryFrame.Add(grids["setTimeoutRetry"]);
+                    settingStack.AddTitled(grids["setTimeoutRetry"], "타임아웃 설정", "타임아웃 설정");
                 }
 
                 grids.Add("setUpdateCheck", new Grid()); //업데이트 설정
@@ -890,7 +913,7 @@ namespace CovidCheckClientGui
                         grids["setUpdateCheck"].Attach(new Label("업데이트 확인시 자동으로 업데이트하기"), 1, 2, 5, 1);
                         grids["setUpdateCheck"].Attach(autogrid, 6, 2, 1, 1);
                     }
-                    setUpdateCheckFrame.Add(grids["setUpdateCheck"]);
+                    settingStack.AddTitled(grids["setUpdateCheck"], "업데이트 설정", "업데이트 설정");
 
                 }
 
@@ -958,7 +981,7 @@ namespace CovidCheckClientGui
                         grids["getSetting"].Attach(filePath, 1, 1, 4, 1);
                         grids["getSetting"].Attach(getFile, 5, 1, 1, 1);
                     }
-                    getSettingFrame.Add(grids["getSetting"]);
+                    settingStack.AddTitled(grids["getSetting"], "설정 가져오기", "설정 가져오기");
 
                 }
                 
@@ -1012,7 +1035,7 @@ namespace CovidCheckClientGui
                             done.Dispose();                            
                         };
                     }
-                    setPasswordFrame.Add(grids["setPassword"]);
+                    settingStack.AddTitled(grids["setPassword"], "잠금 설정", "잠금 설정");
                 }
                 
                 grids.Add("csvSave", new Grid()); //csv 저장 관련 설정
@@ -1167,15 +1190,17 @@ namespace CovidCheckClientGui
                         };
                     }
                     
-                    csvSave.Add(grids["csvSave"]);
+                    settingStack.AddTitled(grids["csvSave"], "내보내기 설정", "내보내기 설정");
                 }
 
                 foreach (var a in grids) //설정 Grid에 공통으로 적용되는 것
                 {
                     a.Value.ColumnHomogeneous = true;
                     a.Value.Margin = 10;
-                    a.Value.MarginTop = 0;
                 }
+                
+                settingSidebar.ShowAll();
+                settingStack.ShowAll();
             }
 
             Grid toDev = new Grid(); //개발자들에게 건의하거나 할 때 쓰는거
