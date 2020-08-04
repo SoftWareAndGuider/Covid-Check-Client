@@ -805,6 +805,8 @@ namespace CovidCheckClientGui
                 }                
 
                 //grids.Add("setUrl", new Grid()); //URL 설정하는 곳
+                Grid networkGrid = new Grid();
+                settingStack.AddTitled(networkGrid, "네트워크 설정", "네트워크 설정");
                 grids.Add("server", new Grid());
                 {
                     Label label = new Label("http://, https://"); //http://, https://같은거 입력하지 말라는 거
@@ -834,11 +836,13 @@ namespace CovidCheckClientGui
                         grids["server"].Attach(url, 2, 1, 5, 1);
                     }
                     //setUrlFrame.Add(grids["server"]);
-                    settingStack.AddTitled(grids["server"], "서버 관련 설정", "서버 관련 설정");
+
+                    Frame urlFrame = new Frame("URL 설정");
+                    urlFrame.Add(grids["server"]);
+                    networkGrid.Attach(urlFrame, 1, 1, 1, 1);
                 }
                 
                 
-
 
                 grids.Add("setTimeoutRetry", new Grid()); //타임아웃시 재시도 횟수 설정하는 곳
                 {
@@ -872,7 +876,10 @@ namespace CovidCheckClientGui
                         };
 
                     }
-                    settingStack.AddTitled(grids["setTimeoutRetry"], "타임아웃 설정", "타임아웃 설정");
+                    Frame timeoutFrame = new Frame("타임아웃 설정");
+
+                    timeoutFrame.Add(grids["setTimeoutRetry"]);
+                    networkGrid.Attach(timeoutFrame, 1, 2, 1, 1);
                 }
 
                 grids.Add("setUpdateCheck", new Grid()); //업데이트 설정
@@ -1367,11 +1374,42 @@ namespace CovidCheckClientGui
                 Add(usePassword);
                 ShowAll();
 
+                enterPassword.KeyReleaseEvent += (o, k) => {
+                    if (k.Event.Key.ToString() == "Return" || k.Event.Key.ToString() == "KP_Enter")
+                    {
+                        if (processPassword(enterPassword.Text))
+                        {
+                            Remove(usePassword); //이거 지우고
+                            //창에 추가
+                            Add(grid);
+                            ShowAll();
+                            statusListFrame[1].Add(statusListMore);
+                            statusListFrame[1].Margin = 15;
+                            statusListFrame[1].MarginTop = 0;
+                            manageMode.Attach(statusListFrame[1], 1, 5, 1, 1);
+
+
+                            Thread status = new Thread(new ThreadStart(getStatus));
+                            Thread showTime = new Thread(new ThreadStart(timer));
+                            status.Start();
+                            showTime.Start();
+
+                            selectMode.Page = 2;
+                            selectMode.Page = 0; //이런식으로 하지 않으면 종종 발열체크를 선택할 수 없을 때가 있음
+                        }
+                        else
+                        {
+                            MessageDialog dialog = new MessageDialog(null, DialogFlags.Modal, MessageType.Error, ButtonsType.Ok, false, "틀렸습니다. 다시 시도해주세요.");
+                            dialog.Run();
+                            dialog.Dispose();
+                        }
+                    }
+                };
+
                 enter.Clicked += delegate {
-                    if (user.getSha512(enterPassword.Text) == settingJson["password"].ToString()) //비밀번호가 맞다면
+                    if (processPassword(enterPassword.Text))
                     {
                         Remove(usePassword); //이거 지우고
-
                         //창에 추가
                         Add(grid);
                         ShowAll();
@@ -1389,7 +1427,7 @@ namespace CovidCheckClientGui
                         selectMode.Page = 2;
                         selectMode.Page = 0; //이런식으로 하지 않으면 종종 발열체크를 선택할 수 없을 때가 있음
                     }
-                    else //비밀번호가 틀렸다면
+                    else
                     {
                         MessageDialog dialog = new MessageDialog(null, DialogFlags.Modal, MessageType.Error, ButtonsType.Ok, false, "틀렸습니다. 다시 시도해주세요.");
                         dialog.Run();
@@ -1789,6 +1827,13 @@ namespace CovidCheckClientGui
             {
             }
         }
-
+        bool processPassword(string input)
+        {
+            if (user.getSha512(input) == settingJson["password"].ToString()) //비밀번호가 맞다면
+            {
+                return true;
+            }
+            return false;
+        }
     }
 }
