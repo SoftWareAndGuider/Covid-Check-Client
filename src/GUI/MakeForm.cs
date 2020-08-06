@@ -777,8 +777,6 @@ namespace CovidCheckClientGui
                 setting.ColumnHomogeneous = true;
                 setting.RowHomogeneous = true;
                 setting.ColumnSpacing = 5;
-                // setting.Margin = 10;
-                // setting.MarginStart = 0;
 
                 
 
@@ -786,14 +784,6 @@ namespace CovidCheckClientGui
                 Dictionary<string, Grid> grids = new Dictionary<string, Grid>(); //Grid가 꽤나 필요해서 Dict로 묶음
 
 
-                //setting Grid 설정
-                // {
-                //     setting.ColumnHomogeneous = true;
-                //     setting.RowHomogeneous = true;
-                //     setting.RowSpacing = 10;
-                //     setting.Margin = 10;
-                // }
-                //setting Grid 배치
                 {
                     // setting.Attach(settingSidebar, 1, 1, 1, 1);
                     // setting.Attach(setUrlFrame, 1, 1, 1, 1);
@@ -926,6 +916,7 @@ namespace CovidCheckClientGui
 
                 grids.Add("getSetting", new Grid()); //설정 파일 가져오기
                 {
+                    Frame getSettingFrame = new Frame("파일에서 설정 가져오기");
                     Entry filePath = new Entry("파일을 선택하세요.");
                     Button getFile = new Button("파일 불러오기");
                     FileChooserDialog fileChooser = new FileChooserDialog("설정 파일 불러오기", null, FileChooserAction.Open, "불러오기", ResponseType.Accept);
@@ -988,7 +979,11 @@ namespace CovidCheckClientGui
                         grids["getSetting"].Attach(filePath, 1, 1, 4, 1);
                         grids["getSetting"].Attach(getFile, 5, 1, 1, 1);
                     }
-                    settingStack.AddTitled(grids["getSetting"], "설정 가져오기", "설정 가져오기");
+                    Grid getSettingGrid = new Grid();
+                    getSettingFrame.Add(grids["getSetting"]);
+                    getSettingGrid.Add(getSettingFrame);
+                    getSettingGrid.ColumnHomogeneous = true;
+                    settingStack.AddTitled(getSettingGrid, "설정 가져오기", "설정 가져오기");
 
                 }
                 
@@ -1200,6 +1195,22 @@ namespace CovidCheckClientGui
                     settingStack.AddTitled(grids["csvSave"], "내보내기 설정", "내보내기 설정");
                 }
 
+                grids.Add("cssDesign", new Grid());
+                {
+                    Button openFile = new Button("CSS파일 열기");
+                    openFile.ButtonReleaseEvent += delegate {
+                        FileChooserDialog fileChooser = new FileChooserDialog("CSS파일 열기", this, FileChooserAction.Open);
+                        fileChooser.AddButton("열기", ResponseType.Ok);
+                        int result = fileChooser.Run();
+                        if (result == -5) //파일을 열었을 때
+                        {
+                            File.Copy(fileChooser.File.Path, "design.css");
+                        }
+                        fileChooser.Dispose();
+                    };
+                    grids["cssDesign"].Attach(openFile,1 ,1 ,1, 1);
+                    settingStack.AddTitled(grids["cssDesign"], "CSS 설정", "CSS 설정");
+                }
                 foreach (var a in grids) //설정 Grid에 공통으로 적용되는 것
                 {
                     a.Value.ColumnHomogeneous = true;
