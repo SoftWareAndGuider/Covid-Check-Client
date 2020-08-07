@@ -167,8 +167,7 @@ namespace CovidCheckClientGui
             }
             addLog("프로그램이 시작됨");
             programProcessing = true; //아래에 있는 루프 도는 스레드들 일하도록 true 설정
-            CssProvider cssProvider = new CssProvider(); //기본 CSS설정
-            cssProvider.LoadFromData(@"
+            string css = @"
                 .log {
                     font-size: 18px;
                 }
@@ -187,7 +186,48 @@ namespace CovidCheckClientGui
                     background-image: none;
                     background-color: red;
                 }
-            ");
+            ";
+            CssProvider cssProvider = new CssProvider(); //기본 CSS설정
+            try
+            {
+                css = File.ReadAllText("design.css");
+            }
+            catch
+            {
+                File.WriteAllText("design.css", css);
+            }
+            try
+            {
+                cssProvider.LoadFromData(css);
+            }
+            catch
+            {
+                css = @"
+                .log {
+                    font-size: 18px;
+                }
+                .NowLog {
+                    background-color: lightpink;
+                }
+                .DefaultStatus > trough > progress {
+                    background-image: none;
+                    background-color: gray;
+                }
+                .CheckedStatus > trough > progress {
+                    background-image: none;
+                    background-color: #5DE3BD;
+                }
+                .FeverStatus > trough > progress {
+                    background-image: none;
+                    background-color: red;
+                }
+            ";
+                File.WriteAllText("design.css", css);
+                cssProvider.LoadFromData(css);
+                MessageDialog wrong = new MessageDialog(this, DialogFlags.DestroyWithParent, MessageType.Error, ButtonsType.Close, true, "잘못된 CSS파일 입니다. 초기 설정으로 돌아갑니다.");
+                wrong.Run();
+                wrong.Dispose();
+            }
             StyleContext.AddProviderForScreen(Gdk.Screen.Default, cssProvider, 800); //CSS 적용
 
             if (doneUpdate) //(자동으로) 업데이트를 했다면
@@ -199,7 +239,7 @@ namespace CovidCheckClientGui
 
             user = new CheckCovid19.User("localhost"); //User 선언
 
-            string defaultSetting = @"{
+            const string defaultSetting = @"{
                 ""url"": ""localhost"",
                 ""barcodeLength"": 8,
                 ""timeoutRetry"": 100,
@@ -1200,15 +1240,51 @@ namespace CovidCheckClientGui
                     Button openFile = new Button("CSS파일 열기");
                     openFile.ButtonReleaseEvent += delegate {
                         FileChooserDialog fileChooser = new FileChooserDialog("CSS파일 열기", this, FileChooserAction.Open);
+                        FileFilter filter = new FileFilter();
+                        filter.AddPattern("*.css");
+                        fileChooser.Filter = filter;
                         fileChooser.AddButton("열기", ResponseType.Ok);
                         int result = fileChooser.Run();
                         if (result == -5) //파일을 열었을 때
                         {
-                            File.Copy(fileChooser.File.Path, "design.css");
+                            File.Copy(fileChooser.File.Path, "design.css", true);
                         }
                         fileChooser.Dispose();
                     };
                     grids["cssDesign"].Attach(openFile,1 ,1 ,1, 1);
+
+                    Button changeToDefault = new Button("기본값으로 되돌리기");
+                    changeToDefault.ButtonReleaseEvent += delegate {
+                        css = @"
+                        .log {
+                            font-size: 18px;
+                        }
+                        .NowLog {
+                            background-color: lightpink;
+                        }
+                        .DefaultStatus > trough > progress {
+                            background-image: none;
+                            background-color: gray;
+                        }
+                        .CheckedStatus > trough > progress {
+                            background-image: none;
+                            background-color: #5DE3BD;
+                        }
+                        .FeverStatus > trough > progress {
+                            background-image: none;
+                            background-color: red;
+                        }
+                    ";
+                        File.WriteAllText("design.css", css);
+                        cssProvider.LoadFromData(css);
+                        MessageDialog done = new MessageDialog(this, DialogFlags.DestroyWithParent, MessageType.Info, ButtonsType.Close, true, "초기 설정으로 돌아갔습니다.");
+                        done.Run();
+                        done.Dispose();
+                    };
+
+                    grids["cssDesign"].Attach(changeToDefault, 1, 2, 1, 1);
+                    
+                    grids["cssDesign"].RowSpacing = 10;
                     settingStack.AddTitled(grids["cssDesign"], "CSS 설정", "CSS 설정");
                 }
                 foreach (var a in grids) //설정 Grid에 공통으로 적용되는 것
