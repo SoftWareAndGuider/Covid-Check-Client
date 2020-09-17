@@ -221,6 +221,9 @@ namespace CovidCheckClientGui
                     background-image: none;
                     background-color: red;
                 }
+                #programTitle {
+                    font-size: 150%;
+                }
             ";
                 File.WriteAllText("design.css", css);
                 cssProvider.LoadFromData(css);
@@ -1274,6 +1277,9 @@ namespace CovidCheckClientGui
                             background-image: none;
                             background-color: red;
                         }
+                        #programTitle {
+                            font-size: 150%;
+                        }
                     ";
                         File.WriteAllText("design.css", css);
                         cssProvider.LoadFromData(css);
@@ -1287,6 +1293,17 @@ namespace CovidCheckClientGui
                     grids["cssDesign"].RowSpacing = 10;
                     settingStack.AddTitled(grids["cssDesign"], "CSS 설정", "CSS 설정");
                 }
+                grids.Add("programInfo", new Grid()); //프로그램 정보
+                {
+                    Label programTitle = new Label("Covid Check Client");
+                    programTitle.Name = "programTitle";
+                    Label info = new Label("버전: 1.3\r\n개발자\r\n\t클라이언트 개발자: csnewcs\r\n\t서버 개발자: pmh-only, Noeul-Night\r\n\r\n\r\nCopyright (c) Janggok SWAG 2020 Custom Licence\r\n자세한 라이센스는 <a href=\"https://github.com/SoftWareAndGuider/Covid-Check-Client/blob/master/LICENSE\">여기</a>를 참고하세요");
+                    info.UseMarkup = true;
+                    grids["programInfo"].Attach(programTitle, 1, 1, 1, 1);
+                    grids["programInfo"].Attach(info, 1, 2, 1, 1);
+                    settingStack.AddTitled(grids["programInfo"], "프로그램 정보", "프로그램 정보");
+                }
+                
                 foreach (var a in grids) //설정 Grid에 공통으로 적용되는 것
                 {
                     a.Value.ColumnHomogeneous = true;
@@ -1400,6 +1417,8 @@ namespace CovidCheckClientGui
                     };
                 }
             }
+            JArray update = new JArray();
+            bool have = user.hasNewVersion(version, out update);
             
             //Grid들 Notebook에 추가
             selectMode.AppendPage(checkAll, new Label("체크"));
@@ -1416,16 +1435,9 @@ namespace CovidCheckClientGui
             Grid setTimer = new Grid();
             setTimer.Attach(time, 1, 1, 1, 1);
 
-            Label licence = new Label("Custom License Copyright (c) 2020 SoftWareAndGuider, csnewcs, pmh-only, Noeul-Night / 자세한 저작권 관련 사항과 이 프로그램의 소스코드는 https://github.com/softwareandguider/covid-check-client에서 확인해 주세요.");
-            licence.Margin = 10;
-            licence.Valign = Align.End;
-            EventBox b = new EventBox();
-            b.Add(licence);
-
 
             //모든 것을 배치
             grid.RowHomogeneous = true;
-            grid.Attach(b, 1, 2, 10, 1);
             grid.Attach(setTimer, 5, 1, 2, 2);
             grid.Attach(selectMode, 1, 1, 5, 2);
             grid.Attach(scroll, 6, 1, 5, 2);
@@ -1551,12 +1563,14 @@ namespace CovidCheckClientGui
             if (!((bool)settingJson["csvSave"] && (bool)settingJson["saves"][2][1])) export[2, 1].Hide();
 
             addLog("프로그램 로딩이 완료됨");
+            
+
+            
 
             //=========== 업데이트 확인 ===============
             if ((bool)settingJson["checkUpdate"] && !doneUpdate && !doingUpdate) //업데이트를 체크하고 방금 업데이트를 하지 않았다면
-            {
-                JArray update = new JArray();
-                if (user.hasNewVersion(version, out update)) //신버전 확인
+            {                                
+                if (have) //신버전 확인
                 {
                     if ((bool)settingJson["autoUpdate"]) //자동 업데이트가 켜져있다면
                     {
@@ -1660,6 +1674,8 @@ namespace CovidCheckClientGui
                     }
                 }                
             }
+        
+            
         }
 
 
