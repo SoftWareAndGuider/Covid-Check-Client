@@ -1317,7 +1317,7 @@ namespace CovidCheckClientGui
                 {
                     Label programTitle = new Label("Covid Check Client");
                     programTitle.Name = "programTitle";
-                    Label info = new Label("버전: 1.3\r\n개발자\r\n\t클라이언트 개발자: csnewcs\r\n\t서버 개발자: pmh-only, Noeul-Night\r\n\r\n\r\nCopyright (c) Janggok SWAG 2020 Custom Licence\r\n자세한 라이센스는 <a href=\"https://github.com/SoftWareAndGuider/Covid-Check-Client/blob/master/LICENSE\">여기</a>를 참고하세요");
+                    Label info = new Label("버전: 1.4\r\n개발자\r\n\t클라이언트 개발자: csnewcs\r\n\t서버 개발자: pmh-only, Noeul-Night\r\n\r\n\r\nCopyright (c) Janggok SWAG 2020 Custom Licence\r\n자세한 라이센스는 <a href=\"https://github.com/SoftWareAndGuider/Covid-Check-Client/blob/master/LICENSE\">여기</a>를 참고하세요");
                     info.UseMarkup = true;
                     grids["programInfo"].Attach(programTitle, 1, 1, 1, 1);
                     grids["programInfo"].Attach(info, 1, 2, 1, 1);
