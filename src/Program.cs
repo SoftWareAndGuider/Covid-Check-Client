@@ -14,7 +14,10 @@ namespace CovidCheckClientGui
         bool saveData;
         static User user;
         static bool doneUpdate = false;
+        static bool doingUpdate = false;
+        static bool failUpdate = false;
         static string[,] csv = new string[3,2];
+        static string[] _args = new string[0];
 
 
         static void Main(string[] args)
@@ -23,47 +26,10 @@ namespace CovidCheckClientGui
             {
                 csv[i / 2, i % 2] = "학년,반,번호,이름,ID";
             }
-            if (args.Length == 0)
-            {
-                Application.Init();
-                new Program();
-                Application.Run();
-            }
+            if (args.Length == 0) {}
             else if (args[0] == "update")
             {
-                Thread.Sleep(1000);
-                string[] fileInfos = Directory.GetFiles("./", "*.zip");
-                foreach (string f in fileInfos)
-                {
-                    File.Delete(f);
-                }
-
-                if (args[1] == "linux")
-                {
-                    DirectoryInfo dictInfo = new DirectoryInfo("./update");
-                    foreach (var file in dictInfo.GetFiles())
-                    {
-                        if (file.Name == "config.json") continue;
-                        file.CopyTo("./" + file.Name, true);
-                    }
-
-                    ProcessStartInfo info = new ProcessStartInfo("./CovidCheckClientGui", "done linux");
-                    Process.Start(info);
-                    Environment.Exit(0);
-                }
-                else if (args[1] == "windows") // 시작 위치: ./files
-                {
-                    DirectoryInfo dictInfo = new DirectoryInfo("../update");
-                    foreach (var file in dictInfo.GetFiles())
-                    {
-                        if (file.Name == "config.json") continue;
-                        file.CopyTo("../" + file.Name, true);
-                    }
-                    ProcessStartInfo info = new ProcessStartInfo("../CovidCheckClientGui.exe", "done windows");
-                    info.WorkingDirectory = "../";
-                    Process.Start(info);
-                    Environment.Exit(0);
-                }
+                _args = args;
             }
             else if (args[0] == "done")
             {
@@ -73,10 +39,14 @@ namespace CovidCheckClientGui
                     Directory.Delete("files", true);
                 }
                 doneUpdate = true;
-                Application.Init();
-                new Program();
-                Application.Run();
             }
+            else if (args[0] == "updateFail")
+            {
+                failUpdate = true;
+            }
+            Application.Init();
+            new Program();
+            Application.Run();
         }
         
         //학생이 아님이 체크됐을 때 실행하는 것
@@ -278,7 +248,7 @@ namespace CovidCheckClientGui
             {
                 if (loop > (int)helpSet.Value)
                 {
-                    internetErrorNotice();
+                    internetErrorNotice($"{id} 체크");
                     return;
                 }
                 Thread.Sleep(1000);
@@ -331,7 +301,7 @@ namespace CovidCheckClientGui
                 
                 if (loop > (int)helpSet.Value)
                 {
-                    internetErrorNotice();
+                    internetErrorNotice($"{grade}학년 {@class}반 {number}번 체크");
                     return;
                 }
                 Thread.Sleep(1000);
@@ -373,7 +343,7 @@ namespace CovidCheckClientGui
             {
                 if (loop > (int)helpSet.Value)
                 {
-                    internetErrorNotice();
+                    internetErrorNotice($"{id} 발열체크");
                     return;
                 }
                 Thread.Sleep(1000);
@@ -422,7 +392,7 @@ namespace CovidCheckClientGui
             {
                 if (loop > (int)helpSet.Value)
                 {
-                    internetErrorNotice();
+                    internetErrorNotice($"{grade}학년 {@class}반 {number}번 발열체크");
                     return;
                 }
                 Thread.Sleep(1000);
@@ -466,7 +436,7 @@ namespace CovidCheckClientGui
             {
                 if (loop > (int)helpSet.Value)
                 {
-                    internetErrorNotice();
+                    internetErrorNotice($"{id} 체크 해제");
                     return;
                 }
                 Thread.Sleep(1000);
@@ -515,7 +485,7 @@ namespace CovidCheckClientGui
             {
                 if (loop > (int)helpSet.Value)
                 {
-                    internetErrorNotice();
+                    internetErrorNotice($"{grade}학년 {@class}반 {number}번 체크 해제");
                     return;
                 }
                 Thread.Sleep(1000);
@@ -566,7 +536,7 @@ namespace CovidCheckClientGui
             {
                 if (loop > (int)helpSet.Value)
                 {
-                    internetErrorNotice();
+                    internetErrorNotice($"{grade}학년 {@class}반 {number}번 {name}(ID: {id}) 사용자 추가");
                     return;
                 }
                 Thread.Sleep(1000);
@@ -605,7 +575,7 @@ namespace CovidCheckClientGui
             {
                 if (loop > (int)helpSet.Value)
                 {
-                    internetErrorNotice();
+                    internetErrorNotice($"{id} 사용자 삭제");
                     return;
                 }
 
@@ -657,7 +627,7 @@ namespace CovidCheckClientGui
             {
                 if (loop > (int)helpSet.Value)
                 {
-                    internetErrorNotice();
+                    internetErrorNotice($"{grade}학년 {@class}반 {number}번 사용자 삭제");
                     return;
                 }
                 Thread.Sleep(1000);
@@ -781,12 +751,10 @@ namespace CovidCheckClientGui
                     selectMode.Page = 3;
                 });
         }    
-        void internetErrorNotice() //인터넷이 잘못되었을 때 에러를 보여주는거 (타임아웃)
+        void internetErrorNotice(string doing) //인터넷이 잘못되었을 때 에러를 보여주는거 (타임아웃)
         {
             Application.Invoke(delegate {
-                    MessageDialog dialog = new MessageDialog(null, DialogFlags.Modal, MessageType.Error, ButtonsType.Close, false, "인터넷이 원활한 환경에서 사용해 주세요.");
-                    dialog.Run();
-                    dialog.Dispose();
+                    addLog($"인터넷 문제로 {doing} 작업 실패");
                 });
         }
     }

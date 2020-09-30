@@ -18,6 +18,7 @@ namespace CovidCheckClientGui
 {
     partial class Program : Window
     {
+        const int version = 4;
         JObject settingJson = new JObject(); //설정 JSON
         const string settingPath = "config.json"; //설정 파일 경로
 
@@ -43,6 +44,7 @@ namespace CovidCheckClientGui
         Entry checkInsertClass = new Entry(); //(체크) 사용자의 반을 입력하는 Entry
         Entry checkInsertNumber = new Entry(); //(체크) 사용자의 번호를 입력하는 Entry
         CheckButton checkIsTeacher = new CheckButton("학생이 아님"); //(체크) 대상이 학생이 아닐 때 체크하는 체크버튼 (0학년 0반 판정)
+
         Button checkInsertUser = new Button("정상 체크하기"); //(체크) 학년, 반, 번호를 사용시 누르는 버튼
 
 
@@ -151,41 +153,122 @@ namespace CovidCheckClientGui
         
         public Program() : base("코로나19 예방용 발열체크 프로그램")
         {
+            if (_args.Length == 0) {}
+            else if (_args[0] == "update")
+            {
+                update2nd();
+                doingUpdate = true;
+                Environment.Exit(0);
+            }
+            else if (_args[0] == "updateFail")
+            {
+                string reason = "";
+                switch (_args[1])
+                {
+                    case null:
+                        reason = "알 수 없음";
+                        break;
+                    case "download":
+                        reason = "다운로드 에러";
+                        break;
+                    case "unzip":
+                        reason = "압축 해제 에러";
+                        break;
+                    case "filecopy(linux)":
+                        reason = "파일 복사 에러 (리눅스)";
+                        break;
+                    case "filecopy(windows)":
+                        reason = "파일 복사 에러 (윈도우)";
+                        break;
+                    case "clean":
+                        reason = "정리 중 에러";
+                        break;
+                    default:
+                        reason = "알 수 없음";
+                        break;
+                }
+                MessageDialog dialog = new MessageDialog(null, DialogFlags.Modal, MessageType.Error, ButtonsType.Close, false, "업데이트에 실패했습니다. 다시 시도해주세요.\n이유: " + reason);
+                    dialog.Run();
+                    dialog.Dispose();
+            }
             addLog("프로그램이 시작됨");
             programProcessing = true; //아래에 있는 루프 도는 스레드들 일하도록 true 설정
-            CssProvider cssProvider = new CssProvider(); //기본 CSS설정
-            cssProvider.LoadFromData(@"
-                #add {
+            string css = @"
+                .log {
                     font-size: 18px;
                 }
-                #gray > trough > progress {
+                .NowLog {
+                    background-color: lightpink;
+                }
+                .DefaultStatus > trough > progress {
                     background-image: none;
                     background-color: gray;
                 }
-                #green > trough > progress {
+                .CheckedStatus > trough > progress {
                     background-image: none;
                     background-color: #5DE3BD;
                 }
-                #red > trough > progress {
+                .FeverStatus > trough > progress {
                     background-image: none;
                     background-color: red;
                 }
-                .nowlog {
+            ";
+            CssProvider cssProvider = new CssProvider(); //기본 CSS설정
+            try
+            {
+                css = File.ReadAllText("design.css");
+            }
+            catch
+            {
+                File.WriteAllText("design.css", css);
+            }
+            try
+            {
+                cssProvider.LoadFromData(css);
+            }
+            catch
+            {
+                css = @"
+                .log {
+                    font-size: 18px;
+                }
+                .NowLog {
                     background-color: lightpink;
                 }
-            ");
+                .DefaultStatus > trough > progress {
+                    background-image: none;
+                    background-color: gray;
+                }
+                .CheckedStatus > trough > progress {
+                    background-image: none;
+                    background-color: #5DE3BD;
+                }
+                .FeverStatus > trough > progress {
+                    background-image: none;
+                    background-color: red;
+                }
+                #programTitle {
+                    font-size: 150%;
+                }
+            ";
+                File.WriteAllText("design.css", css);
+                cssProvider.LoadFromData(css);
+                MessageDialog wrong = new MessageDialog(this, DialogFlags.DestroyWithParent, MessageType.Error, ButtonsType.Close, true, "잘못된 CSS파일 입니다. 초기 설정으로 돌아갑니다.");
+                wrong.Run();
+                wrong.Dispose();
+            }
             StyleContext.AddProviderForScreen(Gdk.Screen.Default, cssProvider, 800); //CSS 적용
 
             if (doneUpdate) //(자동으로) 업데이트를 했다면
             {
-                MessageDialog dialog = new MessageDialog(null, DialogFlags.Modal, MessageType.Error, ButtonsType.Close, false, "새로운 버전으로 업데이트를 완료했습니다!");
+                MessageDialog dialog = new MessageDialog(null, DialogFlags.Modal, MessageType.Error, ButtonsType.Close, false, $"새로운 버전으로 업데이트를 완료했습니다!\r\n\r\n업데이트 내역\r\n{File.ReadAllText("updatelog")}");
                     dialog.Run();
                     dialog.Dispose();
             }
 
             user = new CheckCovid19.User("localhost"); //User 선언
 
-            string defaultSetting = @"{
+            const string defaultSetting = @"{
                 ""url"": ""localhost"",
                 ""barcodeLength"": 8,
                 ""timeoutRetry"": 100,
@@ -235,6 +318,112 @@ namespace CovidCheckClientGui
             grid.Margin = 20;
             grid.ColumnHomogeneous = true; //위젯들을 가로로 잡아당길거냐?
             grid.ColumnSpacing = 8; //각 셀의 간격
+
+
+            //필드에 선언된 위젯들 이름 짓기, 클래스 붙이기
+            {
+                selectMode.Name = "selectMode";
+                scroll.Name = "defaultLogScroll";
+                timeoutLogScroll.Name = "timeoutLogScroll";
+
+                // ID로 체크하기
+                checkInsertID.Name = "checkInsertID";
+                checkInsertID.StyleContext.AddClass("InsertID");
+
+                // ID없이 체크하기
+                checkIsTeacher.Name = "checkNotStudent";
+                checkIsTeacher.StyleContext.AddClass("NotStudent");
+                checkInsertGrade.Name = "checkInsertGrade";
+                checkInsertGrade.StyleContext.AddClass("InsertGrade");
+                checkInsertClass.Name = "checkInsertClass";
+                checkInsertClass.StyleContext.AddClass("InsertClass");
+                checkInsertNumber.Name = "checkInsertNumber";
+                checkInsertNumber.StyleContext.AddClass("InsertNumber");
+                checkInsertUser.Name = "checkWithoutID";
+                checkInsertUser.StyleContext.AddClass("WithoutID");
+
+                // ID로 발열 체크하기
+                checkDoubtInsertID.Name = "feverInsertID";
+                checkDoubtInsertID.StyleContext.AddClass("InsertID");
+                
+                // ID없이 발열 체크하기
+                checkIsTeacher.Name = "checkNotStudent";
+                checkIsTeacher.StyleContext.AddClass("NotStudent");
+                checkDoubtInsertGrade.Name = "feverInsertGrade";
+                checkDoubtInsertGrade.StyleContext.AddClass("InsertGrade");
+                checkDoubtInsertClass.Name = "feverInsertClass";
+                checkDoubtInsertClass.StyleContext.AddClass("InsertClass");
+                checkDoubtInsertNumber.Name = "feverInsertNumber";
+                checkDoubtInsertNumber.StyleContext.AddClass("InsertNumber");
+                checkDoubtInsertUser.Name = "feverWithoutID";
+                checkDoubtInsertUser.StyleContext.AddClass("WithoutID");
+
+                // ID로 체크 해제하기
+                uncheckInsertID.Name = "uncheckInsertID";
+                uncheckInsertID.StyleContext.AddClass("InsertID");
+
+                // ID없이 체크 해제하기
+                uncheckIsTeacher.Name = "uncheckNotStudent";
+                uncheckIsTeacher.StyleContext.AddClass("NotStudent");
+                uncheckInsertGrade.Name = "uncheckInsertGrade";
+                uncheckInsertGrade.StyleContext.AddClass("InsertGrade");
+                uncheckInsertClass.Name = "uncheckInsertClass";
+                uncheckInsertClass.StyleContext.AddClass("InsertClass");
+                uncheckInsertNumber.Name = "uncheckInsertNumber";
+                uncheckInsertNumber.StyleContext.AddClass("InsertNumber");
+                uncheckInsertUser.Name = "uncheckWithoutID";
+                uncheckInsertUser.StyleContext.AddClass("WithoutID");
+
+                // 사용자 추가
+                addIsTeacher.Name = "addNotStudent";
+                addIsTeacher.StyleContext.AddClass("NotStudent");
+                addInsertGrade.Name = "addInsertGrade";
+                addInsertGrade.StyleContext.AddClass("InsertGrade");
+                addInsertClass.Name = "addInsertClass";
+                addInsertClass.StyleContext.AddClass("InsertClass");
+                addInsertNumber.Name = "addInsertNumber";
+                addInsertNumber.StyleContext.AddClass("InsertNumber");
+                addInsertName.Name = "addInsertName";
+                insertUser.Name = "addUser";
+                insertUser.StyleContext.AddClass("addUser");
+
+                // ID로 사용자 삭제
+                delInsertID.Name = "deleteInsertID";
+                delInsertID.StyleContext.AddClass("InsertID");
+
+                // ID없이 사용자 삭제
+                delIsTeacher.Name = "deleteNotStudent";
+                delIsTeacher.StyleContext.AddClass("NotStudent");
+                delInsertGrade.Name = "deleteInsertGrade";
+                delInsertGrade.StyleContext.AddClass("InsertGrade");
+                delInsertClass.Name = "deleteInsertClass";
+                delInsertClass.StyleContext.AddClass("InsertClass");
+                delInsertNumber.Name = "deleteInsertNumber";
+                delInsertNumber.StyleContext.AddClass("InsertNumber");
+
+                delInsertUser.Name = "deleteWithID";
+                delInsertUser.StyleContext.AddClass("WithID");
+                delInsertUserWithoutID.Name = "deleteWithoutID";
+                delInsertUserWithoutID.StyleContext.AddClass("WithoutID");
+
+                // 사용자 정보 보는 부분
+                seeMoreInfo.Name = "seeMoreInfo";
+
+                for (int i = 0; i < userCount.Length; i++)
+                {
+                    userCount[i].Name = $"userCount{i}";
+                    userCount[i].StyleContext.AddClass("UserCount");
+                }
+                for (int i = 0; i < 4 ; i++)
+                {
+                    statusProgressBar[i,0].Name = $"defaultStatus{i}";
+                    statusProgressBar[i,0].StyleContext.AddClass("DefaultStatus");
+                    statusProgressBar[i,1].Name = $"checkedStatus{i}";
+                    statusProgressBar[i,1].StyleContext.AddClass("CheckedStatus");
+                    statusProgressBar[i,2].Name = $"feverStatus{i}";
+                    statusProgressBar[i,2].StyleContext.AddClass("FeverStatus");
+                }
+            }
 
 
             //사용자 체크 Grid
@@ -310,7 +499,8 @@ namespace CovidCheckClientGui
                 checkDoubtInsertNumber.KeyReleaseEvent += checkDoubtWithoutIDKeyRelease;
 
                 //사용자 체크 배치(ID)
-                checkDoubt.Attach(checkDoubtInsertID, 1, 2, 5, 1); // 텍스트박스 추가
+                checkDoubt.Attach(new Label("실제 바코드의 길이가 지정한 바코드의 길이와 다를 경우 체크하기 버튼을 눌러 체크해주세요."), 1, 1, 5, 1); // 공지 추가
+                checkDoubt.Attach(checkDoubtInsertID, 1, 2, 4, 1); // 텍스트박스 추가
                 checkDoubt.Attach(export[1, 0], 1, 3, 5, 1);
 
                 checkDoubt.Attach(new Separator(Orientation.Horizontal), 1, 4, 5, 1);
@@ -336,7 +526,6 @@ namespace CovidCheckClientGui
 
             Grid checkAll = new Grid(); //check하는 Frame들 배치
             {
-                checkAll.MarginTop = 10;
                 checkAll.ColumnHomogeneous = true;
                 checkAll.RowSpacing = 10;
                 checkAll.Attach(checkFrame, 1, 2, 5, 1);
@@ -525,12 +714,6 @@ namespace CovidCheckClientGui
                     a.ShowText = true;
                     a.Text = "로딩...";
                 }
-                for (int i = 0; i < 4; i++) //ProgressBar에 색깔 입히기
-                {
-                    statusProgressBar[i, 0].Name = "gray";
-                    statusProgressBar[i, 1].Name = "green";
-                    statusProgressBar[i, 2].Name = "red";
-                }
                 
                 //배치
                 {
@@ -602,35 +785,35 @@ namespace CovidCheckClientGui
                 scroll2.Add(manageMode);
             }
             
-            Grid setting = new Grid(); //설정 Grid
+            // Grid setting = new Grid(); //설정 Grid
+            Grid setting = new Grid();
+            Stack settingStack = new Stack();
+            StackSidebar settingSidebar = new StackSidebar();
             {
+                settingSidebar.Name = "settingSidebar";
+                settingSidebar.Visible = true;
+                settingSidebar.Stack = settingStack;
+
+                settingSidebar.Stack = settingStack;
+                settingStack.Name = "settingStack";
+                settingStack.Visible = true;
+
+                setting.Attach(settingSidebar, 1, 1, 1, 1);
+                setting.Attach(settingStack, 2, 1, 5, 1);
+                
+                setting.ColumnHomogeneous = true;
+                setting.RowHomogeneous = true;
+                setting.ColumnSpacing = 5;
+
+                
+
+
                 Dictionary<string, Grid> grids = new Dictionary<string, Grid>(); //Grid가 꽤나 필요해서 Dict로 묶음
 
-                //Frame들은 설정할 거 없으니 그냥 바로
-                Frame setUrlFrame = new Frame("URL 설정");
-                Frame setTimeoutRetryFrame = new Frame("타임아웃 재시도 횟수 설정");
-                Frame setUpdateCheckFrame = new Frame("업데이트 설정");
-                Frame setPasswordFrame = new Frame("비밀번호 설정");
-                Frame getSettingFrame = new Frame("설정 파일 불러오기");
-                Frame csvSave = new Frame("데이터 저장");
-
-                //setting Grid 설정
-                {
-                    setting.ColumnHomogeneous = true;
-                    setting.RowSpacing = 10;
-                    setting.Margin = 10;
-                }
-                //setting Grid 배치
-                {
-                    setting.Attach(setUrlFrame, 1, 1, 1, 1);
-                    setting.Attach(setTimeoutRetryFrame, 1, 2, 1, 1);
-                    setting.Attach(setUpdateCheckFrame, 1, 3, 1, 1);
-                    setting.Attach(getSettingFrame, 1, 4, 1, 1);
-                    setting.Attach(setPasswordFrame, 1, 5, 1, 1);
-                    setting.Attach(csvSave, 1, 6, 1, 1);
-                }                
-
-                grids.Add("setUrl", new Grid()); //URL 설정하는 곳
+                //grids.Add("setUrl", new Grid()); //URL 설정하는 곳
+                Grid networkGrid = new Grid();
+                settingStack.AddTitled(networkGrid, "네트워크 설정", "네트워크 설정");
+                grids.Add("server", new Grid());
                 {
                     Label label = new Label("http://, https://"); //http://, https://같은거 입력하지 말라는 거
                     Entry url = new Entry(); //url 입력하는 곳
@@ -639,7 +822,8 @@ namespace CovidCheckClientGui
                         url.PlaceholderText = "웹 사이트의 URL을 입력하세요.";
                         label.Halign = Align.End;
                         url.Text = settingJson["url"].ToString();
-                        grids["setUrl"].ColumnSpacing = 10;
+                        grids["server"].ColumnSpacing = 10;
+                        url.Name = "serverUrl";
                     }
                     {
                         url.KeyReleaseEvent += async delegate {
@@ -654,11 +838,17 @@ namespace CovidCheckClientGui
                         };
                     }
                     {
-                        grids["setUrl"].Attach(label, 1, 1, 1, 1);
-                        grids["setUrl"].Attach(url, 2, 1, 5, 1);
+                        grids["server"].Attach(label, 1, 1, 1, 1);
+                        grids["server"].Attach(url, 2, 1, 5, 1);
                     }
-                    setUrlFrame.Add(grids["setUrl"]);                    
+                    //setUrlFrame.Add(grids["server"]);
+
+                    Frame urlFrame = new Frame("URL 설정");
+                    urlFrame.Add(grids["server"]);
+                    networkGrid.Attach(urlFrame, 1, 1, 1, 1);
                 }
+                
+                
 
                 grids.Add("setTimeoutRetry", new Grid()); //타임아웃시 재시도 횟수 설정하는 곳
                 {
@@ -669,6 +859,8 @@ namespace CovidCheckClientGui
                         time.RoundDigits = 0;
                         time.Digits = 0;
                         time.DrawValue = false;
+                        time.Name = "timeoutScale";
+                        helpSet.Name = "timeoutSpinButton";
 
                         grids["setTimeoutRetry"].Attach(new Label("타임아웃시 재시도 횟수를 설정해 주세요."), 1, 1, 5, 1);
                         grids["setTimeoutRetry"].Attach(time, 1, 2, 4, 1);
@@ -690,13 +882,20 @@ namespace CovidCheckClientGui
                         };
 
                     }
-                    setTimeoutRetryFrame.Add(grids["setTimeoutRetry"]);
+                    Frame timeoutFrame = new Frame("타임아웃 설정");
+
+                    timeoutFrame.Add(grids["setTimeoutRetry"]);
+                    networkGrid.Attach(timeoutFrame, 1, 2, 1, 1);
                 }
 
                 grids.Add("setUpdateCheck", new Grid()); //업데이트 설정
                 {
                     Gtk.Switch checkUpdate = new Gtk.Switch(); //업데이트 체크 여부 (Switch가 이미 있으니...)
                     Gtk.Switch autoUpdate = new Gtk.Switch(); //자동 업데이트 여부
+                    {
+                        checkUpdate.Name = "checkUpdate";
+                        autoUpdate.Name = "autoUpdate";
+                    }
                     {
                         checkUpdate.StateChanged += delegate {
                             autoUpdate.Sensitive = checkUpdate.State;
@@ -727,17 +926,25 @@ namespace CovidCheckClientGui
                         grids["setUpdateCheck"].Attach(new Label("업데이트 확인시 자동으로 업데이트하기"), 1, 2, 5, 1);
                         grids["setUpdateCheck"].Attach(autogrid, 6, 2, 1, 1);
                     }
-                    setUpdateCheckFrame.Add(grids["setUpdateCheck"]);
+                    settingStack.AddTitled(grids["setUpdateCheck"], "업데이트 설정", "업데이트 설정");
 
                 }
 
                 grids.Add("getSetting", new Grid()); //설정 파일 가져오기
                 {
+                    Frame getSettingFrame = new Frame("파일에서 설정 가져오기");
                     Entry filePath = new Entry("파일을 선택하세요.");
                     Button getFile = new Button("파일 불러오기");
                     FileChooserDialog fileChooser = new FileChooserDialog("설정 파일 불러오기", null, FileChooserAction.Open, "불러오기", ResponseType.Accept);
                     FileFilter filter = new FileFilter();
-                    filter.AddPattern("*.json"); //json파일만
+                    
+                    {
+                        filter.AddPattern("*.json"); //json파일만
+                        filter.Name = "settingFileChooser";
+                        getFile.Name = "settingFileButton";
+                    }
+                    
+                    
                     fileChooser.Filter = filter;
                     {
                         getFile.Clicked += delegate {
@@ -788,7 +995,11 @@ namespace CovidCheckClientGui
                         grids["getSetting"].Attach(filePath, 1, 1, 4, 1);
                         grids["getSetting"].Attach(getFile, 5, 1, 1, 1);
                     }
+                    Grid getSettingGrid = new Grid();
                     getSettingFrame.Add(grids["getSetting"]);
+                    getSettingGrid.Add(getSettingFrame);
+                    getSettingGrid.ColumnHomogeneous = true;
+                    settingStack.AddTitled(getSettingGrid, "설정 가져오기", "설정 가져오기");
 
                 }
                 
@@ -802,6 +1013,9 @@ namespace CovidCheckClientGui
                         grids["setPassword"].ColumnSpacing = 5;
                         grids["setPassword"].Margin = 5;
                         setEnterPassword.PlaceholderText = "비밀번호를 입력하세요.";
+                        setEnterPassword.Name = "setInsertPassword";
+                        usePassword.Name = "usePasswordButton";
+                        showPassword.Name = "showPasswordButton";
                         setEnterPassword.Valign = Align.Center;
                         setEnterPassword.Visibility = false;
                     }
@@ -839,7 +1053,7 @@ namespace CovidCheckClientGui
                             done.Dispose();                            
                         };
                     }
-                    setPasswordFrame.Add(grids["setPassword"]);
+                    settingStack.AddTitled(grids["setPassword"], "잠금 설정", "잠금 설정");
                 }
                 
                 grids.Add("csvSave", new Grid()); //csv 저장 관련 설정
@@ -857,6 +1071,11 @@ namespace CovidCheckClientGui
                             new CheckButton("ID로 체크 해제하기"), new CheckButton("ID없이 체크 해제하기")
                         }
                     };
+                    use.Name = "useCsvSave";
+                    foreach(var a in checkButtons)
+                    {
+                        a.StyleContext.AddClass("CsvSaveItem");
+                    }
                     Label text = new Label("데이터 저장하기");
                     use.Halign = Align.Start;
                     text.Halign = Align.End;
@@ -989,16 +1208,112 @@ namespace CovidCheckClientGui
                         };
                     }
                     
-                    csvSave.Add(grids["csvSave"]);
+                    settingStack.AddTitled(grids["csvSave"], "내보내기 설정", "내보내기 설정");
                 }
 
+                grids.Add("cssDesign", new Grid());
+                {
+                    Button openFile = new Button("CSS파일 열기");
+                    openFile.ButtonReleaseEvent += delegate {
+                        FileChooserDialog fileChooser = new FileChooserDialog("CSS파일 열기", this, FileChooserAction.Open);
+                        FileFilter filter = new FileFilter();
+                        filter.AddPattern("*.css");
+                        fileChooser.Filter = filter;
+                        fileChooser.AddButton("열기", ResponseType.Ok);
+                        int result = fileChooser.Run();
+                        if (result == -5) //파일을 열었을 때
+                        {
+                            File.Copy(fileChooser.File.Path, "design.css", true);
+                        }
+                        fileChooser.Dispose();
+                    };
+                    grids["cssDesign"].Attach(openFile,1 ,1 ,1, 1);
+
+                    Button changeToDefault = new Button("기본값으로 되돌리기");
+                    changeToDefault.ButtonReleaseEvent += delegate {
+                        css = @"
+                        .log {
+                            font-size: 18px;
+                        }
+                        .NowLog {
+                            background-color: lightpink;
+                        }
+                        .DefaultStatus > trough > progress {
+                            background-image: none;
+                            background-color: gray;
+                        }
+                        .CheckedStatus > trough > progress {
+                            background-image: none;
+                            background-color: #5DE3BD;
+                        }
+                        .FeverStatus > trough > progress {
+                            background-image: none;
+                            background-color: red;
+                        }
+                        #programTitle {
+                            font-size: 150%;
+                        }
+                    ";
+                        File.WriteAllText("design.css", css);
+                        cssProvider.LoadFromData(css);
+                        MessageDialog done = new MessageDialog(this, DialogFlags.DestroyWithParent, MessageType.Info, ButtonsType.Close, true, "초기 설정으로 돌아갔습니다.");
+                        done.Run();
+                        done.Dispose();
+                    };
+
+                    grids["cssDesign"].Attach(changeToDefault, 1, 2, 1, 1);
+                    
+                    grids["cssDesign"].RowSpacing = 10;
+                    settingStack.AddTitled(grids["cssDesign"], "CSS 설정", "CSS 설정");
+                }
+                grids.Add("programInfo", new Grid()); //프로그램 정보
+                {
+                    Label programTitle = new Label("Covid Check Client");
+                    programTitle.Name = "programTitle";
+                    Label info = new Label("버전: 1.4\r\n개발자\r\n\t클라이언트 개발자: csnewcs\r\n\t서버 개발자: pmh-only, Noeul-Night\r\n\r\n\r\nCopyright (c) Janggok SWAG 2020 Custom Licence\r\n자세한 라이센스는 <a href=\"https://github.com/SoftWareAndGuider/Covid-Check-Client/blob/master/LICENSE\">여기</a>를 참고하세요");
+                    info.UseMarkup = true;
+                    grids["programInfo"].Attach(programTitle, 1, 1, 1, 1);
+                    grids["programInfo"].Attach(info, 1, 2, 1, 1);
+
+                    info.Name = "programInfoLabel";
+
+                    settingStack.AddTitled(grids["programInfo"], "프로그램 정보", "프로그램 정보");
+                }
+                grids.Add("opensourceLicense", new Grid());
+                {
+                    ScrolledWindow licenseScroll = new ScrolledWindow();
+                    Label licenseLabel = new Label("GTKSharp\r\n<a href=\"https://github.com/GtkSharp/GtkSharp\">https://github.com/GtkSharp/GtkSharp</a>\r\nCopyright (C) 1991 Free Software Foundation, Inc.(LGPLv2 License)\r\n\nNewtonsoft.Json\r\n<a href=\"https://github.com/JamesNK/Newtonsoft.Json\">https://github.com/JamesNK/Newtonsoft.Json</a>\r\nCopyright (c) 2007 James Newton-King(MIT License)");
+                    Label MITLicense = new Label("MIT License\nCopyright <YEAR> <COPYRIGHT HOLDER>\nPermission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the \"Software\"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:\nThe above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.");
+                    Label LGPLLicense = new Label("LGPLv2 License\r\n<a href=\"https://www.gnu.org/licenses/old-licenses/lgpl-2.0.html\">https://www.gnu.org/licenses/old-licenses/lgpl-2.0.html</a>");
+                    
+                    licenseLabel.LineWrap = true;
+                    MITLicense.LineWrap = true;
+                    licenseLabel.UseMarkup = true;
+                    LGPLLicense.UseMarkup = true;
+                    licenseLabel.Halign = Align.Start;
+                    LGPLLicense.Halign = Align.Start;
+                    grids["opensourceLicense"].Attach(licenseLabel, 1 ,1, 1, 1);
+                    grids["opensourceLicense"].Attach(MITLicense, 1, 2, 1, 1);
+                    grids["opensourceLicense"].Attach(LGPLLicense, 1, 3, 1, 1);
+                    grids["opensourceLicense"].RowSpacing = 35;
+                    licenseScroll.Add(grids["opensourceLicense"]);
+
+                    licenseLabel.Name = "licenseList";
+                    MITLicense.Name = "MITLicense";
+                    LGPLLicense.Name = "LGPLLicense";
+
+                    settingStack.AddTitled(licenseScroll, "오픈소스 라이센스", "오픈소스 라이센스");
+                }
                 foreach (var a in grids) //설정 Grid에 공통으로 적용되는 것
                 {
                     a.Value.ColumnHomogeneous = true;
                     a.Value.Margin = 10;
-                    a.Value.MarginTop = 0;
                 }
+                
+                settingSidebar.ShowAll();
+                settingStack.ShowAll();
             }
+            
 
             Grid toDev = new Grid(); //개발자들에게 건의하거나 할 때 쓰는거
             {
@@ -1103,6 +1418,8 @@ namespace CovidCheckClientGui
                     };
                 }
             }
+            JArray update = new JArray();
+            bool have = user.hasNewVersion(version, out update);
             
             //Grid들 Notebook에 추가
             selectMode.AppendPage(checkAll, new Label("체크"));
@@ -1119,16 +1436,9 @@ namespace CovidCheckClientGui
             Grid setTimer = new Grid();
             setTimer.Attach(time, 1, 1, 1, 1);
 
-            Label licence = new Label("Custom License Copyright (c) 2020 SoftWareAndGuider, csnewcs, pmh-only, Noeul-Night / 자세한 저작권 관련 사항과 이 프로그램의 소스코드는 https://github.com/softwareandguider/covid-check-client에서 확인해 주세요.");
-            licence.Margin = 10;
-            licence.Valign = Align.End;
-            EventBox b = new EventBox();
-            b.Add(licence);
-
 
             //모든 것을 배치
             grid.RowHomogeneous = true;
-            grid.Attach(b, 1, 2, 10, 1);
             grid.Attach(setTimer, 5, 1, 2, 2);
             grid.Attach(selectMode, 1, 1, 5, 2);
             grid.Attach(scroll, 6, 1, 5, 2);
@@ -1164,11 +1474,42 @@ namespace CovidCheckClientGui
                 Add(usePassword);
                 ShowAll();
 
+                enterPassword.KeyReleaseEvent += (o, k) => {
+                    if (k.Event.Key.ToString() == "Return" || k.Event.Key.ToString() == "KP_Enter")
+                    {
+                        if (processPassword(enterPassword.Text))
+                        {
+                            Remove(usePassword); //이거 지우고
+                            //창에 추가
+                            Add(grid);
+                            ShowAll();
+                            statusListFrame[1].Add(statusListMore);
+                            statusListFrame[1].Margin = 15;
+                            statusListFrame[1].MarginTop = 0;
+                            manageMode.Attach(statusListFrame[1], 1, 5, 1, 1);
+
+
+                            Thread status = new Thread(new ThreadStart(getStatus));
+                            Thread showTime = new Thread(new ThreadStart(timer));
+                            status.Start();
+                            showTime.Start();
+
+                            selectMode.Page = 2;
+                            selectMode.Page = 0; //이런식으로 하지 않으면 종종 발열체크를 선택할 수 없을 때가 있음
+                        }
+                        else
+                        {
+                            MessageDialog dialog = new MessageDialog(null, DialogFlags.Modal, MessageType.Error, ButtonsType.Ok, false, "틀렸습니다. 다시 시도해주세요.");
+                            dialog.Run();
+                            dialog.Dispose();
+                        }
+                    }
+                };
+
                 enter.Clicked += delegate {
-                    if (user.getSha512(enterPassword.Text) == settingJson["password"].ToString()) //비밀번호가 맞다면
+                    if (processPassword(enterPassword.Text))
                     {
                         Remove(usePassword); //이거 지우고
-
                         //창에 추가
                         Add(grid);
                         ShowAll();
@@ -1186,7 +1527,7 @@ namespace CovidCheckClientGui
                         selectMode.Page = 2;
                         selectMode.Page = 0; //이런식으로 하지 않으면 종종 발열체크를 선택할 수 없을 때가 있음
                     }
-                    else //비밀번호가 틀렸다면
+                    else
                     {
                         MessageDialog dialog = new MessageDialog(null, DialogFlags.Modal, MessageType.Error, ButtonsType.Ok, false, "틀렸습니다. 다시 시도해주세요.");
                         dialog.Run();
@@ -1223,72 +1564,160 @@ namespace CovidCheckClientGui
             if (!((bool)settingJson["csvSave"] && (bool)settingJson["saves"][2][1])) export[2, 1].Hide();
 
             addLog("프로그램 로딩이 완료됨");
+            
+
+            
 
             //=========== 업데이트 확인 ===============
-            if ((bool)settingJson["checkUpdate"] && !doneUpdate) //업데이트를 체크하고 방금 업데이트를 하지 않았다면
-            {
-                JArray update = new JArray();
-                if (user.hasNewVersion(2, out update)) //신버전 확인
+            if ((bool)settingJson["checkUpdate"] && !doneUpdate && !doingUpdate) //업데이트를 체크하고 방금 업데이트를 하지 않았다면
+            {                                
+                if (have) //신버전 확인
                 {
                     if ((bool)settingJson["autoUpdate"]) //자동 업데이트가 켜져있다면
                     {
-                        WebClient client = new WebClient();
-                        client.Encoding = System.Text.Encoding.UTF8;
-                        client.Headers.Add("user-agent", "CovidCheckClientCheckUpdate");
-                        JArray files = update.First()["assets"] as JArray;
+                        Grid updateGrid = new Grid();
+                        Spinner updating = new Spinner();
+                        Label updatingWhat = new Label("다운로드 중.... (0%)");
 
-                        foreach (var file in files)
-                        {
-                            if (file["name"].ToString() == "My-School-Version.zip")
+                        updateGrid.Attach(updating, 1, 1, 1, 1);
+                        updateGrid.Attach(updatingWhat, 2, 1, 1, 1);
+                        
+                        updating.Halign = Align.End;
+                        updatingWhat.Halign = Align.Start;
+
+                        updateGrid.ColumnSpacing = 10;
+                        updateGrid.ColumnHomogeneous = true;
+                        updateGrid.RowHomogeneous = true;
+
+                        
+                        updating.Start();
+                        Remove(grid);
+                        Add(updateGrid);
+                        ShowAll();
+
+                        int percent = 0;
+                        bool downloading = false;
+
+                        Thread updateThread = new Thread(() => {
+                            try
                             {
-                                client.DownloadFile(file["browser_download_url"].ToString(), "update.zip"); //god Github api
-                                break;
+                                WebClient client = new WebClient();
+                                client.Encoding = System.Text.Encoding.UTF8;
+                                client.Headers.Add("user-agent", "CovidCheckClientCheckUpdate");
+                                JArray files = update[0]["assets"] as JArray;
+                                File.WriteAllText("updatelog", update[0]["body"].ToString());
+
+
+                                client.DownloadProgressChanged += (ob, e) => {
+                                    if (percent == e.ProgressPercentage) return;
+                                    if (e.ProgressPercentage == 100) downloading = false;
+                                    Application.Invoke(delegate {
+                                        percent = e.ProgressPercentage;
+                                        updatingWhat.Text = $"다운로드 중... ({percent}%)";
+                                    });                                
+                                };
+
+                                foreach (var file in files)
+                                {
+                                    if (file["name"].ToString() == "My-School-Version.zip")
+                                    {
+                                        client.DownloadFileAsync(new Uri(file["browser_download_url"].ToString()), "update.zip"); //god Github api
+                                        downloading = true;
+                                        break;
+                                    }
+                                }
+                                if (!downloading)
+                                {
+                                    updateError("download");
+                                }
+
+                                while (downloading) {}
                             }
-                        }
-                        ZipFile.ExtractToDirectory("./update.zip", "./", true); //압축을 풀고
-                        Directory.CreateDirectory("update"); //업데이트 파일들 집어넣을 폴더
-
-
-                        if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux)) //리눅스 (프로그램이 켜져 있어도 파일 복사 가능, ProcessStartInfo.UseShellExecute = false면 실행 불가)
-                        {
-                            ZipFile.ExtractToDirectory("./linux-x64.zip", "./update", true);
-                            ProcessStartInfo info = new ProcessStartInfo("update/CovidCheckClientGui", "update linux");
-                            info.UseShellExecute = true;
-                            Process.Start("chmod", "777 update");
-                            Process.Start("chmod", "777 update/CovidCheckClientGui"); //실행 가능하도록 해주고
-                            Thread.Sleep(1000);
-                            Process process = new Process();
-                            process.StartInfo = info;
-                            process.Start();
-
-                            Environment.Exit(0);
-                        }
-                        else if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) //윈도우 (프로그램이 켜져 있으면 파일 복사 불가능)
-                        {
-                            ZipFile.ExtractToDirectory("./win-x64.zip", "./update", true);
-                            Directory.CreateDirectory("files");
-
-                            DirectoryInfo updateDictInfo = new DirectoryInfo("update");
-                            foreach (var file in updateDictInfo.GetFiles()) //파일 복사
+                            catch 
                             {
-                                file.CopyTo("files/" + file.Name, true);
+                                updateError("download");
                             }
 
-                            ProcessStartInfo info = new ProcessStartInfo("files/CovidCheckClientGui.exe", "update windows");
-                            info.WorkingDirectory = "./update";
-                            Process.Start(info);
-                            Environment.Exit(0);
-                        }
+                            try
+                            {
+                                Application.Invoke(delegate {updatingWhat.Text = "압축 해제 중....";});
+                                ZipFile.ExtractToDirectory("./update.zip", "./", true); //압축을 풀고
+                                ZipFile.ExtractToDirectory("./GUI.zip", "./", true);
+                                Directory.CreateDirectory("update"); //업데이트 파일들 집어넣을 폴더}
+                            }
+                            catch
+                            {
+                                updateError("unzip");
+                            }
+
+
+                                if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux)) //리눅스 (프로그램이 켜져 있어도 파일 복사 가능, ProcessStartInfo.UseShellExecute = false면 실행 불가)
+                                {
+                                    try
+                                    {
+                                        ZipFile.ExtractToDirectory("./linux-x64.zip", "./update", true);
+                                        ProcessStartInfo info = new ProcessStartInfo("update/CovidCheckClientGui", "update linux");
+                                        info.UseShellExecute = true;
+                                        Process.Start("chmod", "777 update");
+                                        Process.Start("chmod", "777 update/CovidCheckClientGui"); //실행 가능하도록 해주고
+                                        Thread.Sleep(1000);
+                                        Process process = new Process();
+                                        process.StartInfo = info;
+                                        process.Start();
+
+                                        Environment.Exit(0);
+                                    }
+                                    catch
+                                    {
+                                        updateError("filecopy(linux)");
+                                    }
+                                }
+                                else if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) //윈도우 (프로그램이 켜져 있으면 파일 복사 불가능)
+                                {
+                                    try
+                                    {
+                                        ZipFile.ExtractToDirectory("./win-x64.zip", "./update", true);
+                                    }
+                                    catch
+                                    {
+                                        updateError("unzip");
+                                    }
+                                    try
+                                    {
+                                        Directory.CreateDirectory("files");
+
+                                        Application.Invoke(delegate {updatingWhat.Text = "파일 복사 중....";});
+                                        DirectoryInfo updateDictInfo = new DirectoryInfo("update");
+                                        foreach (var file in updateDictInfo.GetFiles()) //파일 복사
+                                        {
+                                            file.CopyTo("files/" + file.Name, true);
+                                        }
+
+                                        ProcessStartInfo info = new ProcessStartInfo("files/CovidCheckClientGui.exe", "update windows");
+                                        info.WorkingDirectory = "./update";
+                                        Process.Start(info);
+                                        Environment.Exit(0);
+                                    }
+                                    catch
+                                    {
+                                        updateError("filecopy(windows)");
+                                    }
+                                }
+
+                        });
+                        updateThread.Start();
                     }
                     else //자동 업데이트 기능이 꺼져있다면
                     {
                         string name = update.First()["name"].ToString();
-                        MessageDialog dialog = new MessageDialog(null, DialogFlags.Modal, MessageType.Info, ButtonsType.Close, true, $"프로그램의 새 버전({name})을 찾았습니다. <a href=\"https://github.com/SoftWareAndGuider/Covid-Check-Client/releases\">여기를 눌러</a> 확인해 주세요.");
+                        MessageDialog dialog = new MessageDialog(null, DialogFlags.Modal, MessageType.Info, ButtonsType.Close, true, $"프로그램의 새 버전({name})을 찾았습니다. <a href=\"https://github.com/SoftWareAndGuider/Covid-Check-Client/releases\">여기를 눌러</a> 확인해 주세요.\r\n\n업데이트 내역\r\n{update[0]["body"]}");
                         dialog.Run();
                         dialog.Dispose();
                     }
                 }                
             }
+        
+            
         }
 
 
@@ -1414,13 +1843,13 @@ namespace CovidCheckClientGui
                 storeTime = $"{dt.Month}월 {dt.Day}일 {dt.Hour}:{dt.Minute}:{dt.Second}";
             }
             
-            logLabel.StyleContext.RemoveClass("nowlog"); //일단 기존 로그에서 nowlog 클래스 지우고 (=배경색 지우고)
+            logLabel.StyleContext.RemoveClass("NowLog"); //일단 기존 로그에서 nowlog 클래스 지우고 (=배경색 지우고)
 
             logLabel = new Label($"{text} ({storeTime})");
 
-            logLabel.StyleContext.AddClass("nowlog"); //새 로그에 nowlog 클래스 추가 (=배경색 추가)
+            logLabel.StyleContext.AddClass("NowLog"); //새 로그에 nowlog 클래스 추가 (=배경색 추가)
             
-            logLabel.Name = "add";
+            logLabel.StyleContext.AddClass("log");
             log.Insert(logLabel, 0);
             log.ShowAll();
         }
@@ -1459,36 +1888,140 @@ namespace CovidCheckClientGui
                 storeTime = $"{dt.Month}월 {dt.Day}일 {dt.Hour}:{dt.Minute}:{dt.Second}";
             }
 
-            timeoutLogLabel.StyleContext.RemoveClass("nowlog");
+            timeoutLogLabel.StyleContext.RemoveClass("NowLog");
 
             timeoutLogLabel = new Label($"{text} ({storeTime})");
-            timeoutLogLabel.StyleContext.AddClass("nowlog");
-            timeoutLogLabel.Name = "add";
+            timeoutLogLabel.StyleContext.AddClass("NowLog");
+            timeoutLogLabel.StyleContext.AddClass("log");
 
             timeoutLog.Insert(timeoutLogLabel, 0);
             timeoutLog.ShowAll();
         }   
         void exportCsv(string text)
         {
-            FileChooserDialog dialog = new FileChooserDialog("csv 파일 저장", null, FileChooserAction.Save, "저장하기", ResponseType.Accept);
-            FileFilter filter = new FileFilter();
-            filter.AddPattern("*.csv");
-            dialog.Filter = filter;
-
-
-            int result = dialog.Run();
-            Regex regex = new Regex(@"^*.csv$");
-            string path = dialog.Filename;
-
-            if (!regex.IsMatch(path))
+            try
             {
-                path += ".csv";
+                FileChooserDialog dialog = new FileChooserDialog("csv 파일 저장", null, FileChooserAction.Save, "저장하기", ResponseType.Accept);
+                FileFilter filter = new FileFilter();
+                filter.AddPattern("*.csv");
+                dialog.Filter = filter;
+
+
+                int result = dialog.Run();
+                Regex regex = new Regex(@"^*.csv$");
+                string path = dialog.Filename;
+
+                if (!regex.IsMatch(path))
+                {
+                    path += ".csv";
+                }
+                if (result == -3)
+                {
+                    File.WriteAllText(path, text);
+                }
+                dialog.Dispose();
             }
-            if (result == -3)
+            catch{}
+        }
+        void update2nd()
+        {
+            SetDefaultSize(1450, 850);
+            Spinner spinner = new Spinner();
+            Grid grid = new Grid();
+            Label label = new Label();
+            grid.Attach(spinner, 1, 1, 1, 1);
+            grid.Attach(label, 2, 1, 1, 1);
+            Add(grid);
+            ShowAll();
+            bool done = false;
+            Thread thread = new Thread(() => {
+                string[] fileInfos = Directory.GetFiles("./", "*.zip");
+                
+
+                Application.Invoke(delegate {label.Text = "파일 복사 중...";});
+                if (_args[1] == "linux")
+                {
+                    try
+                    {
+                        DirectoryInfo dictInfo = new DirectoryInfo("./update");
+                        foreach (var file in dictInfo.GetFiles())
+                        {
+                            if (file.Name == "config.json") continue;
+                            file.CopyTo("./" + file.Name, true);
+                        }
+
+                        ProcessStartInfo info = new ProcessStartInfo("./CovidCheckClientGui", "done linux");
+                        Process.Start(info);
+                    }
+                    catch
+                    {
+                        updateError("filecopy(linux)");
+                    }
+                }
+
+                else if (_args[1] == "windows") // 시작 위치: ./files
+                {
+                    try
+                    {                        
+                        DirectoryInfo dictInfo = new DirectoryInfo("../update");
+                        foreach (var file in dictInfo.GetFiles())
+                        {
+                            if (file.Name == "config.json") continue;
+                            file.CopyTo("../" + file.Name, true);
+                        }
+                        ProcessStartInfo info = new ProcessStartInfo("../CovidCheckClientGui.exe", "done windows");
+                        info.WorkingDirectory = "../";
+                        Process.Start(info);
+                    }
+                    catch
+                    {
+                        updateError("filecopy(windows)");
+                    }
+                }
+                Application.Invoke(delegate {label.Text = "다운로드 파일 삭제 중...";});
+                try
+                {
+                    foreach (string f in fileInfos)
+                    {
+                        File.Delete(f);
+                    }
+                    done = true;
+                }
+                catch
+                {
+                    updateError("clean");
+                }
+            });
+            thread.Start();
+            while (!done)
             {
-                File.WriteAllText(path, text);
             }
-            dialog.Dispose();
+        }
+        bool processPassword(string input)
+        {
+            if (user.getSha512(input) == settingJson["password"].ToString()) //비밀번호가 맞다면
+            {
+                return true;
+            }
+            return false;
+        }
+        void updateError(string reason)
+        {
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux)) //리눅스 (프로그램이 켜져 있어도 파일 복사 가능, ProcessStartInfo.UseShellExecute = false면 실행 불가)
+            {
+                ProcessStartInfo info = new ProcessStartInfo(System.AppDomain.CurrentDomain.FriendlyName, $"updateFail {reason}");
+                Process process = new Process();
+                process.StartInfo = info;
+                process.Start();
+                Environment.Exit(0);
+            }
+            else if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) //윈도우 (프로그램이 켜져 있으면 파일 복사 불가능)
+            {
+                ProcessStartInfo info = new ProcessStartInfo(System.AppDomain.CurrentDomain.FriendlyName, $"updateFail {reason}");
+                info.WorkingDirectory = "./";
+                Process.Start(info);
+                Environment.Exit(0);
+            }     
         }
     }
 }
