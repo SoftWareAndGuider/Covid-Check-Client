@@ -15,6 +15,7 @@ namespace CovidCheckClientGui
         static User user;
         static bool doneUpdate = false;
         static bool doingUpdate = false;
+        static bool failUpdate = false;
         static string[,] csv = new string[3,2];
         static string[] _args = new string[0];
 
@@ -38,6 +39,10 @@ namespace CovidCheckClientGui
                     Directory.Delete("files", true);
                 }
                 doneUpdate = true;
+            }
+            else if (args[0] == "updateFail")
+            {
+                failUpdate = true;
             }
             Application.Init();
             new Program();

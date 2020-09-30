@@ -18,7 +18,7 @@ namespace CovidCheckClientGui
 {
     partial class Program : Window
     {
-        int version = 4;
+        const int version = 4;
         JObject settingJson = new JObject(); //설정 JSON
         const string settingPath = "config.json"; //설정 파일 경로
 
@@ -164,6 +164,37 @@ namespace CovidCheckClientGui
                 update2nd();
                 doingUpdate = true;
                 Environment.Exit(0);
+            }
+            else if (_args[0] == "updateFail")
+            {
+                string reason = "";
+                switch (_args[1])
+                {
+                    case null:
+                        reason = "알 수 없음";
+                        break;
+                    case "download":
+                        reason = "다운로드 에러";
+                        break;
+                    case "unzip":
+                        reason = "압축 해제 에러";
+                        break;
+                    case "filecopy(linux)":
+                        reason = "파일 복사 에러 (리눅스)";
+                        break;
+                    case "filecopy(windows)":
+                        reason = "파일 복사 에러 (윈도우)";
+                        break;
+                    case "clean":
+                        reason = "정리 중 에러";
+                        break;
+                    default:
+                        reason = "알 수 없음";
+                        break;
+                }
+                MessageDialog dialog = new MessageDialog(null, DialogFlags.Modal, MessageType.Error, ButtonsType.Close, false, "업데이트에 실패했습니다. 다시 시도해주세요.\n이유: " + reason);
+                    dialog.Run();
+                    dialog.Dispose();
             }
             addLog("프로그램이 시작됨");
             programProcessing = true; //아래에 있는 루프 도는 스레드들 일하도록 true 설정
@@ -826,17 +857,6 @@ namespace CovidCheckClientGui
 
                 Dictionary<string, Grid> grids = new Dictionary<string, Grid>(); //Grid가 꽤나 필요해서 Dict로 묶음
 
-
-                {
-                    // setting.Attach(settingSidebar, 1, 1, 1, 1);
-                    // setting.Attach(setUrlFrame, 1, 1, 1, 1);
-                    // setting.Attach(setTimeoutRetryFrame, 1, 2, 1, 1);
-                    // setting.Attach(setUpdateCheckFrame, 1, 3, 1, 1);
-                    // setting.Attach(getSettingFrame, 1, 4, 1, 1);
-                    // setting.Attach(setPasswordFrame, 1, 5, 1, 1);
-                    // setting.Attach(csvSave, 1, 6, 1, 1);
-                }                
-
                 //grids.Add("setUrl", new Grid()); //URL 설정하는 곳
                 Grid networkGrid = new Grid();
                 settingStack.AddTitled(networkGrid, "네트워크 설정", "네트워크 설정");
@@ -1301,6 +1321,9 @@ namespace CovidCheckClientGui
                     info.UseMarkup = true;
                     grids["programInfo"].Attach(programTitle, 1, 1, 1, 1);
                     grids["programInfo"].Attach(info, 1, 2, 1, 1);
+
+                    info.Name = "programInfoLabel";
+
                     settingStack.AddTitled(grids["programInfo"], "프로그램 정보", "프로그램 정보");
                 }
                 grids.Add("opensourceLicense", new Grid());
@@ -1321,6 +1344,11 @@ namespace CovidCheckClientGui
                     grids["opensourceLicense"].Attach(LGPLLicense, 1, 3, 1, 1);
                     grids["opensourceLicense"].RowSpacing = 35;
                     licenseScroll.Add(grids["opensourceLicense"]);
+
+                    licenseLabel.Name = "licenseList";
+                    MITLicense.Name = "MITLicense";
+                    LGPLLicense.Name = "LGPLLicense";
+
                     settingStack.AddTitled(licenseScroll, "오픈소스 라이센스", "오픈소스 라이센스");
                 }
                 foreach (var a in grids) //설정 Grid에 공통으로 적용되는 것
@@ -1332,6 +1360,7 @@ namespace CovidCheckClientGui
                 settingSidebar.ShowAll();
                 settingStack.ShowAll();
             }
+            
 
             Grid toDev = new Grid(); //개발자들에게 건의하거나 할 때 쓰는거
             {
@@ -1614,7 +1643,7 @@ namespace CovidCheckClientGui
                         ShowAll();
 
                         int percent = 0;
-                        bool downloading = true;
+                        bool downloading = false;
 
                         Thread updateThread = new Thread(() => {
                             try
@@ -1640,55 +1669,87 @@ namespace CovidCheckClientGui
                                     if (file["name"].ToString() == "Default-Version.zip")
                                     {
                                         client.DownloadFileAsync(new Uri(file["browser_download_url"].ToString()), "update.zip"); //god Github api
+                                        downloading = true;
                                         break;
                                     }
                                 }
+                                if (!downloading)
+                                {
+                                    updateError("download");
+                                }
 
                                 while (downloading) {}
+                            }
+                            catch 
+                            {
+                                updateError("download");
+                            }
 
-
+                            try
+                            {
                                 Application.Invoke(delegate {updatingWhat.Text = "압축 해제 중....";});
                                 ZipFile.ExtractToDirectory("./update.zip", "./", true); //압축을 풀고
                                 ZipFile.ExtractToDirectory("./GUI.zip", "./", true);
                                 Directory.CreateDirectory("update"); //업데이트 파일들 집어넣을 폴더}
+                            }
+                            catch
+                            {
+                                updateError("unzip");
+                            }
 
 
                                 if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux)) //리눅스 (프로그램이 켜져 있어도 파일 복사 가능, ProcessStartInfo.UseShellExecute = false면 실행 불가)
                                 {
-                                    ZipFile.ExtractToDirectory("./linux-x64.zip", "./update", true);
-                                    ProcessStartInfo info = new ProcessStartInfo("update/CovidCheckClientGui", "update linux");
-                                    info.UseShellExecute = true;
-                                    Process.Start("chmod", "777 update");
-                                    Process.Start("chmod", "777 update/CovidCheckClientGui"); //실행 가능하도록 해주고
-                                    Thread.Sleep(1000);
-                                    Process process = new Process();
-                                    process.StartInfo = info;
-                                    process.Start();
+                                    try
+                                    {
+                                        ZipFile.ExtractToDirectory("./linux-x64.zip", "./update", true);
+                                        ProcessStartInfo info = new ProcessStartInfo("update/CovidCheckClientGui", "update linux");
+                                        info.UseShellExecute = true;
+                                        Process.Start("chmod", "777 update");
+                                        Process.Start("chmod", "777 update/CovidCheckClientGui"); //실행 가능하도록 해주고
+                                        Thread.Sleep(1000);
+                                        Process process = new Process();
+                                        process.StartInfo = info;
+                                        process.Start();
 
-                                    Environment.Exit(0);
+                                        Environment.Exit(0);
+                                    }
+                                    catch
+                                    {
+                                        updateError("filecopy(linux)");
+                                    }
                                 }
                                 else if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) //윈도우 (프로그램이 켜져 있으면 파일 복사 불가능)
                                 {
-                                    ZipFile.ExtractToDirectory("./win-x64.zip", "./update", true);
-                                    Directory.CreateDirectory("files");
-
-                                    Application.Invoke(delegate {updatingWhat.Text = "파일 복사 중....";});
-                                    DirectoryInfo updateDictInfo = new DirectoryInfo("update");
-                                    foreach (var file in updateDictInfo.GetFiles()) //파일 복사
+                                    try
                                     {
-                                        file.CopyTo("files/" + file.Name, true);
+                                        ZipFile.ExtractToDirectory("./win-x64.zip", "./update", true);
                                     }
+                                    catch
+                                    {
+                                        updateError("unzip");
+                                    }
+                                    try
+                                    {
+                                        Directory.CreateDirectory("files");
 
-                                    ProcessStartInfo info = new ProcessStartInfo("files/CovidCheckClientGui.exe", "update windows");
-                                    info.WorkingDirectory = "./update";
-                                    Process.Start(info);
-                                    Environment.Exit(0);
-                                }                                
-                            }
-                            catch
-                            {
+                                        Application.Invoke(delegate {updatingWhat.Text = "파일 복사 중....";});
+                                        DirectoryInfo updateDictInfo = new DirectoryInfo("update");
+                                        foreach (var file in updateDictInfo.GetFiles()) //파일 복사
+                                        {
+                                            file.CopyTo("files/" + file.Name, true);
+                                        }
 
-                            }
+                                        ProcessStartInfo info = new ProcessStartInfo("files/CovidCheckClientGui.exe", "update windows");
+                                        info.WorkingDirectory = "./update";
+                                        Process.Start(info);
+                                        Environment.Exit(0);
+                                    }
+                                    catch
+                                    {
+                                        updateError("filecopy(windows)");
+                                    }
+                                }
 
                         });
                         updateThread.Start();
@@ -1885,33 +1946,36 @@ namespace CovidCheckClientGui
         }   
         void exportCsv(string text)
         {
-            FileChooserDialog dialog = new FileChooserDialog("csv 파일 저장", null, FileChooserAction.Save, "저장하기", ResponseType.Accept);
-            FileFilter filter = new FileFilter();
-            filter.AddPattern("*.csv");
-            dialog.Filter = filter;
-
-
-            int result = dialog.Run();
-            Regex regex = new Regex(@"^*.csv$");
-            string path = dialog.Filename;
-
-            if (!regex.IsMatch(path))
+            try
             {
-                path += ".csv";
+                FileChooserDialog dialog = new FileChooserDialog("csv 파일 저장", null, FileChooserAction.Save, "저장하기", ResponseType.Accept);
+                FileFilter filter = new FileFilter();
+                filter.AddPattern("*.csv");
+                dialog.Filter = filter;
+
+
+                int result = dialog.Run();
+                Regex regex = new Regex(@"^*.csv$");
+                string path = dialog.Filename;
+
+                if (!regex.IsMatch(path))
+                {
+                    path += ".csv";
+                }
+                if (result == -3)
+                {
+                    File.WriteAllText(path, text);
+                }
+                dialog.Dispose();
             }
-            if (result == -3)
-            {
-                File.WriteAllText(path, text);
-            }
-            dialog.Dispose();
+            catch{}
         }
         void update2nd()
         {
             SetDefaultSize(1450, 850);
-
             Spinner spinner = new Spinner();
-            Label label = new Label("파일 복사 중...");
             Grid grid = new Grid();
+            Label label = new Label();
             grid.Attach(spinner, 1, 1, 1, 1);
             grid.Attach(label, 2, 1, 1, 1);
             Add(grid);
@@ -1919,39 +1983,61 @@ namespace CovidCheckClientGui
             bool done = false;
             Thread thread = new Thread(() => {
                 string[] fileInfos = Directory.GetFiles("./", "*.zip");
-                Application.Invoke(delegate {label.Text = "다운로드 파일 삭제 중...";});
-                foreach (string f in fileInfos)
-                {
-                    File.Delete(f);
-                }
+                
 
                 Application.Invoke(delegate {label.Text = "파일 복사 중...";});
                 if (_args[1] == "linux")
                 {
-                    DirectoryInfo dictInfo = new DirectoryInfo("./update");
-                    foreach (var file in dictInfo.GetFiles())
+                    try
                     {
-                        if (file.Name == "config.json") continue;
-                        file.CopyTo("./" + file.Name, true);
-                    }
+                        DirectoryInfo dictInfo = new DirectoryInfo("./update");
+                        foreach (var file in dictInfo.GetFiles())
+                        {
+                            if (file.Name == "config.json") continue;
+                            file.CopyTo("./" + file.Name, true);
+                        }
 
-                    ProcessStartInfo info = new ProcessStartInfo("./CovidCheckClientGui", "done linux");
-                    Process.Start(info);
+                        ProcessStartInfo info = new ProcessStartInfo("./CovidCheckClientGui", "done linux");
+                        Process.Start(info);
+                    }
+                    catch
+                    {
+                        updateError("filecopy(linux)");
+                    }
                 }
 
                 else if (_args[1] == "windows") // 시작 위치: ./files
                 {
-                    DirectoryInfo dictInfo = new DirectoryInfo("../update");
-                    foreach (var file in dictInfo.GetFiles())
-                    {
-                        if (file.Name == "config.json") continue;
-                        file.CopyTo("../" + file.Name, true);
+                    try
+                    {                        
+                        DirectoryInfo dictInfo = new DirectoryInfo("../update");
+                        foreach (var file in dictInfo.GetFiles())
+                        {
+                            if (file.Name == "config.json") continue;
+                            file.CopyTo("../" + file.Name, true);
+                        }
+                        ProcessStartInfo info = new ProcessStartInfo("../CovidCheckClientGui.exe", "done windows");
+                        info.WorkingDirectory = "../";
+                        Process.Start(info);
                     }
-                    ProcessStartInfo info = new ProcessStartInfo("../CovidCheckClientGui.exe", "done windows");
-                    info.WorkingDirectory = "../";
-                    Process.Start(info);
+                    catch
+                    {
+                        updateError("filecopy(windows)");
+                    }
                 }
-                done = true;
+                Application.Invoke(delegate {label.Text = "다운로드 파일 삭제 중...";});
+                try
+                {
+                    foreach (string f in fileInfos)
+                    {
+                        File.Delete(f);
+                    }
+                    done = true;
+                }
+                catch
+                {
+                    updateError("clean");
+                }
             });
             thread.Start();
             while (!done)
@@ -1965,6 +2051,24 @@ namespace CovidCheckClientGui
                 return true;
             }
             return false;
+        }
+        void updateError(string reason)
+        {
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux)) //리눅스 (프로그램이 켜져 있어도 파일 복사 가능, ProcessStartInfo.UseShellExecute = false면 실행 불가)
+            {
+                ProcessStartInfo info = new ProcessStartInfo(System.AppDomain.CurrentDomain.FriendlyName, $"updateFail {reason}");
+                Process process = new Process();
+                process.StartInfo = info;
+                process.Start();
+                Environment.Exit(0);
+            }
+            else if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) //윈도우 (프로그램이 켜져 있으면 파일 복사 불가능)
+            {
+                ProcessStartInfo info = new ProcessStartInfo(System.AppDomain.CurrentDomain.FriendlyName, $"updateFail {reason}");
+                info.WorkingDirectory = "./";
+                Process.Start(info);
+                Environment.Exit(0);
+            }     
         }
     }
 }

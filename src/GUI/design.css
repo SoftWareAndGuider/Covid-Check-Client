@@ -1,0 +1,23 @@
+
+                        .log {
+                            font-size: 18px;
+                        }
+                        .NowLog {
+                            background-color: lightpink;
+                        }
+                        .DefaultStatus > trough > progress {
+                            background-image: none;
+                            background-color: gray;
+                        }
+                        .CheckedStatus > trough > progress {
+                            background-image: none;
+                            background-color: #5DE3BD;
+                        }
+                        .FeverStatus > trough > progress {
+                            background-image: none;
+                            background-color: red;
+                        }
+                        #programTitle {
+                            font-size: 150%;
+                        }
+                    
